@@ -3,7 +3,11 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 const base = `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/rpc/`;
 
 async function rpc(name, body = {}) {
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY || SUPABASE_URL.includes('YOUR_')) {
+  if (
+    !SUPABASE_URL ||
+    !SUPABASE_ANON_KEY ||
+    SUPABASE_URL.includes('YOUR_')
+  ) {
     throw new Error('assets/js/config.js의 Supabase 설정을 확인해 주세요.');
   }
 
@@ -26,7 +30,11 @@ async function rpc(name, body = {}) {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw new Error(data?.message || data?.details || '요청에 실패했어요.');
+    throw new Error(
+      data?.message ||
+      data?.details ||
+      '요청에 실패했어요.'
+    );
   }
 
   if (data?.ok === false) {
@@ -48,10 +56,13 @@ export const loginAccount = (nickname, password) =>
     p_password: password
   });
 
-export const getSettings = () => rpc('get_game_settings');
+export const getSettings = () =>
+  rpc('get_game_settings');
 
 export const teacherGetAccounts = code =>
-  rpc('teacher_get_accounts', { p_code: code });
+  rpc('teacher_get_accounts', {
+    p_code: code
+  });
 
 export const teacherGrantCoins = (code, nickname, amount) =>
   rpc('teacher_grant_coins', {
@@ -73,7 +84,11 @@ export const teacherSetShortcut = (code, enabled) =>
     p_enabled: enabled
   });
 
-export const developerSetAccount = (developerCode, nickname, enabled) =>
+export const developerSetAccount = (
+  developerCode,
+  nickname,
+  enabled
+) =>
   rpc('developer_set_account', {
     p_developer_code: developerCode,
     p_nickname: nickname,
@@ -107,21 +122,42 @@ export const teacherDeleteAccount = (
 
 export function getSession() {
   try {
-    return JSON.parse(localStorage.getItem('arcade-profile') || 'null');
+    return JSON.parse(
+      localStorage.getItem('arcade-profile') || 'null'
+    );
   } catch {
     return null;
   }
 }
 
 export function saveSession(profile) {
-  localStorage.setItem('arcade-profile', JSON.stringify(profile));
+  localStorage.setItem(
+    'arcade-profile',
+    JSON.stringify(profile)
+  );
 }
 
 export function clearSession() {
   localStorage.removeItem('arcade-profile');
 }
 
-export function requirePassword(password) {
+export function requirePassword(password, allowSpecialFormat = false) {
+  if (typeof password !== 'string') {
+    return false;
+  }
+
+  if (allowSpecialFormat && password.includes('/')) {
+    if (password.length > 19) {
+      return false;
+    }
+
+    const parts = password.split('/');
+
+    return parts.length === 2 &&
+      /^[A-Za-z0-9]{4,8}$/.test(parts[0]) &&
+      parts[1].length > 0;
+  }
+
   return /^[A-Za-z0-9]{4,8}$/.test(password);
 }
 
