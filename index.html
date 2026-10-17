@@ -8,67 +8,64 @@
   <link rel="stylesheet" href="assets/css/site.css">
   <link rel="stylesheet" href="assets/css/game-new.css">
   <style>
-    .auth-fields{display:grid;gap:10px}
-    .auth-actions{display:flex;gap:10px;flex-wrap:wrap}
-    .auth-actions button{flex:1;min-width:130px}
-    .error-text{color:#b42318}
-    .small-note{font-size:.9em;opacity:.8}
+    .auth-fields { display:grid; gap:10px; }
+    .auth-actions { display:flex; gap:10px; flex-wrap:wrap; }
+    .auth-actions button { flex:1; min-width:130px; }
+    .error-text { color:#b42318; }
+    .small-note { font-size:.9em; opacity:.8; }
   </style>
 </head>
 <body>
-  <main class="new-wrap">
-    <header class="new-head">
-      <h1>🎮 게임 놀이터</h1>
-      <button id="logout" class="btn btn-line hidden" type="button">로그아웃</button>
-    </header>
+<main class="new-wrap">
+  <header class="new-head">
+    <h1>🎮 게임 놀이터</h1>
+    <button id="logout" class="btn btn-line hidden">로그아웃</button>
+  </header>
 
-    <section id="login" class="new-card">
-      <h2>계정 만들기 / 로그인</h2>
-      <p>닉네임과 비밀번호를 입력해 주세요. 비밀번호는 영어와 숫자만 사용해 4~8글자예요.</p>
-      <div class="auth-fields">
-        <input id="nickname" maxlength="16" required
-          placeholder="닉네임" autocomplete="username">
-        <input id="password" type="password" minlength="4" maxlength="19"
-          required placeholder="비밀번호 (영어+숫자, 4~8글자)"
-          autocomplete="current-password">
-      </div>
+  <section id="login" class="new-card">
+    <h2>계정 만들기 / 로그인</h2>
+    <p>닉네임과 비밀번호를 입력해 주세요. 비밀번호는 영어와 숫자만 사용해 4~8글자예요.</p>
+    <div class="auth-fields">
+      <input id="nickname" maxlength="16" required
+             placeholder="닉네임" autocomplete="username">
+      <input id="password" type="password" minlength="4" maxlength="8"
+             required placeholder="비밀번호 (영어+숫자, 4~8글자)"
+             autocomplete="current-password" pattern="[A-Za-z0-9]{4,8}">
+    </div>
+    <div class="auth-actions" style="margin-top:12px">
+      <button id="create-account" class="btn btn-primary" type="button">계정 생성</button>
+      <button id="login-account" class="btn btn-line" type="button">로그인</button>
+    </div>
+    <p id="auth-status" role="status" aria-live="polite"></p>
+    <p class="small-note">계정은 서버에 저장돼 다른 기기에서도 사용할 수 있어요.</p>
+  </section>
 
-      <div class="auth-actions" style="margin-top:12px">
-        <button id="create-account" class="btn btn-primary" type="button">계정 생성</button>
-        <button id="login-account" class="btn btn-line" type="button">로그인</button>
-      </div>
+  <section id="home" class="hidden">
+    <div class="new-card">
+      <p>안녕하세요, <b id="hello"></b>님!</p>
+      <p>🪙 보유 코인 <b id="coins">0</b></p>
+    </div>
 
-      <p id="auth-status" role="status" aria-live="polite"></p>
-      <p class="small-note">소유자 예외 코드는 계정 생성 시에만 비밀번호 뒤에 /코드 형식으로 입력합니다.</p>
-    </section>
+    <div class="new-grid">
+      <a id="omok-link" class="new-card game-link" href="omok.html">
+        <span>⚫⚪</span><h2>오목</h2><p>컴퓨터 대전 · 1대1 대전</p>
+      </a>
+      <a id="rummikub-link" class="new-card game-link" href="rummikub.html">
+        <span>🀄</span><h2>루미큐브</h2><p>컴퓨터 AI 개발 버전</p>
+      </a>
+      <a class="new-card game-link" href="me.html">
+        <span>👤</span><h2>마이페이지</h2><p>코인 확인</p>
+      </a>
+      <a class="new-card game-link" href="shop.html">
+        <span>🛍️</span><h2>상점</h2><p>준비 중</p>
+      </a>
+    </div>
 
-    <section id="home" class="hidden">
-      <div class="new-card">
-        <p>안녕하세요, <b id="hello"></b>님!</p>
-        <p>🪙 보유 코인 <b id="coins">0</b></p>
-      </div>
-
-      <div class="new-grid">
-        <a id="omok-link" class="new-card game-link" href="omok.html">
-          <span>⚫⚪</span><h2>오목</h2><p>컴퓨터 대전 · 1대1 대전</p>
-        </a>
-        <a id="rummikub-link" class="new-card game-link" href="rummikub.html">
-          <span>🀄</span><h2>루미큐브</h2><p>컴퓨터 AI 개발 버전</p>
-        </a>
-        <a class="new-card game-link" href="me.html">
-          <span>👤</span><h2>마이페이지</h2><p>코인 확인</p>
-        </a>
-        <a class="new-card game-link" href="shop.html">
-          <span>🛍️</span><h2>상점</h2><p>준비 중</p>
-        </a>
-      </div>
-
-      <p class="teacher-link hidden" id="teacher-shortcut">
-        <a href="teacher/index.html">교사 페이지</a>
-      </p>
-    </section>
-  </main>
-
-  <script type="module" src="assets/js/pages/new-home.js"></script>
+    <p id="teacherShortcut" class="teacher-link hidden">
+      <a href="teacher/index.html">교사 페이지</a>
+    </p>
+  </section>
+</main>
+<script type="module" src="assets/js/pages/new-home.js"></script>
 </body>
 </html>
