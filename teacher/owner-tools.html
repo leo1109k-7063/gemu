@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>소유자 도구 안내</title>
+  <link rel="stylesheet" href="../assets/css/design.css">
+  <link rel="stylesheet" href="../assets/css/site.css">
+  <link rel="stylesheet" href="../assets/css/game-new.css">
+  <style>
+    .error-text{color:#b42318}
+    #featureList li{margin:10px 0}
+  </style>
+</head>
+<body>
+  <main class="new-wrap">
+    <header class="new-head">
+      <a href="index.html">← 교사 페이지</a>
+      <h1>소유자 도구 안내</h1>
+    </header>
+
+    <section class="new-card">
+      <h2>소유자 인증</h2>
+      <form id="ownerForm">
+        <input id="ownerCode" type="password" maxlength="10"
+          minlength="10" pattern="[A-Za-z0-9]{10}"
+          placeholder="소유자 코드 10자리" required>
+        <button class="btn btn-primary" type="submit">확인</button>
+      </form>
+      <p id="ownerStatus" role="status"></p>
+    </section>
+
+    <section id="ownerContent" class="new-card hidden">
+      <h2>등록된 기능</h2>
+      <ul id="featureList"></ul>
+      <p class="small-note">
+        이 페이지는 기능 안내용입니다. 소유자 코드 자체는 이 페이지에 표시되지 않습니다.
+      </p>
+    </section>
+  </main>
+
+  <script type="module" src="../assets/js/pages/owner-tools.js"></script>
+</body>
+</html>
