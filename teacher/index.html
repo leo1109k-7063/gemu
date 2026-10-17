@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="../assets/css/game-new.css">
   <style>
     .account-list { display:grid; gap:8px; }
+
     .account-row {
       display:flex;
       justify-content:space-between;
@@ -18,16 +19,46 @@
       border:1px solid #ddd;
       border-radius:10px;
     }
-    .account-row small { display:block; opacity:.7; }
+
+    .account-row small {
+      display:block;
+      opacity:.7;
+    }
+
     .error-text { color:#b42318; }
-    .teacher-actions { display:flex; gap:8px; flex-wrap:wrap; }
-<<<<<<< HEAD
-    .account-name { border:0; background:transparent; padding:0; font:inherit; font-weight:700; text-align:left; cursor:pointer; color:inherit; }
-    .account-detail { margin-top:12px; padding:14px; border:1px solid #ddd; border-radius:12px; }
+
+    .teacher-actions {
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .account-name {
+      border:0;
+      background:transparent;
+      padding:0;
+      font:inherit;
+      font-weight:700;
+      text-align:left;
+      cursor:pointer;
+      color:inherit;
+    }
+
+    .account-detail {
+      margin-top:12px;
+      padding:14px;
+      border:1px solid #ddd;
+      border-radius:12px;
+    }
+
     .account-detail[hidden] { display:none; }
-    .role-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
-=======
->>>>>>> a6239a4bf07c18b04f85260f7f713d5306e2d591
+
+    .role-actions {
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
   </style>
 </head>
 <body>
@@ -39,94 +70,144 @@
 
   <section id="gate" class="new-card">
     <h2>교사 코드</h2>
+
     <form id="gateform">
-      <input id="code" type="password" inputmode="numeric"
-             maxlength="6" placeholder="출입 코드" required>
+      <input
+        id="code"
+        type="password"
+        inputmode="numeric"
+        maxlength="6"
+        placeholder="출입 코드"
+        required
+      >
       <button class="btn btn-primary">확인</button>
     </form>
-    <p class="small-note">교사 기능은 서버에서 코드를 확인합니다.</p>
+
+    <p class="small-note">
+      교사 기능은 서버에서 코드를 확인합니다.
+    </p>
     <p id="gateStatus" role="status"></p>
   </section>
 
   <section id="panel" class="hidden">
     <div class="new-card">
-      <h2>계정 목록 <span id="accountCount">(0)</span></h2>
-<<<<<<< HEAD
-      <p class="small-note">계정 이름을 누르면 마이페이지 정보와 권한 지정 기능을 열 수 있습니다.</p>
-=======
-      <p class="small-note">닉네임과 현재 코인 수입니다.</p>
->>>>>>> a6239a4bf07c18b04f85260f7f713d5306e2d591
-      <button id="refreshAccounts" class="btn btn-line" type="button">
-        목록 새로고침
-      </button>
+      <h2>
+        계정 목록 <span id="accountCount">(0)</span>
+      </h2>
+
+      <p class="small-note">
+        계정 이름을 누르면 마이페이지 정보와 권한 지정 기능을 열 수 있습니다.
+      </p>
+
+      <button
+        id="refreshAccounts"
+        class="btn btn-line"
+        type="button"
+      >목록 새로고침</button>
+
       <p id="accountStatus" role="status"></p>
       <div id="accountList" class="account-list"></div>
-<<<<<<< HEAD
-      <section id="accountDetail" class="account-detail" hidden aria-live="polite">
+
+      <section
+        id="accountDetail"
+        class="account-detail"
+        hidden
+        aria-live="polite"
+      >
         <h3 id="detailNickname"></h3>
-        <p>보유 코인: <strong id="detailCoins">0</strong></p>
-        <p id="detailRoles" class="small-note"></p>
-        <label for="roleDeveloperCode">개발자 코드</label>
-        <input id="roleDeveloperCode" type="password" autocomplete="off" placeholder="개발자 코드">
-        <button id="assignDeveloper" class="btn btn-primary" type="button">이 계정을 개발자로 지정</button>
-        <label for="roleTeacherCode">교사 코드</label>
-        <input id="roleTeacherCode" type="password" autocomplete="off" placeholder="교사 코드">
-        <button id="assignTeacher" class="btn btn-primary" type="button">이 계정을 교사로 지정</button>
-        <p id="roleStatus" role="status"></p>
-        <button id="closeAccountDetail" class="btn btn-line" type="button">닫기</button>
-      </section>
-=======
-    </div>
 
-    <div class="new-card">
-      <h2>교사 바로가기 표시</h2>
-      <p>
-        <label>
-          <input type="checkbox" id="shortcutToggle">
-          홈 화면에 교사 페이지 바로가기 표시
-        </label>
-      </p>
-      <button id="saveShortcut" class="btn btn-primary" type="button">저장</button>
-      <p id="shortcutStatus" role="status"></p>
-    </div>
-
-    <div class="new-card">
-      <h2>개발자 계정 설정</h2>
-      <p class="small-note">계정 목록에서 대상을 정한 뒤 개발자 코드를 입력하세요.</p>
-      <form id="developerForm">
-        <input id="developerNickname" placeholder="계정 목록의 닉네임" required>
-        <input id="developerCode" type="password" placeholder="개발자 코드" required>
         <p>
-          <label>
-            <input type="checkbox" id="developerToggle">
-            이 계정을 개발자/소유자로 지정
-          </label>
+          보유 코인:
+          <strong id="detailCoins">0</strong>
         </p>
-        <button class="btn btn-primary">개발자 설정 저장</button>
-      </form>
-      <p id="developerStatus" role="status"></p>
->>>>>>> a6239a4bf07c18b04f85260f7f713d5306e2d591
+
+        <p id="detailRoles" class="small-note"></p>
+
+        <label for="roleDeveloperCode">개발자 코드</label>
+        <input
+          id="roleDeveloperCode"
+          type="password"
+          autocomplete="off"
+          placeholder="개발자 코드"
+        >
+
+        <button
+          id="assignDeveloper"
+          class="btn btn-primary"
+          type="button"
+        >이 계정을 개발자로 지정</button>
+
+        <label for="roleTeacherCode">교사 코드</label>
+        <input
+          id="roleTeacherCode"
+          type="password"
+          autocomplete="off"
+          placeholder="교사 코드"
+        >
+
+        <button
+          id="assignTeacher"
+          class="btn btn-primary"
+          type="button"
+        >이 계정을 교사로 지정</button>
+
+        <p id="roleStatus" role="status"></p>
+
+        <button
+          id="closeAccountDetail"
+          class="btn btn-line"
+          type="button"
+        >닫기</button>
+      </section>
     </div>
 
     <div class="new-card">
       <h2>코인 지급</h2>
+
       <form id="grantform">
         <input id="target" placeholder="학생 닉네임" required>
-        <input id="amount" type="number" min="1" max="100000" value="10" required>
+        <input
+          id="amount"
+          type="number"
+          min="1"
+          max="100000"
+          value="10"
+          required
+        >
         <button class="btn btn-primary">코인 지급</button>
       </form>
+
       <p id="grantstatus" role="status"></p>
     </div>
 
     <div class="new-card">
       <h2>게임 ON/OFF</h2>
-      <p><label><input type="checkbox" id="omokToggle" checked> 오목 사용</label></p>
-      <p><label><input type="checkbox" id="rkToggle" checked> 루미큐브 사용</label></p>
-      <button id="saveSettings" class="btn btn-primary" type="button">설정 저장</button>
+
+      <p>
+        <label>
+          <input type="checkbox" id="omokToggle" checked>
+          오목 사용
+        </label>
+      </p>
+
+      <p>
+        <label>
+          <input type="checkbox" id="rkToggle" checked>
+          루미큐브 사용
+        </label>
+      </p>
+
+      <button
+        id="saveSettings"
+        class="btn btn-primary"
+        type="button"
+      >설정 저장</button>
+
       <p id="settingsStatus" role="status"></p>
     </div>
   </section>
 </main>
+
 <script type="module" src="../assets/js/pages/new-teacher.js"></script>
 </body>
 </html>
