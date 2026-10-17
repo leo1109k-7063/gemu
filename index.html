@@ -25,17 +25,33 @@
   <section id="login" class="new-card">
     <h2>계정 만들기 / 로그인</h2>
     <p>닉네임과 비밀번호를 입력해 주세요. 비밀번호는 영어와 숫자만 사용해 4~8글자예요.</p>
+
     <div class="auth-fields">
-      <input id="nickname" maxlength="16" required
-             placeholder="닉네임" autocomplete="username">
-      <input id="password" type="password" minlength="4" maxlength="8"
-             required placeholder="비밀번호 (영어+숫자, 4~8글자)"
-             autocomplete="current-password" pattern="[A-Za-z0-9]{4,8}">
+      <input id="nickname"
+             maxlength="16"
+             required
+             placeholder="닉네임"
+             autocomplete="username">
+
+      <input id="password"
+             type="password"
+             minlength="4"
+             maxlength="19"
+             required
+             placeholder="비밀번호"
+             autocomplete="current-password">
     </div>
+
     <div class="auth-actions" style="margin-top:12px">
-      <button id="create-account" class="btn btn-primary" type="button">계정 생성</button>
-      <button id="login-account" class="btn btn-line" type="button">로그인</button>
+      <button id="create-account"
+              class="btn btn-primary"
+              type="button">계정 생성</button>
+
+      <button id="login-account"
+              class="btn btn-line"
+              type="button">로그인</button>
     </div>
+
     <p id="auth-status" role="status" aria-live="polite"></p>
     <p class="small-note">계정은 서버에 저장돼 다른 기기에서도 사용할 수 있어요.</p>
   </section>
@@ -48,16 +64,27 @@
 
     <div class="new-grid">
       <a id="omok-link" class="new-card game-link" href="omok.html">
-        <span>⚫⚪</span><h2>오목</h2><p>컴퓨터 대전 · 1대1 대전</p>
+        <span>⚫⚪</span>
+        <h2>오목</h2>
+        <p>컴퓨터 대전 · 1대1 대전</p>
       </a>
+
       <a id="rummikub-link" class="new-card game-link" href="rummikub.html">
-        <span>🀄</span><h2>루미큐브</h2><p>컴퓨터 AI 개발 버전</p>
+        <span>🀄</span>
+        <h2>루미큐브</h2>
+        <p>컴퓨터 AI 개발 버전</p>
       </a>
+
       <a class="new-card game-link" href="me.html">
-        <span>👤</span><h2>마이페이지</h2><p>코인 확인</p>
+        <span>👤</span>
+        <h2>마이페이지</h2>
+        <p>코인 확인</p>
       </a>
+
       <a class="new-card game-link" href="shop.html">
-        <span>🛍️</span><h2>상점</h2><p>준비 중</p>
+        <span>🛍️</span>
+        <h2>상점</h2>
+        <p>준비 중</p>
       </a>
     </div>
 
@@ -66,6 +93,7 @@
     </p>
   </section>
 </main>
+
 <script type="module" src="assets/js/pages/new-home.js"></script>
 </body>
 </html>
