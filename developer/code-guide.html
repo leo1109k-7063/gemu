@@ -1,0 +1,529 @@
+
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>코드 설명 및 작동 원리</title>
+  <link rel="stylesheet" href="../assets/css/design.css">
+  <link rel="stylesheet" href="../assets/css/site.css">
+  <link rel="stylesheet" href="../assets/css/game-new.css">
+  <style>
+    .guide-wrap {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .guide-card {
+      padding: 20px;
+      margin: 16px 0;
+      border: 1px solid #ddd;
+      border-radius: 14px;
+    }
+
+    .guide-card h2 {
+      margin-top: 0;
+    }
+
+    .guide-card h3 {
+      margin-bottom: 8px;
+    }
+
+    .guide-card p,
+    .guide-card li {
+      line-height: 1.75;
+    }
+
+    .guide-card code {
+      overflow-wrap: anywhere;
+    }
+
+    .guide-card pre {
+      padding: 14px;
+      overflow-x: auto;
+      border-radius: 10px;
+      background: #f4f5f7;
+      color: #202124;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .guide-label {
+      display: inline-block;
+      margin: 3px 4px 3px 0;
+      padding: 4px 9px;
+      border: 1px solid #ccc;
+      border-radius: 999px;
+      font-size: .85rem;
+    }
+
+    .guide-warning {
+      border-left: 4px solid #b45309;
+    }
+
+    .guide-flow {
+      display: grid;
+      gap: 8px;
+    }
+
+    .guide-step {
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+    }
+
+    .guide-arrow {
+      text-align: center;
+      opacity: .7;
+    }
+
+    .guide-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+<main class="new-wrap guide-wrap">
+  <header class="new-head guide-top">
+    <div>
+      <a href="index.html">← 개발자 센터</a>
+      <h1>코드 설명 및 작동 원리</h1>
+      <p>프로젝트의 구조, 데이터 흐름, 권한 확인을 설명하는 문서</p>
+    </div>
+    <button id="guideLogout" class="btn btn-line" hidden>
+      로그아웃
+    </button>
+  </header>
+
+  <section id="guideDenied" class="new-card" hidden>
+    <h2>권한이 없습니다</h2>
+    <p>개발자 권한이 있는 계정만 이 문서를 볼 수 있습니다.</p>
+    <a class="btn btn-primary" href="../index.html">홈으로</a>
+  </section>
+
+  <section id="guideContent" hidden>
+    <div class="guide-card">
+      <h2>1. 이 문서는 무엇을 설명하나요?</h2>
+      <p>
+        이 프로젝트는 HTML 페이지, CSS 스타일, 브라우저 JavaScript,
+        Supabase 서버 함수가 함께 작동하는 웹 프로젝트입니다.
+        화면에서 버튼을 누르면 JavaScript가 입력을 확인하고,
+        필요한 경우 Supabase의 RPC 함수를 호출합니다.
+      </p>
+      <p>
+        아래 내용은 저장소에서 확인되는 코드에 근거합니다.
+        서버 함수 내부에서 실제로 어떤 SQL을 실행하는지,
+        비밀번호를 어떤 방식으로 저장하는지처럼 서버 정의가 필요한 사항은
+        별도로 구분합니다.
+      </p>
+      <span class="guide-label">HTML</span>
+      <span class="guide-label">CSS</span>
+      <span class="guide-label">JavaScript</span>
+      <span class="guide-label">Supabase RPC</span>
+    </div>
+
+    <div class="guide-card">
+      <h2>2. 전체 작동 흐름</h2>
+      <div class="guide-flow">
+        <div class="guide-step">
+          <strong>① 사용자가 화면에서 동작</strong>
+          <p>예: 계정 생성, 로그인, 게임 설정 확인, 관리 기능 실행</p>
+        </div>
+        <div class="guide-arrow">↓</div>
+        <div class="guide-step">
+          <strong>② 페이지 JavaScript가 입력을 처리</strong>
+          <p>
+            입력값을 읽고 기본 형식을 확인한 뒤,
+            필요한 API 함수를 호출합니다.
+          </p>
+        </div>
+        <div class="guide-arrow">↓</div>
+        <div class="guide-step">
+          <strong>③ `assets/js/game-api.js`가 요청을 보냄</strong>
+          <p>
+            공통 `rpc()` 함수가 Supabase REST RPC 경로에 POST 요청을 보내고
+            JSON 응답과 오류를 처리합니다.
+          </p>
+        </div>
+        <div class="guide-arrow">↓</div>
+        <div class="guide-step">
+          <strong>④ Supabase 서버 함수가 요청을 처리</strong>
+          <p>
+            요청 이름에 해당하는 서버 함수가 실행됩니다.
+            실제 데이터 검증, 권한 확인, 데이터 변경의 안전성은
+            서버 함수의 구현과 데이터베이스 정책에 달려 있습니다.
+          </p>
+        </div>
+        <div class="guide-arrow">↓</div>
+        <div class="guide-step">
+          <strong>⑤ 결과를 화면에 반영</strong>
+          <p>
+            성공하면 받은 데이터를 화면이나 브라우저 세션에 반영하고,
+            실패하면 오류 메시지를 표시합니다.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="guide-card">
+      <h2>3. 주요 파일의 역할</h2>
+      <h3><code>index.html</code></h3>
+      <p>
+        홈 화면의 HTML 구조입니다. 로그인 영역, 로그인 후 화면,
+        개발자 탭 같은 요소의 위치와 ID를 정의합니다.
+      </p>
+
+      <h3><code>assets/css/</code></h3>
+      <p>
+        색상, 여백, 카드, 버튼, 반응형 배치 등 화면 디자인을 담당합니다.
+        CSS는 화면의 모양을 바꾸지만, 서버 권한을 부여하지는 않습니다.
+      </p>
+
+      <h3><code>assets/js/pages/new-home.js</code></h3>
+      <p>
+        홈 화면의 계정 생성과 로그인 버튼, 로그인 상태에 따른 화면 표시,
+        게임 설정 조회, 개발자 탭 이동을 처리합니다.
+      </p>
+
+      <h3><code>assets/js/game-api.js</code></h3>
+      <p>
+        Supabase RPC 요청을 보내는 공통 함수와 계정·관리 기능별 호출 함수,
+        브라우저 세션 저장·조회·삭제 및 입력 형식 확인 함수를 제공합니다.
+      </p>
+
+      <h3><code>assets/js/config.js</code></h3>
+      <p>
+        Supabase 프로젝트 URL과 브라우저에서 사용하는 공개용 키,
+        학년 및 학급 관련 설정을 정의합니다.
+        브라우저 코드에 서버 비밀 키를 넣으면 안 됩니다.
+      </p>
+
+      <h3><code>developer/index.html</code></h3>
+      <p>
+        개발자 센터의 기능별 링크를 모아 둔 페이지입니다.
+        실제 각 기능은 연결된 HTML과 JavaScript 파일에서 구현됩니다.
+      </p>
+
+      <h3><code>developer/code-guide.html</code></h3>
+      <p>
+        이 문서 페이지입니다. 개발자 권한을 확인한 뒤 프로젝트 구조와
+        주요 메커니즘을 설명합니다.
+      </p>
+    </div>
+
+    <div class="guide-card">
+      <h2>4. 로그인과 계정 생성 메커니즘</h2>
+      <ol>
+        <li>
+          홈 화면에서 닉네임과 비밀번호를 입력합니다.
+        </li>
+        <li>
+          <code>new-home.js</code>가 <code>requireNickname()</code>과
+          <code>requirePassword()</code>로 입력 형식을 검사합니다.
+        </li>
+        <li>
+          계정 생성은 <code>registerAccount()</code>,
+          로그인은 <code>loginAccount()</code>를 호출합니다.
+        </li>
+        <li>
+          이 함수들은 <code>game-api.js</code>를 통해 각각
+          <code>register_game_account</code>,
+          <code>login_game_account</code> RPC를 호출합니다.
+        </li>
+        <li>
+          서버 응답에 <code>profile</code>이 있으면 브라우저에
+          필요한 프로필 정보를 저장합니다.
+        </li>
+        <li>
+          <code>render()</code>가 로그인 화면을 숨기고 홈 화면을 표시합니다.
+        </li>
+      </ol>
+
+      <pre>registerAccount(nickname, password)
+  → RPC: register_game_account
+
+loginAccount(nickname, password)
+  → RPC: login_game_account
+
+성공한 응답
+  → saveSession(profile)
+  → render()
+  → 로그인 후 화면 표시</pre>
+
+      <p>
+        현재 프런트엔드 코드에서 비밀번호 형식은 영어 대소문자와 숫자로
+        이루어진 4~8글자로 제한됩니다. 이는 입력 형식 검사이며,
+        그 자체가 비밀번호 보안이나 서버 인증을 보장하는 것은 아닙니다.
+      </p>
+    </div>
+
+    <div class="guide-card">
+      <h2>5. 브라우저 세션은 어떻게 동작하나요?</h2>
+      <p>
+        <code>game-api.js</code>의 <code>getSession()</code>,
+        <code>saveSession()</code>, <code>clearSession()</code>은
+        브라우저의 <code>localStorage</code>에 있는
+        <code>arcade-profile</code> 항목을 읽고 쓰고 삭제합니다.
+      </p>
+      <ul>
+        <li><code>getSession()</code>: 저장된 JSON 프로필을 읽습니다.</li>
+        <li><code>saveSession(profile)</code>: 프로필을 JSON 문자열로 저장합니다.</li>
+        <li><code>clearSession()</code>: 해당 저장 항목을 삭제합니다.</li>
+      </ul>
+      <p>
+        홈 화면은 <code>authVersion</code>이 2인지 확인하고,
+        다른 버전이면 기존 브라우저 세션을 지웁니다.
+        이 버전 값은 세션 데이터 형식을 구분하기 위한 것이며,
+        비밀 인증 토큰이나 서버가 검증한 신원 증명은 아닙니다.
+      </p>
+      <pre>localStorage["arcade-profile"]
+  ├─ authVersion
+  ├─ id
+  ├─ nickname
+  ├─ coins
+  ├─ is_developer
+  └─ is_teacher</pre>
+      <p>
+        위 항목은 브라우저에 저장된 값입니다.
+        사용자가 브라우저 저장 내용을 수정할 수 있으므로,
+        중요한 작업의 권한을 이 값만으로 판단하면 안 됩니다.
+      </p>
+    </div>
+
+    <div class="guide-card">
+      <h2>6. Supabase RPC 통신 메커니즘</h2>
+      <p>
+        <code>game-api.js</code>는 Supabase URL 뒤에
+        <code>/rest/v1/rpc/</code>를 붙여 RPC 경로를 구성합니다.
+        각 호출은 POST 방식으로 JSON 본문을 전송합니다.
+      </p>
+      <pre>브라우저
+  → fetch(Supabase RPC URL)
+  → POST + JSON body
+  → Supabase 함수 실행
+  → JSON 응답
+  → 화면에 결과 반영</pre>
+      <p>
+        공통 함수는 네트워크 오류를 처리하고, HTTP 응답이 실패하면
+        서버가 반환한 메시지나 세부 정보를 이용해 오류를 표시합니다.
+        응답에 <code>ok: false</code>가 들어 있는 경우도 실패로 처리합니다.
+      </p>
+      <p>
+        현재 API 래퍼에서 사용하는 공개용 키는 브라우저에 노출될 수 있는
+        키입니다. 따라서 데이터 접근 권한과 중요한 작업의 검증은
+        데이터베이스 정책 및 서버 함수에서 올바르게 제한해야 합니다.
+      </p>
+    </div>
+
+    <div class="guide-card">
+      <h2>7. 개발자 탭과 개발자 센터의 권한 확인</h2>
+      <p>
+        홈 화면은 저장된 프로필의 <code>is_developer</code> 값이
+        참일 때 개발자 탭을 표시합니다. 탭을 누르면 프로필을 다시 확인한 뒤
+        <code>developer/index.html</code>로 이동합니다.
+      </p>
+      <p>
+        개발자 센터의 JavaScript는 프로필이 존재하고,
+        <code>authVersion === 2</code>이며,
+        <code>is_developer === true</code>인지 검사합니다.
+        조건이 맞지 않으면 권한 없음 화면을 보여 줍니다.
+      </p>
+      <p>
+        이 확인은 사용자가 실수로 접근하는 것을 막는 UI 제어에는 도움이 되지만,
+        브라우저에서 실행되는 검사이므로 실제 보안 경계가 될 수 없습니다.
+        사용자는 주소를 직접 입력하거나 브라우저 저장값을 바꿀 수 있습니다.
+      </p>
+      <p>
+        따라서 개발자 권한 변경, 계정 삭제, 코인 변경 등 민감한 작업은
+        서버 함수에서도 요청한 사용자의 권한을 확인해야 합니다.
+      </p>
+    </div>
+
+    <div class="guide-card">
+      <h2>8. 현재 API 래퍼에 정의된 주요 기능</h2>
+      <ul>
+        <li>
+          <code>register_game_account</code>:
+          계정 생성 요청
+        </li>
+        <li>
+          <code>login_game_account</code>:
+          로그인 요청
+        </li>
+        <li>
+          <code>get_game_settings</code>:
+          게임 설정 조회
+        </li>
+        <li>
+          <code>teacher_get_accounts</code>:
+          교사 계정 목록 조회 요청
+        </li>
+        <li>
+          <code>teacher_grant_coins</code>:
+          코인 지급 요청
+        </li>
+        <li>
+          <code>teacher_update_settings</code>:
+          게임 설정 변경 요청
+        </li>
+        <li>
+          <code>teacher_set_shortcut</code>:
+          바로가기 설정 요청
+        </li>
+        <li>
+          <code>teacher_set_account_role</code>:
+          계정 역할 변경 요청
+        </li>
+        <li>
+          <code>developer_set_account</code>:
+          개발자 계정 설정 요청
+        </li>
+        <li>
+          <code>teacher_flag_nickname</code>,
+          <code>teacher_create_delete_challenge</code>,
+          <code>teacher_delete_account</code>:
+          닉네임 확인 및 계정 삭제 관련 요청
+        </li>
+      </ul>
+      <p>
+        이 목록은 프런트엔드 API 래퍼에 정의된 요청 이름을 설명합니다.
+        서버 함수 내부에서 수행하는 정확한 SQL, 추가 검증 절차,
+        데이터베이스 정책은 해당 Supabase 함수와 SQL 정의를 확인해야 합니다.
+      </p>
+    </div>
+
+    <div class="guide-card">
+      <h2>9. 게임 설정은 어떻게 반영되나요?</h2>
+      <p>
+        홈 화면의 <code>render()</code>는 로그인된 프로필이 있을 때
+        <code>getSettings()</code>를 호출합니다.
+        이 함수는 <code>get_game_settings</code> RPC를 요청합니다.
+      </p>
+      <p>
+        응답의 <code>omok_enabled</code>와
+        <code>rummikub_enabled</code> 값에 따라 해당 게임 링크에
+        <code>disabled-game</code> CSS 클래스를 적용하거나 제거합니다.
+      </p>
+      <p>
+        즉, 홈 화면에서 링크를 비활성화하는 것과 서버에서 게임 데이터에
+        대한 접근을 차단하는 것은 서로 다른 일입니다.
+        실제 접근 제한이 필요한 기능은 서버에서도 확인해야 합니다.
+      </p>
+    </div>
+
+    <div class="guide-card">
+      <h2>10. 새 기능을 추가할 때의 기본 순서</h2>
+      <ol>
+        <li>
+          화면이 필요하면 해당 HTML 페이지에 요소와 버튼을 추가합니다.
+        </li>
+        <li>
+          CSS를 사용해 화면의 배치와 스타일을 정의합니다.
+        </li>
+        <li>
+          페이지 JavaScript에서 버튼 이벤트와 입력 처리를 작성합니다.
+        </li>
+        <li>
+          서버 데이터가 필요하면 <code>game-api.js</code>에 RPC 호출 함수를
+          추가하고, Supabase에 대응하는 서버 함수가 있는지 확인합니다.
+        </li>
+        <li>
+          서버 함수에서 사용자 권한, 입력값, 대상 데이터와 변경 가능 범위를
+          검증합니다.
+        </li>
+        <li>
+          정상 요청, 권한 없는 요청, 잘못된 입력, 네트워크 오류를 각각 테스트합니다.
+        </li>
+        <li>
+          개발자 센터에서 접근할 수 있도록 필요한 링크를 추가합니다.
+        </li>
+      </ol>
+    </div>
+
+    <div class="guide-card guide-warning">
+      <h2>11. 보안상 꼭 알아야 할 점</h2>
+      <ul>
+        <li>
+          브라우저의 <code>localStorage</code> 값은 사용자가 수정할 수 있습니다.
+        </li>
+        <li>
+          숨겨진 버튼이나 페이지의 권한 확인은 서버 보안을 대체하지 않습니다.
+        </li>
+        <li>
+          공개용 Supabase 키는 비밀 키가 아닙니다. 서버 비밀 키나
+          <code>service_role</code> 키를 프런트엔드 코드에 넣으면 안 됩니다.
+        </li>
+        <li>
+          민감한 RPC 함수는 서버에서 권한과 입력값을 검증해야 합니다.
+        </li>
+        <li>
+          데이터베이스의 RLS 정책과 함수 실행 권한도 함께 점검해야 합니다.
+        </li>
+        <li>
+          비밀번호의 실제 저장 방식과 서버 측 검증 방법은 SQL 함수 정의를
+          확인하기 전까지 단정할 수 없습니다.
+        </li>
+      </ul>
+    </div>
+
+    <div class="guide-card">
+      <h2>12. 문제가 생겼을 때 점검 순서</h2>
+      <ol>
+        <li>브라우저 개발자 도구의 Console에 JavaScript 오류가 있는지 확인합니다.</li>
+        <li>Network 탭에서 Supabase RPC 요청이 전송되는지 확인합니다.</li>
+        <li>응답 상태 코드와 서버 오류 메시지를 확인합니다.</li>
+        <li>파일 경로와 대소문자, HTML의 요소 ID가 일치하는지 확인합니다.</li>
+        <li>서버 함수 이름과 요청 JSON 필드명이 일치하는지 확인합니다.</li>
+        <li>권한 문제라면 브라우저 화면뿐 아니라 서버 함수와 RLS 정책을 확인합니다.</li>
+      </ol>
+    </div>
+
+    <div class="guide-card">
+      <h2>문서 끝</h2>
+      <p>
+        이 문서는 프로젝트의 프런트엔드 코드에서 확인되는 흐름을 설명합니다.
+        서버 내부의 상세 처리 방식은 Supabase 함수 및 SQL 정의와 함께 확인해야 합니다.
+      </p>
+      <a class="btn btn-primary" href="index.html">
+        개발자 센터로 돌아가기
+      </a>
+    </div>
+  </section>
+</main>
+
+<script type="module">
+  import { getSession, clearSession } from '../assets/js/game-api.js';
+
+  const denied = document.getElementById('guideDenied');
+  const content = document.getElementById('guideContent');
+  const logoutButton = document.getElementById('guideLogout');
+
+  const profile = getSession();
+
+  const allowed = Boolean(
+    profile &&
+    profile.authVersion === 2 &&
+    profile.is_developer === true
+  );
+
+  denied.hidden = allowed;
+  content.hidden = !allowed;
+  logoutButton.hidden = !allowed;
+
+  logoutButton.addEventListener('click', () => {
+    clearSession();
+    location.replace('../index.html');
+  });
+</script>
+</body>
+</html>
