@@ -90,7 +90,6 @@ export const teacherSetShortcut = (code, enabled) =>
     p_enabled: enabled
   });
 
-<<<<<<< HEAD
 export const teacherSetAccountRole = (code, nickname, enabled) =>
   rpc('teacher_set_account_role', {
     p_code: code,
@@ -98,8 +97,6 @@ export const teacherSetAccountRole = (code, nickname, enabled) =>
     p_enabled: enabled
   });
 
-=======
->>>>>>> a6239a4bf07c18b04f85260f7f713d5306e2d591
 export const developerSetAccount = (
   developerCode,
   nickname,
