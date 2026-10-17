@@ -2,12 +2,16 @@ import {
   teacherGetAccounts,
   teacherGrantCoins,
   teacherSaveSettings,
-  getSettings
+  getSettings,
+  teacherSetShortcut,
+  developerSetAccount,
+  teacherFlagNickname,
+  teacherCreateDeleteChallenge,
+  teacherDeleteAccount
 } from '../game-api.js';
 
 const $ = id => document.getElementById(id);
 let teacherCode = '';
-let selectedShortcut = '';
 
 function show(id, text, error = false) {
   $(id).textContent = text;
@@ -24,42 +28,111 @@ async function loadAccounts() {
     $('accountCount').textContent = `(${accounts.length})`;
 
     const list = $('accountList');
-    list.replaceChildren();
+    list.innerHTML = '';
 
-    const select = $('teacherShortcutAccount');
-    select.replaceChildren();
+    if (!accounts.length) {
+      list.textContent = '아직 생성된 계정이 없습니다.';
+    }
 
-    const noShortcut = document.createElement('option');
-    noShortcut.value = '';
-    noShortcut.textContent = '바로가기 표시 안 함';
-    select.append(noShortcut);
-
-    for (const account of accounts) {
+    accounts.forEach(account => {
       const row = document.createElement('div');
       row.className = 'account-row';
 
-      const name = document.createElement('div');
-      name.textContent = account.nickname;
+      const info = document.createElement('div');
+      info.textContent =
+        `${account.nickname}${account.is_developer ? ' · 개발자/소유자' : ''}`;
 
-      const created = document.createElement('small');
-      created.textContent = account.created_at
-        ? `${new Date(account.created_at).toLocaleDateString('ko-KR')} 생성`
-        : '';
+      const small = document.createElement('small');
+      small.textContent =
+        `계정 순번 ${String(account.account_number || 0).padStart(3, '0')} · 🪙 ${Number(account.coins || 0)}`;
 
-      name.append(created);
+      info.append(small);
 
-      const coins = document.createElement('strong');
-      coins.textContent = `🪙 ${Number(account.coins || 0)}`;
-      row.append(name, coins);
+      const actions = document.createElement('div');
+      actions.className = 'teacher-actions';
+
+      const choose = document.createElement('button');
+      choose.type = 'button';
+      choose.className = 'btn btn-line';
+      choose.textContent = '개발자 대상 선택';
+      choose.onclick = () => {
+        $('developerNickname').value = account.nickname;
+      };
+
+      const flag = document.createElement('button');
+      flag.type = 'button';
+      flag.className = 'btn btn-line';
+      flag.textContent = '부적절한 이름 처리';
+
+      flag.onclick = async () => {
+        if (!confirm(`${account.nickname}의 닉네임을 변경하도록 설정할까요?`)) return;
+        if (!confirm('정말 진행할까요?')) return;
+        if (!confirm('마지막 확인입니다. 계속할까요?')) return;
+
+        try {
+          const result = await teacherFlagNickname(
+            teacherCode,
+            account.nickname
+          );
+
+          alert(`다음 로그인 시 ${result.nickname}으로 변경됩니다.`);
+          await loadAccounts();
+        } catch (error) {
+          alert(error.message);
+        }
+      };
+
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'btn btn-line';
+      del.textContent = '계정 삭제';
+
+      del.onclick = async () => {
+        try {
+          if (!confirm(`${account.nickname} 계정을 삭제할까요? (1/3)`)) return;
+          if (!confirm('계정이 영구 삭제됩니다. 계속할까요? (2/3)')) return;
+          if (!confirm('마지막 확인입니다. 계속할까요? (3/3)')) return;
+
+          const reTeacher = prompt('교사 코드를 다시 입력하세요.');
+          if (reTeacher === null) return;
+
+          const developerCode = prompt('개발자 코드를 입력하세요.');
+          if (developerCode === null) return;
+
+          const challenge = await teacherCreateDeleteChallenge(
+            reTeacher,
+            account.nickname
+          );
+
+          if (!challenge.confirmation_code) {
+            throw new Error(challenge.message || '확인 코드를 만들지 못했습니다.');
+          }
+
+          const entered = prompt(
+            `마지막 확인 코드(5분 이내 입력):\n\n${challenge.confirmation_code}`
+          );
+
+          if (entered === null) return;
+
+          const done = await teacherDeleteAccount(
+            reTeacher,
+            developerCode,
+            account.nickname,
+            entered.trim()
+          );
+
+          alert(done.message || '계정을 삭제했습니다.');
+          await loadAccounts();
+        } catch (error) {
+          alert(error.message || '계정 삭제에 실패했습니다.');
+        }
+      };
+
+      actions.append(choose, flag, del);
+      row.append(info, actions);
       list.append(row);
+    });
 
-      const option = document.createElement('option');
-      option.value = account.nickname;
-      option.textContent = account.nickname;
-      select.append(option);
-    }
-
-    select.value = selectedShortcut;
     show('accountStatus', '목록을 업데이트했어요.');
   } catch (error) {
     show('accountStatus', error.message, true);
@@ -82,7 +155,7 @@ $('gateform').addEventListener('submit', async event => {
     const settings = await getSettings();
     $('omokToggle').checked = !!settings.omok_enabled;
     $('rkToggle').checked = !!settings.rummikub_enabled;
-    selectedShortcut = settings.teacher_shortcut_nickname || '';
+    $('shortcutToggle').checked = !!settings.teacher_shortcut_enabled;
 
     await loadAccounts();
   } catch (error) {
@@ -99,8 +172,7 @@ $('grantform').addEventListener('submit', async event => {
   const amount = Number($('amount').value);
 
   if (!nickname || !Number.isInteger(amount) || amount < 1 || amount > 100000) {
-    show('grantstatus', '닉네임과 코인 수를 확인해 주세요.', true);
-    return;
+    return show('grantstatus', '닉네임과 코인 수를 확인해 주세요.', true);
   }
 
   try {
@@ -117,17 +189,42 @@ $('grantform').addEventListener('submit', async event => {
 
 $('saveSettings').addEventListener('click', async () => {
   try {
-    selectedShortcut = $('teacherShortcutAccount').value;
-
     await teacherSaveSettings(
       teacherCode,
       $('omokToggle').checked,
-      $('rkToggle').checked,
-      selectedShortcut
+      $('rkToggle').checked
     );
-
     show('settingsStatus', '설정을 저장했어요.');
   } catch (error) {
     show('settingsStatus', error.message, true);
+  }
+});
+
+$('saveShortcut').addEventListener('click', async () => {
+  try {
+    await teacherSetShortcut(
+      teacherCode,
+      $('shortcutToggle').checked
+    );
+    show('shortcutStatus', '교사 바로가기 설정을 저장했어요.');
+  } catch (error) {
+    show('shortcutStatus', error.message, true);
+  }
+});
+
+$('developerForm').addEventListener('submit', async event => {
+  event.preventDefault();
+
+  try {
+    const result = await developerSetAccount(
+      $('developerCode').value,
+      $('developerNickname').value.trim(),
+      $('developerToggle').checked
+    );
+
+    show('developerStatus', result.message || '개발자 계정 설정을 저장했어요.');
+    await loadAccounts();
+  } catch (error) {
+    show('developerStatus', error.message, true);
   }
 });
