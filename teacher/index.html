@@ -21,10 +21,13 @@
     .account-row small { display:block; opacity:.7; }
     .error-text { color:#b42318; }
     .teacher-actions { display:flex; gap:8px; flex-wrap:wrap; }
+<<<<<<< HEAD
     .account-name { border:0; background:transparent; padding:0; font:inherit; font-weight:700; text-align:left; cursor:pointer; color:inherit; }
     .account-detail { margin-top:12px; padding:14px; border:1px solid #ddd; border-radius:12px; }
     .account-detail[hidden] { display:none; }
     .role-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+=======
+>>>>>>> a6239a4bf07c18b04f85260f7f713d5306e2d591
   </style>
 </head>
 <body>
@@ -48,12 +51,17 @@
   <section id="panel" class="hidden">
     <div class="new-card">
       <h2>계정 목록 <span id="accountCount">(0)</span></h2>
+<<<<<<< HEAD
       <p class="small-note">계정 이름을 누르면 마이페이지 정보와 권한 지정 기능을 열 수 있습니다.</p>
+=======
+      <p class="small-note">닉네임과 현재 코인 수입니다.</p>
+>>>>>>> a6239a4bf07c18b04f85260f7f713d5306e2d591
       <button id="refreshAccounts" class="btn btn-line" type="button">
         목록 새로고침
       </button>
       <p id="accountStatus" role="status"></p>
       <div id="accountList" class="account-list"></div>
+<<<<<<< HEAD
       <section id="accountDetail" class="account-detail" hidden aria-live="polite">
         <h3 id="detailNickname"></h3>
         <p>보유 코인: <strong id="detailCoins">0</strong></p>
@@ -67,6 +75,37 @@
         <p id="roleStatus" role="status"></p>
         <button id="closeAccountDetail" class="btn btn-line" type="button">닫기</button>
       </section>
+=======
+    </div>
+
+    <div class="new-card">
+      <h2>교사 바로가기 표시</h2>
+      <p>
+        <label>
+          <input type="checkbox" id="shortcutToggle">
+          홈 화면에 교사 페이지 바로가기 표시
+        </label>
+      </p>
+      <button id="saveShortcut" class="btn btn-primary" type="button">저장</button>
+      <p id="shortcutStatus" role="status"></p>
+    </div>
+
+    <div class="new-card">
+      <h2>개발자 계정 설정</h2>
+      <p class="small-note">계정 목록에서 대상을 정한 뒤 개발자 코드를 입력하세요.</p>
+      <form id="developerForm">
+        <input id="developerNickname" placeholder="계정 목록의 닉네임" required>
+        <input id="developerCode" type="password" placeholder="개발자 코드" required>
+        <p>
+          <label>
+            <input type="checkbox" id="developerToggle">
+            이 계정을 개발자/소유자로 지정
+          </label>
+        </p>
+        <button class="btn btn-primary">개발자 설정 저장</button>
+      </form>
+      <p id="developerStatus" role="status"></p>
+>>>>>>> a6239a4bf07c18b04f85260f7f713d5306e2d591
     </div>
 
     <div class="new-card">

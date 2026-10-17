@@ -3,8 +3,13 @@ import {
   teacherGrantCoins,
   teacherSaveSettings,
   getSettings,
+<<<<<<< HEAD
   developerSetAccount,
   teacherSetAccountRole,
+=======
+  teacherSetShortcut,
+  developerSetAccount,
+>>>>>>> a6239a4bf07c18b04f85260f7f713d5306e2d591
   teacherFlagNickname,
   teacherCreateDeleteChallenge,
   teacherDeleteAccount
@@ -39,6 +44,7 @@ async function loadAccounts() {
       row.className = 'account-row';
 
       const info = document.createElement('div');
+<<<<<<< HEAD
       const nameButton = document.createElement('button');
       nameButton.type = 'button';
       nameButton.className = 'account-name';
@@ -47,6 +53,10 @@ async function loadAccounts() {
       info.append(nameButton);
       if (account.is_developer) { const role = document.createElement('small'); role.textContent = '개발자'; info.append(role); }
       if (account.is_teacher) { const role = document.createElement('small'); role.textContent = '교사'; info.append(role); }
+=======
+      info.textContent =
+        `${account.nickname}${account.is_developer ? ' · 개발자/소유자' : ''}`;
+>>>>>>> a6239a4bf07c18b04f85260f7f713d5306e2d591
 
       const small = document.createElement('small');
       small.textContent =
@@ -57,6 +67,17 @@ async function loadAccounts() {
       const actions = document.createElement('div');
       actions.className = 'teacher-actions';
 
+<<<<<<< HEAD
+=======
+      const choose = document.createElement('button');
+      choose.type = 'button';
+      choose.className = 'btn btn-line';
+      choose.textContent = '개발자 대상 선택';
+      choose.onclick = () => {
+        $('developerNickname').value = account.nickname;
+      };
+
+>>>>>>> a6239a4bf07c18b04f85260f7f713d5306e2d591
       const flag = document.createElement('button');
       flag.type = 'button';
       flag.className = 'btn btn-line';
@@ -126,7 +147,11 @@ async function loadAccounts() {
         }
       };
 
+<<<<<<< HEAD
       actions.append(flag, del);
+=======
+      actions.append(choose, flag, del);
+>>>>>>> a6239a4bf07c18b04f85260f7f713d5306e2d591
       row.append(info, actions);
       list.append(row);
     });
@@ -153,6 +178,10 @@ $('gateform').addEventListener('submit', async event => {
     const settings = await getSettings();
     $('omokToggle').checked = !!settings.omok_enabled;
     $('rkToggle').checked = !!settings.rummikub_enabled;
+<<<<<<< HEAD
+=======
+    $('shortcutToggle').checked = !!settings.teacher_shortcut_enabled;
+>>>>>>> a6239a4bf07c18b04f85260f7f713d5306e2d591
 
     await loadAccounts();
   } catch (error) {
@@ -197,6 +226,7 @@ $('saveSettings').addEventListener('click', async () => {
   }
 });
 
+<<<<<<< HEAD
 function openAccountDetail(account) {
   window.selectedAccount = account;
   $('accountDetail').hidden = false;
@@ -232,4 +262,33 @@ $('assignTeacher').addEventListener('click', async () => {
     show('roleStatus', result.message || '교사로 지정했습니다.');
     await loadAccounts();
   } catch (error) { show('roleStatus', error.message, true); }
+=======
+$('saveShortcut').addEventListener('click', async () => {
+  try {
+    await teacherSetShortcut(
+      teacherCode,
+      $('shortcutToggle').checked
+    );
+    show('shortcutStatus', '교사 바로가기 설정을 저장했어요.');
+  } catch (error) {
+    show('shortcutStatus', error.message, true);
+  }
+});
+
+$('developerForm').addEventListener('submit', async event => {
+  event.preventDefault();
+
+  try {
+    const result = await developerSetAccount(
+      $('developerCode').value,
+      $('developerNickname').value.trim(),
+      $('developerToggle').checked
+    );
+
+    show('developerStatus', result.message || '개발자 계정 설정을 저장했어요.');
+    await loadAccounts();
+  } catch (error) {
+    show('developerStatus', error.message, true);
+  }
+>>>>>>> a6239a4bf07c18b04f85260f7f713d5306e2d591
 });
