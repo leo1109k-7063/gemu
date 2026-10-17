@@ -1,166 +1,151 @@
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
+import {
+  registerAccount,
+  loginAccount,
+  getSettings,
+  getSession,
+  saveSession,
+  clearSession,
+  requirePassword,
+  requireNickname
+} from '../game-api.js';
 
-const base = `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/rpc/`;
+const $ = id => document.getElementById(id);
+let busy = false;
 
-async function rpc(name, body = {}) {
-  if (
-    !SUPABASE_URL ||
-    !SUPABASE_ANON_KEY ||
-    SUPABASE_URL.includes('YOUR_')
-  ) {
-    throw new Error('assets/js/config.js의 Supabase 설정을 확인해 주세요.');
-  }
-
-  let response;
-
-  try {
-    response = await fetch(base + name, {
-      method: 'POST',
-      headers: {
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(body)
-    });
-  } catch {
-    throw new Error('서버에 연결하지 못했어요.');
-  }
-
-  const data = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    throw new Error(
-      data?.message ||
-      data?.details ||
-      '요청에 실패했어요.'
-    );
-  }
-
-  if (data?.ok === false) {
-    throw new Error(data.message || '요청에 실패했어요.');
-  }
-
-  return data;
+function message(text, error = false) {
+  $('auth-status').textContent = text;
+  $('auth-status').classList.toggle('error-text', error);
 }
 
-export const registerAccount = (nickname, password) =>
-  rpc('register_game_account', {
-    p_nickname: nickname,
-    p_password: password
-  });
+function showBusy(value) {
+  busy = value;
+  $('create-account').disabled = value;
+  $('login-account').disabled = value;
+}
 
-export const loginAccount = (nickname, password) =>
-  rpc('login_game_account', {
-    p_nickname: nickname,
-    p_password: password
-  });
+async function render() {
+  let profile = getSession();
 
-export const getSettings = () =>
-  rpc('get_game_settings');
+  if (profile && profile.authVersion !== 2) {
+    clearSession();
+    profile = null;
+  }
 
-export const teacherGetAccounts = code =>
-  rpc('teacher_get_accounts', {
-    p_code: code
-  });
+  $('login').classList.toggle('hidden', !!profile);
+  $('home').classList.toggle('hidden', !profile);
+  $('logout').classList.toggle('hidden', !profile);
 
-export const teacherGrantCoins = (code, nickname, amount) =>
-  rpc('teacher_grant_coins', {
-    p_code: code,
-    p_nickname: nickname,
-    p_amount: amount
-  });
+  if (!profile) {
+    return;
+  }
 
-export const teacherSaveSettings = (code, omok, rummikub) =>
-  rpc('teacher_update_settings', {
-    p_code: code,
-    p_omok: omok,
-    p_rummikub: rummikub
-  });
+  $('hello').textContent = profile.nickname;
+  $('coins').textContent = Number(profile.coins || 0);
 
-export const teacherSetShortcut = (code, enabled) =>
-  rpc('teacher_set_shortcut', {
-    p_code: code,
-    p_enabled: enabled
-  });
-
-export const developerSetAccount = (
-  developerCode,
-  nickname,
-  enabled
-) =>
-  rpc('developer_set_account', {
-    p_developer_code: developerCode,
-    p_nickname: nickname,
-    p_enabled: enabled
-  });
-
-export const teacherFlagNickname = (code, nickname) =>
-  rpc('teacher_flag_nickname', {
-    p_code: code,
-    p_nickname: nickname
-  });
-
-export const teacherCreateDeleteChallenge = (code, nickname) =>
-  rpc('teacher_create_delete_challenge', {
-    p_code: code,
-    p_nickname: nickname
-  });
-
-export const teacherDeleteAccount = (
-  code,
-  developerCode,
-  nickname,
-  challenge
-) =>
-  rpc('teacher_delete_account', {
-    p_code: code,
-    p_developer_code: developerCode,
-    p_nickname: nickname,
-    p_challenge: challenge
-  });
-
-export function getSession() {
   try {
-    return JSON.parse(
-      localStorage.getItem('arcade-profile') || 'null'
+    const settings = await getSettings();
+
+    $('omok-link').classList.toggle(
+      'disabled-game',
+      !settings.omok_enabled
     );
-  } catch {
-    return null;
+
+    $('rummikub-link').classList.toggle(
+      'disabled-game',
+      !settings.rummikub_enabled
+    );
+
+    $('teacherShortcut').classList.toggle(
+      'hidden',
+      !settings.teacher_shortcut_enabled
+    );
+  } catch (error) {
+    message(error.message || '설정을 불러오지 못했어요.', true);
   }
 }
 
-export function saveSession(profile) {
-  localStorage.setItem(
-    'arcade-profile',
-    JSON.stringify(profile)
+async function authenticate(kind) {
+  if (busy) {
+    return;
+  }
+
+  const nickname = $('nickname').value.trim();
+  const password = $('password').value;
+
+  if (!requireNickname(nickname)) {
+    return message(
+      '닉네임은 1~16글자로 입력해 주세요.',
+      true
+    );
+  }
+
+  // 계정 생성에만 특수 형식 검증을 허용합니다.
+  // 로그인은 일반 비밀번호 형식만 허용합니다.
+  if (!requirePassword(password, kind === 'register')) {
+    return message(
+      '비밀번호 형식이 올바르지 않습니다.',
+      true
+    );
+  }
+
+  showBusy(true);
+
+  message(
+    kind === 'register'
+      ? '계정을 만들고 있어요…'
+      : '로그인 중이에요…'
   );
-}
 
-export function clearSession() {
-  localStorage.removeItem('arcade-profile');
-}
+  try {
+    const result = kind === 'register'
+      ? await registerAccount(nickname, password)
+      : await loginAccount(nickname, password);
 
-export function requirePassword(password, allowSpecialFormat = false) {
-  if (typeof password !== 'string') {
-    return false;
-  }
-
-  if (allowSpecialFormat && password.includes('/')) {
-    if (password.length > 19) {
-      return false;
+    if (!result?.profile) {
+      throw new Error('계정 정보를 확인하지 못했어요.');
     }
 
-    const parts = password.split('/');
+    saveSession({
+      authVersion: 2,
+      id: result.profile.id,
+      nickname: result.profile.nickname,
+      coins: result.profile.coins,
+      is_developer: result.profile.is_developer
+    });
 
-    return parts.length === 2 &&
-      /^[A-Za-z0-9]{4,8}$/.test(parts[0]) &&
-      parts[1].length > 0;
+    $('password').value = '';
+
+    message(
+      result.message ||
+      (
+        kind === 'register'
+          ? '계정이 만들어졌어요!'
+          : '로그인했어요!'
+      )
+    );
+
+    await render();
+  } catch (error) {
+    message(
+      error.message || '처리 중 문제가 생겼어요.',
+      true
+    );
+  } finally {
+    showBusy(false);
   }
-
-  return /^[A-Za-z0-9]{4,8}$/.test(password);
 }
 
-export function requireNickname(nickname) {
-  return nickname.length >= 1 && nickname.length <= 16;
-}
+$('create-account').addEventListener('click', () => {
+  authenticate('register');
+});
+
+$('login-account').addEventListener('click', () => {
+  authenticate('login');
+});
+
+$('logout').addEventListener('click', () => {
+  clearSession();
+  render();
+});
+
+render();
