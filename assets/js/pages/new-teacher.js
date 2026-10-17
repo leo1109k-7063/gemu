@@ -3,13 +3,8 @@ import {
   teacherGrantCoins,
   teacherSaveSettings,
   getSettings,
-<<<<<<< HEAD
   developerSetAccount,
   teacherSetAccountRole,
-=======
-  teacherSetShortcut,
-  developerSetAccount,
->>>>>>> a6239a4bf07c18b04f85260f7f713d5306e2d591
   teacherFlagNickname,
   teacherCreateDeleteChallenge,
   teacherDeleteAccount
@@ -44,19 +39,26 @@ async function loadAccounts() {
       row.className = 'account-row';
 
       const info = document.createElement('div');
-<<<<<<< HEAD
       const nameButton = document.createElement('button');
+
       nameButton.type = 'button';
       nameButton.className = 'account-name';
       nameButton.textContent = account.nickname;
       nameButton.onclick = () => openAccountDetail(account);
+
       info.append(nameButton);
-      if (account.is_developer) { const role = document.createElement('small'); role.textContent = '개발자'; info.append(role); }
-      if (account.is_teacher) { const role = document.createElement('small'); role.textContent = '교사'; info.append(role); }
-=======
-      info.textContent =
-        `${account.nickname}${account.is_developer ? ' · 개발자/소유자' : ''}`;
->>>>>>> a6239a4bf07c18b04f85260f7f713d5306e2d591
+
+      if (account.is_developer) {
+        const role = document.createElement('small');
+        role.textContent = '개발자';
+        info.append(role);
+      }
+
+      if (account.is_teacher) {
+        const role = document.createElement('small');
+        role.textContent = '교사';
+        info.append(role);
+      }
 
       const small = document.createElement('small');
       small.textContent =
@@ -67,24 +69,16 @@ async function loadAccounts() {
       const actions = document.createElement('div');
       actions.className = 'teacher-actions';
 
-<<<<<<< HEAD
-=======
-      const choose = document.createElement('button');
-      choose.type = 'button';
-      choose.className = 'btn btn-line';
-      choose.textContent = '개발자 대상 선택';
-      choose.onclick = () => {
-        $('developerNickname').value = account.nickname;
-      };
-
->>>>>>> a6239a4bf07c18b04f85260f7f713d5306e2d591
       const flag = document.createElement('button');
       flag.type = 'button';
       flag.className = 'btn btn-line';
       flag.textContent = '부적절한 이름 처리';
 
       flag.onclick = async () => {
-        if (!confirm(`${account.nickname}의 닉네임을 변경하도록 설정할까요?`)) return;
+        if (!confirm(
+          `${account.nickname}의 닉네임을 변경하도록 설정할까요?`
+        )) return;
+
         if (!confirm('정말 진행할까요?')) return;
         if (!confirm('마지막 확인입니다. 계속할까요?')) return;
 
@@ -94,7 +88,10 @@ async function loadAccounts() {
             account.nickname
           );
 
-          alert(`다음 로그인 시 ${result.nickname}으로 변경됩니다.`);
+          alert(
+            `다음 로그인 시 ${result.nickname}으로 변경됩니다.`
+          );
+
           await loadAccounts();
         } catch (error) {
           alert(error.message);
@@ -108,14 +105,26 @@ async function loadAccounts() {
 
       del.onclick = async () => {
         try {
-          if (!confirm(`${account.nickname} 계정을 삭제할까요? (1/3)`)) return;
-          if (!confirm('계정이 영구 삭제됩니다. 계속할까요? (2/3)')) return;
-          if (!confirm('마지막 확인입니다. 계속할까요? (3/3)')) return;
+          if (!confirm(
+            `${account.nickname} 계정을 삭제할까요? (1/3)`
+          )) return;
 
-          const reTeacher = prompt('교사 코드를 다시 입력하세요.');
+          if (!confirm(
+            '계정이 영구 삭제됩니다. 계속할까요? (2/3)'
+          )) return;
+
+          if (!confirm(
+            '마지막 확인입니다. 계속할까요? (3/3)'
+          )) return;
+
+          const reTeacher = prompt(
+            '교사 코드를 다시 입력하세요.'
+          );
           if (reTeacher === null) return;
 
-          const developerCode = prompt('개발자 코드를 입력하세요.');
+          const developerCode = prompt(
+            '개발자 코드를 입력하세요.'
+          );
           if (developerCode === null) return;
 
           const challenge = await teacherCreateDeleteChallenge(
@@ -124,7 +133,10 @@ async function loadAccounts() {
           );
 
           if (!challenge.confirmation_code) {
-            throw new Error(challenge.message || '확인 코드를 만들지 못했습니다.');
+            throw new Error(
+              challenge.message ||
+              '확인 코드를 만들지 못했습니다.'
+            );
           }
 
           const entered = prompt(
@@ -143,15 +155,13 @@ async function loadAccounts() {
           alert(done.message || '계정을 삭제했습니다.');
           await loadAccounts();
         } catch (error) {
-          alert(error.message || '계정 삭제에 실패했습니다.');
+          alert(
+            error.message || '계정 삭제에 실패했습니다.'
+          );
         }
       };
 
-<<<<<<< HEAD
       actions.append(flag, del);
-=======
-      actions.append(choose, flag, del);
->>>>>>> a6239a4bf07c18b04f85260f7f713d5306e2d591
       row.append(info, actions);
       list.append(row);
     });
@@ -176,16 +186,17 @@ $('gateform').addEventListener('submit', async event => {
     $('panel').classList.remove('hidden');
 
     const settings = await getSettings();
+
     $('omokToggle').checked = !!settings.omok_enabled;
     $('rkToggle').checked = !!settings.rummikub_enabled;
-<<<<<<< HEAD
-=======
-    $('shortcutToggle').checked = !!settings.teacher_shortcut_enabled;
->>>>>>> a6239a4bf07c18b04f85260f7f713d5306e2d591
 
     await loadAccounts();
   } catch (error) {
-    show('gateStatus', error.message || '교사 코드를 확인하지 못했어요.', true);
+    show(
+      'gateStatus',
+      error.message || '교사 코드를 확인하지 못했어요.',
+      true
+    );
   }
 });
 
@@ -197,16 +208,31 @@ $('grantform').addEventListener('submit', async event => {
   const nickname = $('target').value.trim();
   const amount = Number($('amount').value);
 
-  if (!nickname || !Number.isInteger(amount) || amount < 1 || amount > 100000) {
-    return show('grantstatus', '닉네임과 코인 수를 확인해 주세요.', true);
+  if (
+    !nickname ||
+    !Number.isInteger(amount) ||
+    amount < 1 ||
+    amount > 100000
+  ) {
+    return show(
+      'grantstatus',
+      '닉네임과 코인 수를 확인해 주세요.',
+      true
+    );
   }
 
   try {
-    const result = await teacherGrantCoins(teacherCode, nickname, amount);
+    const result = await teacherGrantCoins(
+      teacherCode,
+      nickname,
+      amount
+    );
+
     show(
       'grantstatus',
       `${result.nickname} 계정에 ${amount}코인을 지급했어요. 현재 코인: ${result.coins}`
     );
+
     await loadAccounts();
   } catch (error) {
     show('grantstatus', error.message, true);
@@ -220,75 +246,94 @@ $('saveSettings').addEventListener('click', async () => {
       $('omokToggle').checked,
       $('rkToggle').checked
     );
+
     show('settingsStatus', '설정을 저장했어요.');
   } catch (error) {
     show('settingsStatus', error.message, true);
   }
 });
 
-<<<<<<< HEAD
 function openAccountDetail(account) {
   window.selectedAccount = account;
+
   $('accountDetail').hidden = false;
   $('detailNickname').textContent = account.nickname;
   $('detailCoins').textContent = Number(account.coins || 0);
-  $('detailRoles').textContent = [account.is_developer ? '개발자' : '', account.is_teacher ? '교사' : ''].filter(Boolean).join(' · ') || '일반 계정';
+
+  $('detailRoles').textContent = [
+    account.is_developer ? '개발자' : '',
+    account.is_teacher ? '교사' : ''
+  ].filter(Boolean).join(' · ') || '일반 계정';
+
   $('roleDeveloperCode').value = '';
   $('roleTeacherCode').value = '';
   show('roleStatus', '');
 }
 
-$('closeAccountDetail').addEventListener('click', () => { $('accountDetail').hidden = true; });
+$('closeAccountDetail').addEventListener('click', () => {
+  $('accountDetail').hidden = true;
+});
 
 $('assignDeveloper').addEventListener('click', async () => {
   const account = window.selectedAccount;
   if (!account) return;
+
   const code = $('roleDeveloperCode').value.trim();
-  if (!code) return show('roleStatus', '개발자 코드를 입력해 주세요.', true);
+
+  if (!code) {
+    return show(
+      'roleStatus',
+      '개발자 코드를 입력해 주세요.',
+      true
+    );
+  }
+
   try {
-    const result = await developerSetAccount(code, account.nickname, true);
-    show('roleStatus', result.message || '개발자로 지정했습니다.');
+    const result = await developerSetAccount(
+      code,
+      account.nickname,
+      true
+    );
+
+    show(
+      'roleStatus',
+      result.message || '개발자로 지정했습니다.'
+    );
+
     await loadAccounts();
-  } catch (error) { show('roleStatus', error.message, true); }
+  } catch (error) {
+    show('roleStatus', error.message, true);
+  }
 });
 
 $('assignTeacher').addEventListener('click', async () => {
   const account = window.selectedAccount;
   if (!account) return;
+
   const code = $('roleTeacherCode').value.trim();
-  if (!code) return show('roleStatus', '교사 코드를 입력해 주세요.', true);
-  try {
-    const result = await teacherSetAccountRole(code, account.nickname, true);
-    show('roleStatus', result.message || '교사로 지정했습니다.');
-    await loadAccounts();
-  } catch (error) { show('roleStatus', error.message, true); }
-=======
-$('saveShortcut').addEventListener('click', async () => {
-  try {
-    await teacherSetShortcut(
-      teacherCode,
-      $('shortcutToggle').checked
+
+  if (!code) {
+    return show(
+      'roleStatus',
+      '교사 코드를 입력해 주세요.',
+      true
     );
-    show('shortcutStatus', '교사 바로가기 설정을 저장했어요.');
-  } catch (error) {
-    show('shortcutStatus', error.message, true);
   }
-});
-
-$('developerForm').addEventListener('submit', async event => {
-  event.preventDefault();
 
   try {
-    const result = await developerSetAccount(
-      $('developerCode').value,
-      $('developerNickname').value.trim(),
-      $('developerToggle').checked
+    const result = await teacherSetAccountRole(
+      code,
+      account.nickname,
+      true
     );
 
-    show('developerStatus', result.message || '개발자 계정 설정을 저장했어요.');
+    show(
+      'roleStatus',
+      result.message || '교사로 지정했습니다.'
+    );
+
     await loadAccounts();
   } catch (error) {
-    show('developerStatus', error.message, true);
+    show('roleStatus', error.message, true);
   }
->>>>>>> a6239a4bf07c18b04f85260f7f713d5306e2d591
 });
