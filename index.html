@@ -24,36 +24,46 @@
 
   <section id="login" class="new-card">
     <h2>계정 만들기 / 로그인</h2>
-    <p>닉네임과 비밀번호를 입력해 주세요. 비밀번호는 영어와 숫자만 사용해 4~8글자예요.</p>
+    <p>닉네임과 비밀번호를 입력해 주세요.</p>
 
     <div class="auth-fields">
-      <input id="nickname"
-             maxlength="16"
-             required
-             placeholder="닉네임"
-             autocomplete="username">
+      <input
+        id="nickname"
+        maxlength="31"
+        required
+        placeholder="닉네임"
+        autocomplete="username"
+      >
 
-      <input id="password"
-             type="password"
-             minlength="4"
-             maxlength="19"
-             required
-             placeholder="비밀번호"
-             autocomplete="current-password">
+      <input
+        id="password"
+        type="password"
+        minlength="4"
+        maxlength="19"
+        required
+        placeholder="비밀번호"
+        autocomplete="current-password"
+      >
     </div>
 
     <div class="auth-actions" style="margin-top:12px">
-      <button id="create-account"
-              class="btn btn-primary"
-              type="button">계정 생성</button>
+      <button
+        id="create-account"
+        class="btn btn-primary"
+        type="button"
+      >계정 생성</button>
 
-      <button id="login-account"
-              class="btn btn-line"
-              type="button">로그인</button>
+      <button
+        id="login-account"
+        class="btn btn-line"
+        type="button"
+      >로그인</button>
     </div>
 
     <p id="auth-status" role="status" aria-live="polite"></p>
-    <p class="small-note">계정은 서버에 저장돼 다른 기기에서도 사용할 수 있어요.</p>
+    <p class="small-note">
+      계정은 서버에 저장돼 다른 기기에서도 사용할 수 있어요.
+    </p>
   </section>
 
   <section id="home" class="hidden">
