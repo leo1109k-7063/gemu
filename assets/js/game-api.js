@@ -3,16 +3,11 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 const base = `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/rpc/`;
 
 async function rpc(name, body = {}) {
-  if (
-    !SUPABASE_URL ||
-    !SUPABASE_ANON_KEY ||
-    SUPABASE_URL.includes('YOUR_')
-  ) {
-    throw new Error('assets/js/config.js의 Supabase URL과 공개 키를 확인해 주세요.');
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    throw new Error('Supabase 설정을 확인해 주세요.');
   }
 
   let response;
-
   try {
     response = await fetch(base + name, {
       method: 'POST',
@@ -24,31 +19,48 @@ async function rpc(name, body = {}) {
       body: JSON.stringify(body)
     });
   } catch {
-    throw new Error('서버에 연결하지 못했어요. 인터넷 연결과 Supabase 설정을 확인해 주세요.');
+    throw new Error('서버에 연결할 수 없습니다.');
   }
 
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw new Error(
-      data?.message ||
-      data?.details ||
-      '요청을 처리하지 못했어요.'
-    );
+    throw new Error(data?.message || data?.details || '요청에 실패했습니다.');
   }
 
   if (data?.ok === false) {
-    throw new Error(data.message || '요청을 처리하지 못했어요.');
+    throw new Error(data.message || '요청에 실패했습니다.');
   }
 
   return data;
 }
 
-export const registerAccount = (nickname, password) =>
-  rpc('register_game_account', {
+function getDeviceId() {
+  const key = 'arcade-device-id';
+  let id = localStorage.getItem(key);
+
+  if (!id) {
+    id = globalThis.crypto?.randomUUID?.();
+
+    if (!id) {
+      id = 'device-' + Date.now().toString(36) +
+        '-' + Math.random().toString(36).slice(2, 18);
+    }
+
+    localStorage.setItem(key, id);
+  }
+
+  return id;
+}
+
+export function registerAccount(nickname, password, ownerCode = '') {
+  return rpc('register_game_account', {
     p_nickname: nickname,
-    p_password: password
+    p_password: password,
+    p_owner_code: ownerCode,
+    p_device_id: getDeviceId()
   });
+}
 
 export const loginAccount = (nickname, password) =>
   rpc('login_game_account', {
@@ -59,7 +71,7 @@ export const loginAccount = (nickname, password) =>
 export const getSettings = () =>
   rpc('get_game_settings');
 
-export const teacherGetAccounts = (code) =>
+export const teacherGetAccounts = code =>
   rpc('teacher_get_accounts', { p_code: code });
 
 export const teacherGrantCoins = (code, nickname, amount) =>
@@ -69,12 +81,18 @@ export const teacherGrantCoins = (code, nickname, amount) =>
     p_amount: amount
   });
 
-export const teacherSaveSettings = (code, omok, rummikub) =>
+export const teacherSaveSettings = (
+  code, omok, rummikub, teacherNickname
+) =>
   rpc('teacher_update_settings', {
     p_code: code,
     p_omok: omok,
-    p_rummikub: rummikub
+    p_rummikub: rummikub,
+    p_teacher_nickname: teacherNickname || null
   });
+
+export const ownerGetTools = code =>
+  rpc('owner_get_tools', { p_code: code });
 
 export function getSession() {
   try {
