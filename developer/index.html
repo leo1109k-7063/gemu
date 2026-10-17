@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>개발자 센터</title>
+  <link rel="stylesheet" href="../assets/css/design.css">
+  <link rel="stylesheet" href="../assets/css/site.css">
+  <link rel="stylesheet" href="../assets/css/game-new.css">
+  <style>
+    .dev-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+    .dev-card {
+      display: block;
+      padding: 16px;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      color: inherit;
+      text-decoration: none;
+    }
+    .dev-card h3 { margin-top: 0; }
+    .denied {
+      max-width: 680px;
+      margin: 12vh auto;
+      padding: 24px;
+    }
+    .muted { opacity: .75; }
+  </style>
+</head>
+<body>
+<main class="new-wrap">
+  <header class="new-head">
+    <a href="../index.html">← 홈으로</a>
+    <h1>개발자 센터</h1>
+    <button id="devLogout" class="btn btn-line">로그아웃</button>
+  </header>
+
+  <section id="denied" class="new-card denied" hidden>
+    <h2>권한이 없습니다</h2>
+    <p>이 주소는 개발자 권한이 있는 계정만 이용할 수 있습니다.</p>
+    <a class="btn btn-primary" href="../index.html">홈으로 돌아가기</a>
+  </section>
+
+  <section id="content" hidden>
+    <div class="new-card">
+      <h2>프로그램 기능 안내</h2>
+      <p>
+        프로젝트에 존재하는 화면을 기능별로 모았습니다.
+        각 항목을 누르면 해당 페이지로 이동합니다.
+        실제 동작은 각 화면의 구현 상태에 따라 달라집니다.
+      </p>
+    </div>
+
+    <h2>사용자 기능</h2>
+    <div class="dev-grid">
+      <a class="dev-card" href="../index.html">
+        <h3>🏠 사용자 홈</h3>
+        <p>계정 생성, 로그인, 코인 확인 및 게임 진입</p>
+      </a>
+      <a class="dev-card" href="../omok.html">
+        <h3>⚫ 오목</h3>
+        <p>오목 게임 화면</p>
+      </a>
+      <a class="dev-card" href="../omok-online.html">
+        <h3>🌐 온라인 오목</h3>
+        <p>온라인 대전 관련 화면</p>
+      </a>
+      <a class="dev-card" href="../omok-rank.html">
+        <h3>🏆 오목 랭킹</h3>
+        <p>오목 랭킹 화면</p>
+      </a>
+      <a class="dev-card" href="../rummikub.html">
+        <h3>🀄 루미큐브</h3>
+        <p>루미큐브 게임 화면</p>
+      </a>
+      <a class="dev-card" href="../me.html">
+        <h3>👤 마이페이지</h3>
+        <p>계정 정보와 개인 기능</p>
+      </a>
+      <a class="dev-card" href="../shop.html">
+        <h3>🛍️ 상점</h3>
+        <p>상점 및 아이템 관련 화면</p>
+      </a>
+      <a class="dev-card" href="../rank.html">
+        <h3>📊 랭킹</h3>
+        <p>게임 랭킹 화면</p>
+      </a>
+      <a class="dev-card" href="../class.html">
+        <h3>🏫 학급</h3>
+        <p>학급 관련 화면</p>
+      </a>
+    </div>
+
+    <h2>교사 및 관리 기능</h2>
+    <div class="dev-grid">
+      <a class="dev-card" href="../teacher/index.html">
+        <h3>🧑‍🏫 교사 관리</h3>
+        <p>계정 목록, 코인 지급, 게임 설정 및 권한 관리</p>
+      </a>
+      <a class="dev-card" href="../teacher/check.html">
+        <h3>교사 확인</h3>
+        <p>교사 확인 기능</p>
+      </a>
+      <a class="dev-card" href="../teacher/groups.html">
+        <h3>그룹 관리</h3>
+        <p>그룹 관리 화면</p>
+      </a>
+      <a class="dev-card" href="../teacher/live.html">
+        <h3>실시간 관리</h3>
+        <p>실시간 수업 및 진행 화면</p>
+      </a>
+      <a class="dev-card" href="../teacher/reveal.html">
+        <h3>공개 관리</h3>
+        <p>공개 및 표시 관련 화면</p>
+      </a>
+      <a class="dev-card" href="../teacher/owner-tools.html">
+        <h3>소유자 도구</h3>
+        <p>소유자 도구 화면</p>
+      </a>
+    </div>
+
+    <h2>수업 자료</h2>
+    <div class="dev-grid">
+      <a class="dev-card" href="../lessons/611.html">
+        <h3>수업 자료 611</h3>
+        <p>611 단원 수업 콘텐츠</p>
+      </a>
+      <a class="dev-card" href="../lessons/612.html">
+        <h3>수업 자료 612</h3>
+        <p>612 단원 수업 콘텐츠</p>
+      </a>
+    </div>
+
+    <h2>과학 시뮬레이션</h2>
+    <div class="dev-grid">
+      <a class="dev-card" href="../sims/611_bottle.html">
+        <h3>병 시뮬레이션</h3>
+        <p>과학 시뮬레이션 화면</p>
+      </a>
+      <a class="dev-card" href="../sims/611_particle_box.html">
+        <h3>입자 상자 611</h3>
+        <p>입자 모델 시뮬레이션</p>
+      </a>
+      <a class="dev-card" href="../sims/612_balloon_jar.html">
+        <h3>풍선 병</h3>
+        <p>기체 관련 시뮬레이션</p>
+      </a>
+      <a class="dev-card" href="../sims/612_gas_fill.html">
+        <h3>기체 채우기</h3>
+        <p>기체 관련 시뮬레이션</p>
+      </a>
+      <a class="dev-card" href="../sims/612_particle_box.html">
+        <h3>입자 상자 612</h3>
+        <p>입자 모델 시뮬레이션</p>
+      </a>
+      <a class="dev-card" href="../sims/612_press_clay.html">
+        <h3>점토 압축</h3>
+        <p>압력 및 부피 관련 시뮬레이션</p>
+      </a>
+      <a class="dev-card" href="../sims/612_syringe.html">
+        <h3>주사기</h3>
+        <p>기체 부피 관련 시뮬레이션</p>
+      </a>
+      <a class="dev-card" href="../sims/612_syringe_particles.html">
+        <h3>주사기 입자</h3>
+        <p>입자 표현 시뮬레이션</p>
+      </a>
+      <a class="dev-card" href="../sims/612_volume_blocks.html">
+        <h3>부피 블록</h3>
+        <p>부피 시각화 화면</p>
+      </a>
+    </div>
+
+    <p class="muted">
+      안내: 이 페이지의 브라우저 측 권한 확인만으로는 보안이 완성되지 않습니다.
+      민감한 데이터 조회와 변경은 서버에서도 권한을 확인해야 합니다.
+    </p>
+  </section>
+</main>
+
+<script type="module" src="../assets/js/pages/developer-center.js"></script>
+</body>
+</html>
