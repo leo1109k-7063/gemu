@@ -34,11 +34,11 @@ async function render() {
   $('login').classList.toggle('hidden', !!profile);
   $('home').classList.toggle('hidden', !profile);
   $('logout').classList.toggle('hidden', !profile);
-<<<<<<< HEAD
-  $('developerTab').classList.toggle('hidden', !profile?.is_developer);
+  $('developerTab').classList.toggle(
+    'hidden',
+    !profile?.is_developer
+  );
   $('developerPanel').classList.add('hidden');
-=======
->>>>>>> a6239a4bf07c18b04f85260f7f713d5306e2d591
 
   if (!profile) return;
 
@@ -58,14 +58,10 @@ async function render() {
       !settings.rummikub_enabled
     );
 
-<<<<<<< HEAD
-    $('teacherShortcut').classList.toggle('hidden', !profile.is_teacher);
-=======
     $('teacherShortcut').classList.toggle(
       'hidden',
-      !settings.teacher_shortcut_enabled
+      !profile.is_teacher
     );
->>>>>>> a6239a4bf07c18b04f85260f7f713d5306e2d591
   } catch (error) {
     message(error.message, true);
   }
@@ -74,58 +70,16 @@ async function render() {
 async function authenticate(kind) {
   if (busy) return;
 
-  const enteredNickname = $('nickname').value.trim();
+  const nickname = $('nickname').value.trim();
   const password = $('password').value;
-<<<<<<< HEAD
-  const nickname = enteredNickname;
-=======
-
-  let nickname = enteredNickname;
-  let developerCode = '';
-
-  /*
-   * 개발자 계정 생성 형식:
-   * 닉네임 입력란: 실제닉네임/개발자코드
-   * 비밀번호 입력란: 일반 비밀번호
-   *
-   * 로그인할 때는 슬래시 형식을 처리하지 않습니다.
-   */
-  if (kind === 'register' && enteredNickname.includes('/')) {
-    const parts = enteredNickname.split('/');
-
-    if (parts.length !== 2) {
-      return message(
-        '개발자 계정은 닉네임/개발자코드 형식으로 입력해 주세요.',
-        true
-      );
-    }
-
-    nickname = parts[0].trim();
-    developerCode = parts[1].trim();
-
-    if (!developerCode || developerCode.length > 14) {
-      return message('개발자 코드를 확인해 주세요.', true);
-    }
-  }
->>>>>>> a6239a4bf07c18b04f85260f7f713d5306e2d591
 
   if (!requireNickname(nickname)) {
-    return message('닉네임은 1~16글자로 입력해 주세요.', true);
+    return message(
+      '닉네임은 1~16글자로 입력해 주세요.',
+      true
+    );
   }
 
-<<<<<<< HEAD
-  // 비밀번호는 일반 계정과 동일하게 4~8자 영문/숫자입니다.
-  if (!requirePassword(password, false)) {
-    return message('비밀번호는 영어와 숫자만 사용해 4~8글자로 입력해 주세요.', true);
-  }
-
-  showBusy(true);
-  message(kind === 'register' ? '계정을 만들고 있어요…' : '로그인 중이에요…');
-
-  try {
-    const result = kind === 'register'
-      ? await registerAccount(nickname, password)
-=======
   if (!requirePassword(password)) {
     return message(
       '비밀번호는 영어와 숫자만 사용해 4~8글자로 입력해 주세요.',
@@ -134,28 +88,22 @@ async function authenticate(kind) {
   }
 
   showBusy(true);
-  message(kind === 'register'
-    ? '계정을 만들고 있어요…'
-    : '로그인 중이에요…'
+
+  message(
+    kind === 'register'
+      ? '계정을 만들고 있어요…'
+      : '로그인 중이에요…'
   );
 
   try {
-    /*
-     * 서버의 register_game_account 함수가 개발자 코드를 검증합니다.
-     * 개발자 코드가 없는 일반 계정은 기존 비밀번호 그대로 전달합니다.
-     * 개발자 코드는 비밀번호 뒤에 붙여 서버 검증 함수로 전달합니다.
-     */
-    const registrationPassword = developerCode
-      ? `${password}/${developerCode}`
-      : password;
-
     const result = kind === 'register'
-      ? await registerAccount(nickname, registrationPassword)
->>>>>>> a6239a4bf07c18b04f85260f7f713d5306e2d591
+      ? await registerAccount(nickname, password)
       : await loginAccount(nickname, password);
 
     if (!result.profile) {
-      throw new Error('서버에서 계정 정보를 반환하지 않았습니다.');
+      throw new Error(
+        '서버에서 계정 정보를 반환하지 않았습니다.'
+      );
     }
 
     saveSession({
@@ -163,35 +111,28 @@ async function authenticate(kind) {
       id: result.profile.id,
       nickname: result.profile.nickname,
       coins: result.profile.coins,
-<<<<<<< HEAD
       is_developer: result.profile.is_developer,
       is_teacher: result.profile.is_teacher
     });
-    $('nickname').value = '';
 
+    $('nickname').value = '';
     $('password').value = '';
 
     message(
       result.message ||
-      (kind === 'register' ? '계정이 만들어졌어요!' : '로그인했어요!')
-=======
-      is_developer: result.profile.is_developer
-    });
-
-    $('password').value = '';
-    $('nickname').value = '';
-
-    message(
-      result.message ||
-      (kind === 'register'
-        ? '계정이 만들어졌어요!'
-        : '로그인했어요!')
->>>>>>> a6239a4bf07c18b04f85260f7f713d5306e2d591
+      (
+        kind === 'register'
+          ? '계정이 만들어졌어요!'
+          : '로그인했어요!'
+      )
     );
 
     await render();
   } catch (error) {
-    message(error.message || '처리 중 문제가 생겼어요.', true);
+    message(
+      error.message || '처리 중 문제가 생겼어요.',
+      true
+    );
   } finally {
     showBusy(false);
   }
@@ -213,11 +154,11 @@ $('logout').addEventListener('click', () => {
 });
 
 render();
-<<<<<<< HEAD
 
 $('developerTab').addEventListener('click', () => {
   $('developerPanel').classList.toggle('hidden');
 });
-$('closeDeveloperPanel').addEventListener('click', () => $('developerPanel').classList.add('hidden'));
-=======
->>>>>>> a6239a4bf07c18b04f85260f7f713d5306e2d591
+
+$('closeDeveloperPanel').addEventListener('click', () => {
+  $('developerPanel').classList.add('hidden');
+});
