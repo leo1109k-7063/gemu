@@ -1,151 +1,254 @@
-import {
-  registerAccount,
-  loginAccount,
-  getSettings,
-  getSession,
-  saveSession,
-  clearSession,
-  requirePassword,
-  requireNickname
-} from '../game-api.js';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 
-const $ = id => document.getElementById(id);
-let busy = false;
+const base = `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/rpc/`;
 
-function message(text, error = false) {
-  $('auth-status').textContent = text;
-  $('auth-status').classList.toggle('error-text', error);
-}
-
-function showBusy(value) {
-  busy = value;
-  $('create-account').disabled = value;
-  $('login-account').disabled = value;
-}
-
-async function render() {
-  let profile = getSession();
-
-  if (profile && profile.authVersion !== 2) {
-    clearSession();
-    profile = null;
+async function rpc(name, body = {}) {
+  if (
+    !SUPABASE_URL ||
+    !SUPABASE_ANON_KEY ||
+    SUPABASE_URL.includes('YOUR_')
+  ) {
+    throw new Error(
+      'assets/js/config.js의 Supabase 설정을 확인해 주세요.'
+    );
   }
 
-  $('login').classList.toggle('hidden', !!profile);
-  $('home').classList.toggle('hidden', !profile);
-  $('logout').classList.toggle('hidden', !profile);
-
-  if (!profile) {
-    return;
-  }
-
-  $('hello').textContent = profile.nickname;
-  $('coins').textContent = Number(profile.coins || 0);
+  let response;
 
   try {
-    const settings = await getSettings();
+    response = await fetch(base + name, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+  } catch {
+    throw new Error('서버에 연결하지 못했어요.');
+  }
 
-    $('omok-link').classList.toggle(
-      'disabled-game',
-      !settings.omok_enabled
-    );
+  const data = await response.json().catch(() => null);
 
-    $('rummikub-link').classList.toggle(
-      'disabled-game',
-      !settings.rummikub_enabled
+  if (!response.ok) {
+    throw new Error(
+      data?.message ||
+      data?.details ||
+      '요청에 실패했어요.'
     );
+  }
 
-    $('teacherShortcut').classList.toggle(
-      'hidden',
-      !settings.teacher_shortcut_enabled
+  if (data?.ok === false) {
+    throw new Error(
+      data.message || '요청에 실패했어요.'
     );
-  } catch (error) {
-    message(error.message || '설정을 불러오지 못했어요.', true);
+  }
+
+  return data;
+}
+
+/* ========================================
+   계정 생성 및 로그인
+======================================== */
+
+export const registerAccount = (nickname, password) =>
+  rpc('register_game_account', {
+    p_nickname: nickname,
+    p_password: password
+  });
+
+export const loginAccount = (nickname, password) =>
+  rpc('login_game_account', {
+    p_nickname: nickname,
+    p_password: password
+  });
+
+/* ========================================
+   게임 설정
+======================================== */
+
+export const getSettings = () =>
+  rpc('get_game_settings');
+
+/* ========================================
+   교사용 계정 관리
+======================================== */
+
+export const teacherGetAccounts = code =>
+  rpc('teacher_get_accounts', {
+    p_code: code
+  });
+
+export const teacherGrantCoins = (
+  code,
+  nickname,
+  amount
+) =>
+  rpc('teacher_grant_coins', {
+    p_code: code,
+    p_nickname: nickname,
+    p_amount: amount
+  });
+
+export const teacherSaveSettings = (
+  code,
+  omok,
+  rummikub
+) =>
+  rpc('teacher_update_settings', {
+    p_code: code,
+    p_omok: omok,
+    p_rummikub: rummikub
+  });
+
+export const teacherSetShortcut = (
+  code,
+  enabled
+) =>
+  rpc('teacher_set_shortcut', {
+    p_code: code,
+    p_enabled: enabled
+  });
+
+export const teacherFlagNickname = (
+  code,
+  nickname
+) =>
+  rpc('teacher_flag_nickname', {
+    p_code: code,
+    p_nickname: nickname
+  });
+
+export const teacherCreateDeleteChallenge = (
+  code,
+  nickname
+) =>
+  rpc('teacher_create_delete_challenge', {
+    p_code: code,
+    p_nickname: nickname
+  });
+
+export const teacherDeleteAccount = (
+  code,
+  developerCode,
+  nickname,
+  challenge
+) =>
+  rpc('teacher_delete_account', {
+    p_code: code,
+    p_developer_code: developerCode,
+    p_nickname: nickname,
+    p_challenge: challenge
+  });
+
+/* ========================================
+   개발자 기능
+======================================== */
+
+export const developerSetAccount = (
+  developerCode,
+  nickname,
+  enabled
+) =>
+  rpc('developer_set_account', {
+    p_developer_code: developerCode,
+    p_nickname: nickname,
+    p_enabled: enabled
+  });
+
+/* ========================================
+   로그인 세션 관리
+======================================== */
+
+export function getSession() {
+  try {
+    return JSON.parse(
+      localStorage.getItem('arcade-profile') || 'null'
+    );
+  } catch {
+    return null;
   }
 }
 
-async function authenticate(kind) {
-  if (busy) {
-    return;
-  }
-
-  const nickname = $('nickname').value.trim();
-  const password = $('password').value;
-
-  if (!requireNickname(nickname)) {
-    return message(
-      '닉네임은 1~16글자로 입력해 주세요.',
-      true
-    );
-  }
-
-  // 계정 생성에만 특수 형식 검증을 허용합니다.
-  // 로그인은 일반 비밀번호 형식만 허용합니다.
-  if (!requirePassword(password, kind === 'register')) {
-    return message(
-      '비밀번호 형식이 올바르지 않습니다.',
-      true
-    );
-  }
-
-  showBusy(true);
-
-  message(
-    kind === 'register'
-      ? '계정을 만들고 있어요…'
-      : '로그인 중이에요…'
+export function saveSession(profile) {
+  localStorage.setItem(
+    'arcade-profile',
+    JSON.stringify(profile)
   );
+}
 
-  try {
-    const result = kind === 'register'
-      ? await registerAccount(nickname, password)
-      : await loginAccount(nickname, password);
+export function clearSession() {
+  localStorage.removeItem('arcade-profile');
+}
 
-    if (!result?.profile) {
-      throw new Error('계정 정보를 확인하지 못했어요.');
+/* ========================================
+   입력값 검증
+
+   일반 비밀번호:
+   영문 대소문자 + 숫자, 4~8글자
+
+   계정 생성용 개발자 형식:
+   일반비밀번호/개발자코드
+
+   전체 길이: 최대 19글자
+======================================== */
+
+export function requirePassword(
+  password,
+  allowDeveloperCode = false
+) {
+  if (typeof password !== 'string') {
+    return false;
+  }
+
+  // 전체 입력 길이 제한
+  if (password.length > 19) {
+    return false;
+  }
+
+  // 개발자 코드가 포함된 계정 생성 형식
+  if (
+    allowDeveloperCode &&
+    password.includes('/')
+  ) {
+    const parts = password.split('/');
+
+    // 슬래시는 정확히 하나만 허용
+    if (parts.length !== 2) {
+      return false;
     }
 
-    saveSession({
-      authVersion: 2,
-      id: result.profile.id,
-      nickname: result.profile.nickname,
-      coins: result.profile.coins,
-      is_developer: result.profile.is_developer
-    });
+    const [normalPassword, developerCode] = parts;
 
-    $('password').value = '';
+    // 일반 비밀번호: 영문과 숫자만, 4~8글자
+    if (!/^[A-Za-z0-9]{4,8}$/.test(normalPassword)) {
+      return false;
+    }
 
-    message(
-      result.message ||
-      (
-        kind === 'register'
-          ? '계정이 만들어졌어요!'
-          : '로그인했어요!'
-      )
-    );
+    // 개발자 코드: 1~14글자
+    if (
+      developerCode.length < 1 ||
+      developerCode.length > 14
+    ) {
+      return false;
+    }
 
-    await render();
-  } catch (error) {
-    message(
-      error.message || '처리 중 문제가 생겼어요.',
-      true
-    );
-  } finally {
-    showBusy(false);
+    return true;
   }
+
+  // 슬래시가 없는 일반 비밀번호
+  return /^[A-Za-z0-9]{4,8}$/.test(password);
 }
 
-$('create-account').addEventListener('click', () => {
-  authenticate('register');
-});
+/* ========================================
+   닉네임 검증
+======================================== */
 
-$('login-account').addEventListener('click', () => {
-  authenticate('login');
-});
-
-$('logout').addEventListener('click', () => {
-  clearSession();
-  render();
-});
-
-render();
+export function requireNickname(nickname) {
+  return (
+    typeof nickname === 'string' &&
+    nickname.length >= 1 &&
+    nickname.length <= 16
+  );
+}
