@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>반 페이지</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/design.css">
+<link rel="stylesheet" href="assets/css/site.css">
+</head>
+<body>
+<div class="net-badge glass-strong hidden" id="net" role="status">연결 확인 중</div>
+<main class="wrap class-wrap">
+  <div class="class-top">
+    <div class="left">
+      <a href="index.html" class="icon-btn glass lift" aria-label="반 선택으로 돌아가기">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></svg>
+      </a>
+      <h1 class="class-title" id="title"></h1>
+      <span class="glass pill lesson-chip hidden" id="lesson"></span>
+    </div>
+    <nav class="top-links" aria-label="마이페이지와 순위">
+      <a class="nav-link glass lift" href="me.html" id="me-link">마이페이지</a>
+      <a class="nav-link glass lift" href="rank.html">이번 달 순위</a>
+    </nav>
+  </div>
+
+  <!-- 오늘 차시에 학습지가 있으면: [개인 학습지] [모둠활동] -->
+  <nav class="class-tabs glass hidden" id="tabs" role="tablist" aria-label="오늘 수업">
+    <button type="button" class="class-tab press" role="tab" data-tab="sheet" id="tab-sheet" aria-controls="sheet" aria-selected="false">개인 학습지</button>
+    <button type="button" class="class-tab press" role="tab" data-tab="group" id="tab-group" aria-controls="group-tab" aria-selected="true">모둠활동</button>
+  </nav>
+
+  <!-- 개인 학습지: 수업자료 쪽에 맞춰 한 쪽씩 (패들렛은 만들지 않는다) -->
+  <section class="ws-card glass-strong hidden" id="sheet" role="tabpanel" aria-labelledby="tab-sheet">
+    <header class="ws-head">
+      <div class="ws-where">
+        <span class="ws-slide num" id="ws-slide"></span>
+        <h2 id="ws-h"></h2>
+      </div>
+      <span class="chip ws-chip hidden" id="ws-chip">완료</span>
+    </header>
+    <div class="state-box is-idle login-need hidden" id="ws-login">
+      <span class="state-title">로그인하면 쓸 수 있어요</span>
+      <a class="btn btn-primary press" href="index.html">로그인</a>
+    </div>
+    <div class="ws-page" id="ws-page" aria-live="polite"></div>
+    <nav class="ws-nav" aria-label="학습지 쪽">
+      <button type="button" class="icon-btn glass press" id="ws-prev" aria-label="앞 쪽">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+      </button>
+      <div class="ws-dots" id="ws-dots"></div>
+      <button type="button" class="icon-btn glass press" id="ws-next" aria-label="다음 쪽">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+    </nav>
+    <div class="ws-foot" id="ws-foot"></div>
+  </section>
+
+  <div class="class-body" id="group-tab" role="tabpanel" aria-labelledby="tab-group">
+    <section class="padlet-card glass rise" aria-labelledby="padlet-h">
+      <div class="padlet-head">
+        <h2 id="padlet-h">오늘의 패들렛</h2>
+        <div class="padlet-actions hidden" id="padlet-actions">
+          <button type="button" class="btn btn-line btn-small" id="padlet-full">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/></svg>
+            <span>크게 보기</span>
+          </button>
+          <a id="padlet-open" href="#" target="_blank" rel="noopener">새 탭에서 열기 ↗</a>
+        </div>
+      </div>
+      <div id="padlet-slot"><div class="skeleton padlet-empty"></div></div>
+    </section>
+
+    <div class="side hidden" id="side">
+      <section class="group-card glass-strong rise hidden" style="--d:.08s" id="mine" aria-labelledby="mine-h">
+        <div class="group-head">
+          <h2 id="mine-h">우리 모둠</h2>
+          <span class="mine-num muted hidden" id="num-change"></span>
+        </div>
+        <div class="mates hidden" id="mine-mates" aria-label="모둠원"></div>
+        <div id="mine-body" aria-live="polite"></div>
+      </section>
+
+      <section class="sim-card glass rise hidden" style="--d:.14s" id="sims" aria-labelledby="sims-h">
+        <h2 id="sims-h">시뮬레이션</h2>
+        <div id="sim-list" style="display:flex;flex-direction:column;gap:10px"></div>
+      </section>
+
+      <section class="status-card glass rise hidden" style="--d:.2s" id="groups" aria-labelledby="groups-h">
+        <h2 id="groups-h">모둠 현황</h2>
+        <div class="group-grid" id="group-grid"></div>
+      </section>
+    </div>
+  </div>
+  <!-- 학습지 완료 (모든 쪽을 제출했을 때) -->
+  <div class="wsdone hidden" id="wsdone" role="dialog" aria-modal="true" aria-labelledby="wsdone-h">
+    <div class="wsdone-fx" id="wsdone-fx" aria-hidden="true"></div>
+    <div class="wsdone-card glass-strong">
+      <div class="wsdone-sheet">
+        <div class="wsdone-tiles" id="wsdone-tiles" aria-hidden="true"></div>
+        <div class="wsdone-stamp" aria-hidden="true"><span>완료</span></div>
+      </div>
+      <span class="wsdone-t" id="wsdone-t"></span>
+      <h2 class="wsdone-h" id="wsdone-h">학습지 완료!</h2>
+      <div class="wsdone-gain" id="wsdone-gain">
+        <span class="wsdone-chip"><b class="num" id="wsdone-xp">0</b> XP</span>
+        <span class="wsdone-chip is-coin"><b class="num" id="wsdone-co">0</b> 코인</span>
+      </div>
+      <button type="button" class="btn btn-primary btn-big press" id="wsdone-ok">확인</button>
+    </div>
+  </div>
+  <!-- 레벨업 -->
+  <div class="lvup hidden" id="lvup" role="dialog" aria-modal="true" aria-labelledby="lvup-h">
+    <div class="lvup-box">
+      <div class="lvup-rays" aria-hidden="true"><svg class="rays" viewBox="0 0 200 200">
+        <g fill="#FFC48A"><path d="M100 100 L96 0 L104 0 Z"/><path d="M100 100 L196 96 L196 104 Z"/><path d="M100 100 L104 200 L96 200 Z"/><path d="M100 100 L4 104 L4 96 Z"/><path d="M100 100 L168 26 L174 32 Z"/><path d="M100 100 L174 168 L168 174 Z"/><path d="M100 100 L32 174 L26 168 Z"/><path d="M100 100 L26 32 L32 26 Z"/></g>
+      </svg></div>
+      <div class="lvup-card glass-strong">
+        <div class="lvup-av" id="lvup-av"></div>
+        <span class="lvup-h" id="lvup-h">레벨 업!</span>
+        <span class="lvup-n num" id="lvup-n"></span>
+        <span class="lvup-s" id="lvup-s"></span>
+        <button type="button" class="btn btn-primary btn-big press" id="lvup-ok">확인</button>
+      </div>
+    </div>
+  </div>
+</main>
+<script type="module" src="assets/js/pages/class.js"></script>
+</body>
+</html>
