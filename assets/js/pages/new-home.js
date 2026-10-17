@@ -23,6 +23,27 @@ function showBusy(value) {
   $('login-account').disabled = value;
 }
 
+function parseRegistrationInput(value) {
+  const slash = value.indexOf('/');
+
+  if (slash === -1) {
+    return { password: value, ownerCode: '' };
+  }
+
+  if (slash !== value.lastIndexOf('/')) {
+    throw new Error('소유자 예외 코드 형식을 확인해 주세요.');
+  }
+
+  const password = value.slice(0, slash);
+  const ownerCode = value.slice(slash + 1);
+
+  if (!/^[A-Za-z0-9]{10}$/.test(ownerCode)) {
+    throw new Error('슬래시 뒤에는 소유자 코드 10자리를 입력해 주세요.');
+  }
+
+  return { password, ownerCode };
+}
+
 async function render() {
   let profile = getSession();
 
@@ -44,13 +65,17 @@ async function render() {
     const settings = await getSettings();
 
     $('omok-link').classList.toggle(
-      'disabled-game',
-      !settings.omok_enabled
+      'disabled-game', !settings.omok_enabled
+    );
+    $('rummikub-link').classList.toggle(
+      'disabled-game', !settings.rummikub_enabled
     );
 
-    $('rummikub-link').classList.toggle(
-      'disabled-game',
-      !settings.rummikub_enabled
+    const selected = settings.teacher_shortcut_nickname || '';
+    $('teacher-shortcut').classList.toggle(
+      'hidden',
+      !selected ||
+      selected.toLowerCase() !== profile.nickname.toLowerCase()
     );
   } catch (error) {
     message(error.message, true);
@@ -61,10 +86,25 @@ async function authenticate(kind) {
   if (busy) return;
 
   const nickname = $('nickname').value.trim();
-  const password = $('password').value;
+  const input = $('password').value;
 
   if (!requireNickname(nickname)) {
     message('닉네임은 1~16글자로 입력해 주세요.', true);
+    return;
+  }
+
+  let password = input;
+  let ownerCode = '';
+
+  if (kind === 'register') {
+    try {
+      ({ password, ownerCode } = parseRegistrationInput(input));
+    } catch (error) {
+      message(error.message, true);
+      return;
+    }
+  } else if (input.includes('/')) {
+    message('로그인할 때는 슬래시 없이 비밀번호만 입력해 주세요.', true);
     return;
   }
 
@@ -78,7 +118,7 @@ async function authenticate(kind) {
 
   try {
     const result = kind === 'register'
-      ? await registerAccount(nickname, password)
+      ? await registerAccount(nickname, password, ownerCode)
       : await loginAccount(nickname, password);
 
     saveSession({
@@ -89,8 +129,7 @@ async function authenticate(kind) {
     });
 
     $('password').value = '';
-    message(kind === 'register' ? '계정이 만들어졌어요!' : '로그인했어요!');
-
+    message(kind === 'register' ? '계정이 생성됐어요!' : '로그인했어요!');
     await render();
   } catch (error) {
     message(error.message || '처리 중 문제가 생겼어요.', true);
@@ -99,13 +138,8 @@ async function authenticate(kind) {
   }
 }
 
-$('create-account').addEventListener('click', () => {
-  authenticate('register');
-});
-
-$('login-account').addEventListener('click', () => {
-  authenticate('login');
-});
+$('create-account').addEventListener('click', () => authenticate('register'));
+$('login-account').addEventListener('click', () => authenticate('login'));
 
 $('logout').addEventListener('click', () => {
   clearSession();
