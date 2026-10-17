@@ -65,35 +65,71 @@ async function render() {
 async function authenticate(kind) {
   if (busy) return;
 
-  const nickname = $('nickname').value.trim();
+  const enteredNickname = $('nickname').value.trim();
   const password = $('password').value;
 
-  if (!requireNickname(nickname)) {
-    return message(
-      '닉네임은 1~16글자로 입력해 주세요.',
-      true
-    );
+  let nickname = enteredNickname;
+  let developerCode = '';
+
+  /*
+   * 개발자 계정 생성 형식:
+   * 닉네임 입력란: 실제닉네임/개발자코드
+   * 비밀번호 입력란: 일반 비밀번호
+   *
+   * 로그인할 때는 슬래시 형식을 처리하지 않습니다.
+   */
+  if (kind === 'register' && enteredNickname.includes('/')) {
+    const parts = enteredNickname.split('/');
+
+    if (parts.length !== 2) {
+      return message(
+        '개발자 계정은 닉네임/개발자코드 형식으로 입력해 주세요.',
+        true
+      );
+    }
+
+    nickname = parts[0].trim();
+    developerCode = parts[1].trim();
+
+    if (!developerCode || developerCode.length > 14) {
+      return message('개발자 코드를 확인해 주세요.', true);
+    }
   }
 
-  if (!requirePassword(password, kind === 'register')) {
+  if (!requireNickname(nickname)) {
+    return message('닉네임은 1~16글자로 입력해 주세요.', true);
+  }
+
+  if (!requirePassword(password)) {
     return message(
-      '비밀번호 형식이 올바르지 않습니다. 비밀번호는 영어와 숫자만 사용해 4~8글자로 입력해 주세요.',
+      '비밀번호는 영어와 숫자만 사용해 4~8글자로 입력해 주세요.',
       true
     );
   }
 
   showBusy(true);
-
-  message(
-    kind === 'register'
-      ? '계정을 만들고 있어요…'
-      : '로그인 중이에요…'
+  message(kind === 'register'
+    ? '계정을 만들고 있어요…'
+    : '로그인 중이에요…'
   );
 
   try {
+    /*
+     * 서버의 register_game_account 함수가 개발자 코드를 검증합니다.
+     * 개발자 코드가 없는 일반 계정은 기존 비밀번호 그대로 전달합니다.
+     * 개발자 코드는 비밀번호 뒤에 붙여 서버 검증 함수로 전달합니다.
+     */
+    const registrationPassword = developerCode
+      ? `${password}/${developerCode}`
+      : password;
+
     const result = kind === 'register'
-      ? await registerAccount(nickname, password)
+      ? await registerAccount(nickname, registrationPassword)
       : await loginAccount(nickname, password);
+
+    if (!result.profile) {
+      throw new Error('서버에서 계정 정보를 반환하지 않았습니다.');
+    }
 
     saveSession({
       authVersion: 2,
@@ -104,6 +140,7 @@ async function authenticate(kind) {
     });
 
     $('password').value = '';
+    $('nickname').value = '';
 
     message(
       result.message ||
@@ -114,10 +151,7 @@ async function authenticate(kind) {
 
     await render();
   } catch (error) {
-    message(
-      error.message || '처리 중 문제가 생겼어요.',
-      true
-    );
+    message(error.message || '처리 중 문제가 생겼어요.', true);
   } finally {
     showBusy(false);
   }
