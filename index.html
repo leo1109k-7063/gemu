@@ -19,41 +19,30 @@
 <main class="new-wrap">
   <header class="new-head">
     <h1>🎮 게임 놀이터</h1>
-<<<<<<< HEAD
-    <div style="display:flex;gap:8px;align-items:center"><button id="developerTab" class="btn btn-primary hidden" type="button">개발자 탭</button><button id="logout" class="btn btn-line hidden">로그아웃</button></div>
-=======
-    <button id="logout" class="btn btn-line hidden">로그아웃</button>
->>>>>>> a6239a4bf07c18b04f85260f7f713d5306e2d591
+    <div style="display:flex;gap:8px;align-items:center">
+      <button
+        id="developerTab"
+        class="btn btn-primary hidden"
+        type="button"
+      >개발자 탭</button>
+      <button id="logout" class="btn btn-line hidden">
+        로그아웃
+      </button>
+    </div>
   </header>
 
   <section id="login" class="new-card">
     <h2>계정 만들기 / 로그인</h2>
     <p>닉네임과 비밀번호를 입력해 주세요.</p>
-<<<<<<< HEAD
-    <div class="auth-fields">
-      <input id="nickname" maxlength="16" required
-             placeholder="닉네임" autocomplete="username">
-      <input id="password" type="password" minlength="4" maxlength="19"
-             required placeholder="비밀번호"
-             autocomplete="current-password">
-    </div>
-    <div class="auth-actions" style="margin-top:12px">
-      <button id="create-account" class="btn btn-primary" type="button">계정 생성</button>
-      <button id="login-account" class="btn btn-line" type="button">로그인</button>
-    </div>
-    <p id="auth-status" role="status" aria-live="polite"></p>
-    <p class="small-note">계정은 서버에 저장돼 다른 기기에서도 사용할 수 있어요.</p>
-=======
 
     <div class="auth-fields">
       <input
         id="nickname"
-        maxlength="31"
+        maxlength="16"
         required
         placeholder="닉네임"
         autocomplete="username"
       >
-
       <input
         id="password"
         type="password"
@@ -71,7 +60,6 @@
         class="btn btn-primary"
         type="button"
       >계정 생성</button>
-
       <button
         id="login-account"
         class="btn btn-line"
@@ -83,7 +71,6 @@
     <p class="small-note">
       계정은 서버에 저장돼 다른 기기에서도 사용할 수 있어요.
     </p>
->>>>>>> a6239a4bf07c18b04f85260f7f713d5306e2d591
   </section>
 
   <section id="home" class="hidden">
@@ -94,24 +81,16 @@
 
     <div class="new-grid">
       <a id="omok-link" class="new-card game-link" href="omok.html">
-<<<<<<< HEAD
-        <span>⚫⚪</span><h2>오목</h2><p>컴퓨터 대전 · 1대1 대전</p>
-      </a>
-      <a id="rummikub-link" class="new-card game-link" href="rummikub.html">
-        <span>🀄</span><h2>루미큐브</h2><p>컴퓨터 AI 개발 버전</p>
-      </a>
-      <a class="new-card game-link" href="me.html">
-        <span>👤</span><h2>마이페이지</h2><p>코인 확인</p>
-      </a>
-      <a class="new-card game-link" href="shop.html">
-        <span>🛍️</span><h2>상점</h2><p>준비 중</p>
-=======
         <span>⚫⚪</span>
         <h2>오목</h2>
         <p>컴퓨터 대전 · 1대1 대전</p>
       </a>
 
-      <a id="rummikub-link" class="new-card game-link" href="rummikub.html">
+      <a
+        id="rummikub-link"
+        class="new-card game-link"
+        href="rummikub.html"
+      >
         <span>🀄</span>
         <h2>루미큐브</h2>
         <p>컴퓨터 AI 개발 버전</p>
@@ -127,33 +106,51 @@
         <span>🛍️</span>
         <h2>상점</h2>
         <p>준비 중</p>
->>>>>>> a6239a4bf07c18b04f85260f7f713d5306e2d591
       </a>
     </div>
 
     <p id="teacherShortcut" class="teacher-link hidden">
       <a href="teacher/index.html">교사 페이지</a>
     </p>
-<<<<<<< HEAD
+
     <section id="developerPanel" class="new-card hidden">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><h2>개발자 도구</h2><button id="closeDeveloperPanel" class="btn btn-line" type="button">닫기</button></div>
+      <div
+        style="display:flex;justify-content:space-between;align-items:center;gap:12px"
+      >
+        <h2>개발자 도구</h2>
+        <button
+          id="closeDeveloperPanel"
+          class="btn btn-line"
+          type="button"
+        >닫기</button>
+      </div>
+
       <p>프로그램의 주요 기능과 관리 화면 바로가기입니다.</p>
+
       <div class="new-grid">
-        <a class="new-card game-link" href="omok.html"><h3>오목</h3><p>게임 실행</p></a>
-        <a class="new-card game-link" href="rummikub.html"><h3>루미큐브</h3><p>게임 실행</p></a>
-        <a class="new-card game-link" href="me.html"><h3>마이페이지</h3><p>계정 정보</p></a>
-        <a class="new-card game-link" href="shop.html"><h3>상점</h3><p>상점 화면</p></a>
-        <a class="new-card game-link" href="teacher/index.html"><h3>교사 관리</h3><p>계정과 게임 설정</p></a>
-        <a class="new-card game-link" href="class.html"><h3>학급</h3><p>학급 화면</p></a>
+        <a class="new-card game-link" href="omok.html">
+          <h3>오목</h3><p>게임 실행</p>
+        </a>
+        <a class="new-card game-link" href="rummikub.html">
+          <h3>루미큐브</h3><p>게임 실행</p>
+        </a>
+        <a class="new-card game-link" href="me.html">
+          <h3>마이페이지</h3><p>계정 정보</p>
+        </a>
+        <a class="new-card game-link" href="shop.html">
+          <h3>상점</h3><p>상점 화면</p>
+        </a>
+        <a class="new-card game-link" href="teacher/index.html">
+          <h3>교사 관리</h3><p>계정과 게임 설정</p>
+        </a>
+        <a class="new-card game-link" href="class.html">
+          <h3>학급</h3><p>학급 화면</p>
+        </a>
       </div>
     </section>
   </section>
 </main>
-=======
-  </section>
-</main>
 
->>>>>>> a6239a4bf07c18b04f85260f7f713d5306e2d591
 <script type="module" src="assets/js/pages/new-home.js"></script>
 </body>
 </html>
