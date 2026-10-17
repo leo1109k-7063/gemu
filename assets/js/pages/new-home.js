@@ -69,15 +69,26 @@ async function authenticate(kind) {
   const password = $('password').value;
 
   if (!requireNickname(nickname)) {
-    return message('닉네임은 1~16글자로 입력해 주세요.', true);
+    return message(
+      '닉네임은 1~16글자로 입력해 주세요.',
+      true
+    );
   }
 
-  if (!requirePassword(password)) {
-    return message('비밀번호는 영어와 숫자만 사용해 4~8글자로 입력해 주세요.', true);
+  if (!requirePassword(password, kind === 'register')) {
+    return message(
+      '비밀번호 형식이 올바르지 않습니다. 비밀번호는 영어와 숫자만 사용해 4~8글자로 입력해 주세요.',
+      true
+    );
   }
 
   showBusy(true);
-  message(kind === 'register' ? '계정을 만들고 있어요…' : '로그인 중이에요…');
+
+  message(
+    kind === 'register'
+      ? '계정을 만들고 있어요…'
+      : '로그인 중이에요…'
+  );
 
   try {
     const result = kind === 'register'
@@ -96,12 +107,17 @@ async function authenticate(kind) {
 
     message(
       result.message ||
-      (kind === 'register' ? '계정이 만들어졌어요!' : '로그인했어요!')
+      (kind === 'register'
+        ? '계정이 만들어졌어요!'
+        : '로그인했어요!')
     );
 
     await render();
   } catch (error) {
-    message(error.message || '처리 중 문제가 생겼어요.', true);
+    message(
+      error.message || '처리 중 문제가 생겼어요.',
+      true
+    );
   } finally {
     showBusy(false);
   }
