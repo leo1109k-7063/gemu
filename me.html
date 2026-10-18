@@ -5,275 +5,134 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>마이페이지 - 게임 놀이터</title>
-
   <link rel="stylesheet" href="assets/css/design.css">
   <link rel="stylesheet" href="assets/css/site.css">
   <link rel="stylesheet" href="assets/css/game-new.css">
-
   <style>
-    .me-layout {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
-      gap: 14px;
-    }
-
-    .profile-hero {
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 280px;
-    }
-
-    #avatar-host {
-      width: 200px;
-      height: 200px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .level-pill {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 58px;
-      height: 58px;
-      border-radius: 50%;
-      border: 4px solid #2457e6;
-      color: #2457e6;
-      font-weight: 900;
-      font-size: 1.2rem;
-      background: #fff;
-    }
-
-    .xp-track {
-      height: 12px;
-      background: #dce5f3;
-      border-radius: 999px;
-      overflow: hidden;
-      margin: 9px 0;
-    }
-
-    .xp-fill {
-      height: 100%;
-      width: 0;
-      background: linear-gradient(90deg, #2457e6, #8b5cf6);
-      border-radius: 999px;
-      transition: width .35s ease;
-    }
-
-    .xp-line {
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-      font-size: .92rem;
-    }
-
-    .stat-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
-    }
-
-    .stat {
-      padding: 14px;
-      border-radius: 14px;
-      background: #f4f7fc;
-    }
-
-    .stat strong {
-      display: block;
-      font-size: 1.35rem;
-      margin-top: 4px;
-    }
-
-    .small-note {
-      font-size: .88rem;
-      color: #64748b;
-    }
-
-    @media (max-width: 680px) {
-      .me-layout {
-        grid-template-columns: 1fr;
-      }
-
-      .profile-hero {
-        min-height: 220px;
-      }
-
-      #avatar-host {
-        width: 170px;
-        height: 170px;
-      }
-    }
+    .me-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:14px}
+    .profile-hero{text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:280px}
+    #avatar-host{width:200px;height:200px;display:flex;align-items:center;justify-content:center}
+    .level-pill{display:inline-flex;align-items:center;justify-content:center;min-width:58px;height:58px;border-radius:50%;border:4px solid #2457e6;color:#2457e6;font-weight:900;font-size:1.2rem;background:#fff}
+    .xp-track{height:12px;background:#dce5f3;border-radius:999px;overflow:hidden;margin:9px 0}
+    .xp-fill{height:100%;width:0;background:linear-gradient(90deg,#2457e6,#8b5cf6);border-radius:999px;transition:width .35s ease}
+    .xp-line{display:flex;justify-content:space-between;gap:10px;font-size:.92rem}
+    .stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .stat{padding:14px;border-radius:14px;background:#f4f7fc}
+    .stat strong{display:block;font-size:1.35rem;margin-top:4px}
+    .small-note{font-size:.88rem;color:#64748b}
+    .coin-stat-button{width:100%;text-align:left;border:0;cursor:pointer;color:inherit;font:inherit}
+    .coin-stat-button:hover{outline:2px solid #2457e6}
+    .coin-history-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px}
+    .coin-history-backdrop[hidden]{display:none}
+    .coin-history-dialog{width:min(560px,100%);max-height:min(80vh,700px);overflow:auto;background:white;color:#172033;border-radius:18px;padding:20px;box-shadow:0 20px 70px rgba(0,0,0,.25)}
+    .coin-history-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .coin-history-list{display:grid;gap:10px;margin-top:14px}
+    .coin-history-row{border:1px solid #e2e8f0;border-radius:12px;padding:12px;display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+    .coin-history-reason{white-space:pre-wrap;overflow-wrap:anywhere}
+    .coin-history-amount{font-weight:900;white-space:nowrap}
+    .coin-positive{color:#087443}
+    .coin-negative{color:#b42318}
+    @media(max-width:680px){.me-layout{grid-template-columns:1fr}.profile-hero{min-height:220px}#avatar-host{width:170px;height:170px}}
   </style>
 </head>
-
 <body>
 <main class="new-wrap">
-
   <header class="new-head">
     <a href="index.html">← 홈</a>
     <h1>마이페이지</h1>
     <a href="shop.html">캐릭터 꾸미기 →</a>
   </header>
 
-  <!-- 로그인하지 않은 경우 -->
   <div id="not-logged-in" class="new-card hidden">
     <h2>로그인이 필요해요</h2>
     <p>마이페이지를 보려면 먼저 로그인해 주세요.</p>
-    <a class="btn btn-primary" href="index.html">
-      홈으로 이동
-    </a>
+    <a class="btn btn-primary" href="index.html">홈으로 이동</a>
   </div>
 
-  <!-- 마이페이지 -->
   <div id="my-page" class="hidden">
-
     <div class="me-layout">
-
-      <!-- 프로필 캐릭터 표시만 유지 -->
       <section class="new-card profile-hero">
-        <div
-          id="avatar-host"
-          aria-label="프로필 캐릭터">
-        </div>
-
+        <div id="avatar-host" aria-label="프로필 캐릭터"></div>
         <h2 id="nick" style="margin:8px 0 4px"></h2>
-
-        <span class="small-note">
-          내 프로필 캐릭터
-        </span>
-
-        <p>
-          <a class="btn btn-primary" href="shop.html">
-            상점에서 캐릭터 꾸미기
-          </a>
-        </p>
+        <span class="small-note">내 프로필 캐릭터</span>
+        <p><a class="btn btn-primary" href="shop.html">상점에서 캐릭터 꾸미기</a></p>
       </section>
 
-      <!-- 레벨 및 경험치 -->
       <section class="new-card">
-
         <div style="display:flex;align-items:center;gap:12px">
-          <div class="level-pill">
-            Lv.<span id="level">1</span>
-          </div>
-
+          <div class="level-pill">Lv.<span id="level">1</span></div>
           <div style="flex:1;min-width:0">
-            <h2 style="margin:0">
-              레벨 <span id="level-label">1</span> / 30
-            </h2>
-
-            <p style="margin:4px 0 0">
-              EXP <strong id="total-exp">0</strong>
-            </p>
+            <h2 style="margin:0">레벨 <span id="level-label">1</span> / 30</h2>
+            <p style="margin:4px 0 0">EXP <strong id="total-exp">0</strong></p>
           </div>
         </div>
 
-        <div
-          class="xp-track"
-          role="progressbar"
-          aria-label="레벨 경험치 진행도"
-          aria-valuemin="0"
-          aria-valuemax="10"
-          aria-valuenow="0"
-          id="xp-track">
-
+        <div class="xp-track" role="progressbar" aria-label="레벨 경험치 진행도" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0" id="xp-track">
           <div id="xp-fill" class="xp-fill"></div>
         </div>
 
         <div class="xp-line">
-          <span>
-            경험치
-            <strong id="current-exp">0</strong> /
-            <strong id="required-exp">10</strong> XP
-          </span>
-
-          <span id="xp-left">
-            다음 레벨까지 10 XP
-          </span>
+          <span>경험치 <strong id="current-exp">0</strong> / <strong id="required-exp">10</strong> XP</span>
+          <span id="xp-left">다음 레벨까지 10 XP</span>
         </div>
 
-        <p id="level-message" class="small-note">
-          경험치를 모아 레벨을 올려 보세요!
-        </p>
+        <p id="level-message" class="small-note">경험치를 모아 레벨을 올려 보세요!</p>
 
-        <!-- 코인 및 누적 경험치 -->
         <div class="stat-grid" style="margin-top:16px">
-
-          <div class="stat">
-            <span>보유 코인</span>
-            <strong>
-              🪙 <span id="coins">0</span>
-            </strong>
-          </div>
+          <button id="open-coin-history" class="stat coin-stat-button" type="button" aria-haspopup="dialog" aria-controls="coin-history-dialog">
+            <span>보유 코인 <span aria-hidden="true">↗</span></span>
+            <strong>🪙 <span id="coins">0</span></strong>
+            <small class="small-note">눌러서 코인 적립 기록 보기</small>
+          </button>
 
           <div class="stat">
             <span>누적 경험치</span>
-            <strong>
-              <span id="exp-stat">0</span> XP
-            </strong>
+            <strong><span id="exp-stat">0</span> XP</strong>
           </div>
-
         </div>
       </section>
-
     </div>
 
-    <p class="small-note">
-      레벨은 최대 30레벨입니다. 레벨별 필요 경험치는
-      10 XP부터 조금씩 올라가며, 30레벨에서는 50 XP를
-      기준으로 표시됩니다.
-    </p>
-
+    <p class="small-note">레벨은 최대 30레벨입니다. 레벨별 필요 경험치는 10 XP부터 조금씩 올라가며, 30레벨에서는 50 XP를 기준으로 표시됩니다.</p>
   </div>
 </main>
 
-<script type="module">
-  import {
-    avatarSVG,
-    normalize,
-    react
-  } from './assets/js/avatar.js';
+<!-- 코인 기록 하위 창 -->
+<div id="coin-history-backdrop" class="coin-history-backdrop" hidden>
+  <section id="coin-history-dialog" class="coin-history-dialog" role="dialog" aria-modal="true" aria-labelledby="coin-history-title" tabindex="-1">
+    <div class="coin-history-head">
+      <div>
+        <h2 id="coin-history-title" style="margin:0">🪙 코인 적립 기록</h2>
+        <p class="small-note">교사 지급 코멘트와 적립 날짜를 확인할 수 있어요.</p>
+      </div>
+      <button id="close-coin-history" class="btn btn-line" type="button">닫기</button>
+    </div>
 
-  import {
-    DEFAULTS
-  } from './assets/js/avatar-parts.js';
+    <p id="coin-history-status" role="status" aria-live="polite">기록을 불러올 준비가 되었어요.</p>
+    <div id="coin-history-list" class="coin-history-list"></div>
+  </section>
+</div>
+
+<script type="module">
+  import { avatarSVG, normalize, react } from './assets/js/avatar.js';
+  import { DEFAULTS } from './assets/js/avatar-parts.js';
 
   const $ = id => document.getElementById(id);
-
   const MAX_LEVEL = 30;
-
-  const SUPABASE_URL =
-    'https://idzbckhztsdnzablelaf.supabase.co';
-
-  const SUPABASE_KEY =
-    'sb_publishable_PHyvEyFmkYgaAHdHOh1RCw_kwB7FLRo';
+  const SUPABASE_URL = 'https://idzbckhztsdnzablelaf.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_PHyvEyFmkYgaAHdHOh1RCw_kwB7FLRo';
 
   let profile = null;
   let avatar = normalize(DEFAULTS);
 
-  const clampXp = value =>
-    Math.max(0, Math.floor(Number(value) || 0));
+  const clampXp = value => Math.max(0, Math.floor(Number(value) || 0));
 
   const needForLevel = level =>
-    Math.round(
-      10 +
-      (
-        (
-          Math.min(MAX_LEVEL, Math.max(1, level)) - 1
-        ) * 40 / 29
-      )
-    );
+    Math.round(10 + ((Math.min(MAX_LEVEL, Math.max(1, level)) - 1) * 40 / 29));
 
   function getProfile() {
     try {
-      return JSON.parse(
-        localStorage.getItem('arcade-profile') || 'null'
-      );
+      return JSON.parse(localStorage.getItem('arcade-profile') || 'null');
     } catch {
       return null;
     }
@@ -287,12 +146,7 @@
       const need = needForLevel(level);
 
       if (remaining < need) {
-        return {
-          level,
-          current: remaining,
-          need,
-          maxed: false
-        };
+        return { level, current: remaining, need, maxed: false };
       }
 
       remaining -= need;
@@ -301,10 +155,7 @@
 
     return {
       level: MAX_LEVEL,
-      current: Math.min(
-        remaining,
-        needForLevel(MAX_LEVEL)
-      ),
+      current: Math.min(remaining, needForLevel(MAX_LEVEL)),
       need: needForLevel(MAX_LEVEL),
       maxed: remaining >= needForLevel(MAX_LEVEL)
     };
@@ -312,19 +163,11 @@
 
   function renderAvatar() {
     $('avatar-host').innerHTML = avatarSVG(
-      avatar,
-      190,
-      {
-        label: '내 프로필 캐릭터',
-        live: true
-      }
+      avatar, 190, { label: '내 프로필 캐릭터', live: true }
     );
 
     const svg = $('avatar-host').querySelector('svg.av');
-
-    if (svg) {
-      react(svg, 'idle');
-    }
+    if (svg) react(svg, 'idle');
   }
 
   function renderLevel() {
@@ -333,13 +176,8 @@
 
     $('level').textContent = data.level;
     $('level-label').textContent = data.level;
-
-    $('total-exp').textContent =
-      xp.toLocaleString('ko-KR');
-
-    $('exp-stat').textContent =
-      xp.toLocaleString('ko-KR');
-
+    $('total-exp').textContent = xp.toLocaleString('ko-KR');
+    $('exp-stat').textContent = xp.toLocaleString('ko-KR');
     $('current-exp').textContent = data.current;
     $('required-exp').textContent = data.need;
 
@@ -350,75 +188,150 @@
     $('xp-fill').style.width =
       `${Math.min(100, data.current / data.need * 100)}%`;
 
-    $('xp-track').setAttribute(
-      'aria-valuemax',
-      String(data.need)
-    );
+    $('xp-track').setAttribute('aria-valuemax', String(data.need));
+    $('xp-track').setAttribute('aria-valuenow', String(data.current));
 
-    $('xp-track').setAttribute(
-      'aria-valuenow',
-      String(data.current)
-    );
-
-    $('level-message').textContent =
-      data.level === MAX_LEVEL
-        ? '최대 레벨 30에 도달했어요!'
-        : `레벨 ${data.level + 1}까지 ${
-            data.need - data.current
-          } XP가 필요해요.`;
+    $('level-message').textContent = data.level === MAX_LEVEL
+      ? '최대 레벨 30에 도달했어요!'
+      : `레벨 ${data.level + 1}까지 ${data.need - data.current} XP가 필요해요.`;
   }
 
   async function loadServerProfile() {
-    const response = await fetch(
-      `${SUPABASE_URL}/rest/v1/rpc/get_game_shop`,
-      {
-        method: 'POST',
-        headers: {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          p_profile_id: profile.id
-        })
-      }
-    );
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_game_shop`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ p_profile_id: profile.id })
+    });
 
     const result = await response.json().catch(() => null);
 
     if (!response.ok || !result?.ok) {
-      throw new Error(
-        result?.message ||
-        '캐릭터 정보를 불러오지 못했어요.'
-      );
+      throw new Error(result?.message || '캐릭터 정보를 불러오지 못했어요.');
     }
 
     avatar = normalize(result.avatar || DEFAULTS);
-
-    $('coins').textContent =
-      Number(result.coins || 0).toLocaleString('ko-KR');
-
+    $('coins').textContent = Number(result.coins || 0).toLocaleString('ko-KR');
     renderAvatar();
   }
 
+  function formatDate(value) {
+    if (!value) return '날짜 정보 없음';
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '날짜 정보 없음';
+
+    return date.toLocaleString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  async function loadCoinHistory() {
+    $('coin-history-status').textContent = '기록을 불러오는 중…';
+    $('coin-history-list').replaceChildren();
+
+    try {
+      const response = await fetch(
+        `${SUPABASE_URL}/rest/v1/rpc/get_game_coin_history`,
+        {
+          method: 'POST',
+          headers: {
+            apikey: SUPABASE_KEY,
+            Authorization: `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ p_profile_id: profile.id })
+        }
+      );
+
+      const result = await response.json().catch(() => null);
+
+      if (!response.ok || !result?.ok) {
+        throw new Error(result?.message || '코인 기록을 불러오지 못했어요.');
+      }
+
+      const rows = Array.isArray(result.entries) ? result.entries : [];
+
+      if (!rows.length) {
+        $('coin-history-status').textContent = '아직 기록이 없어요.';
+        return;
+      }
+
+      $('coin-history-status').textContent = `총 ${rows.length}건의 기록`;
+
+      for (const entry of rows) {
+        const row = document.createElement('article');
+        row.className = 'coin-history-row';
+
+        const info = document.createElement('div');
+        const reason = document.createElement('div');
+        reason.className = 'coin-history-reason';
+        reason.textContent = entry.reason || '코인 적립';
+
+        const date = document.createElement('small');
+        date.className = 'small-note';
+        date.textContent = formatDate(entry.created_at);
+
+        info.append(reason, date);
+
+        const amount = document.createElement('strong');
+        const value = Number(entry.amount || 0);
+
+        amount.className = `coin-history-amount ${value >= 0 ? 'coin-positive' : 'coin-negative'}`;
+        amount.textContent = `${value > 0 ? '+' : ''}${value.toLocaleString('ko-KR')} 코인`;
+
+        row.append(info, amount);
+        $('coin-history-list').append(row);
+      }
+    } catch (error) {
+      $('coin-history-status').textContent =
+        error.message || '기록을 불러오지 못했어요.';
+    }
+  }
+
+  const historyBackdrop = $('coin-history-backdrop');
+
+  $('open-coin-history').addEventListener('click', async () => {
+    historyBackdrop.hidden = false;
+    $('coin-history-dialog').focus();
+    await loadCoinHistory();
+  });
+
+  $('close-coin-history').addEventListener('click', () => {
+    historyBackdrop.hidden = true;
+    $('open-coin-history').focus();
+  });
+
+  historyBackdrop.addEventListener('click', event => {
+    if (event.target === historyBackdrop) {
+      historyBackdrop.hidden = true;
+    }
+  });
+
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && !historyBackdrop.hidden) {
+      historyBackdrop.hidden = true;
+      $('open-coin-history').focus();
+    }
+  });
+
   profile = getProfile();
 
-  if (
-    !profile ||
-    profile.authVersion !== 2 ||
-    !profile.id
-  ) {
+  if (!profile || profile.authVersion !== 2 || !profile.id) {
     $('not-logged-in').classList.remove('hidden');
   } else {
     $('my-page').classList.remove('hidden');
 
     profile.xp = clampXp(profile.xp);
-
-    $('nick').textContent =
-      profile.nickname || '플레이어';
-
-    $('coins').textContent =
-      Number(profile.coins || 0).toLocaleString('ko-KR');
+    $('nick').textContent = profile.nickname || '플레이어';
+    $('coins').textContent = Number(profile.coins || 0).toLocaleString('ko-KR');
 
     renderLevel();
     renderAvatar();
@@ -430,14 +343,10 @@
 
       const note = document.createElement('p');
       note.className = 'small-note';
-
-      note.textContent =
-        '저장된 캐릭터를 불러오지 못했어요. 상점에서 다시 확인해 주세요.';
-
+      note.textContent = '저장된 캐릭터를 불러오지 못했어요. 상점에서 다시 확인해 주세요.';
       $('avatar-host').after(note);
     }
   }
 </script>
-
 </body>
 </html>
