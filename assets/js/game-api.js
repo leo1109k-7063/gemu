@@ -163,3 +163,40 @@ export function requirePassword(password) {
 export function requireNickname(nickname) {
   return nickname.length >= 1 && nickname.length <= 16;
 }
+
+/**
+ * 오목 / 루미큐브 승리 보상 요청
+ * 서버에서 코인과 XP를 지급하도록 요청합니다.
+ */
+export async function awardGameWin(gameName, matchId) {
+  if (!['omok', 'rummikub'].includes(gameName)) {
+    throw new Error('지원하지 않는 게임입니다.');
+  }
+
+  if (!matchId) {
+    throw new Error('게임 판 ID가 없습니다.');
+  }
+
+  const profile = getSession();
+
+  if (!profile?.nickname) {
+    throw new Error('먼저 게임 계정에 로그인해 주세요.');
+  }
+
+  const result = await rpc('award_game_win', {
+    p_nickname: profile.nickname,
+    p_game_name: gameName,
+    p_match_id: matchId
+  });
+
+  // 서버가 성공을 반환했을 때만 세션에 최신 잔액을 반영합니다.
+  if (result.ok) {
+    saveSession({
+      ...profile,
+      coins: result.coins,
+      xp: result.xp
+    });
+  }
+
+  return result;
+}
