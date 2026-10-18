@@ -18,12 +18,8 @@
     .stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
     .stat{padding:14px;border-radius:14px;background:#f4f7fc}
     .stat strong{display:block;font-size:1.35rem;margin-top:4px}
-    .avatar-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-    .avatar-controls label{font-size:.9rem;font-weight:700;color:#475569}
-    .avatar-controls select{width:100%;margin:5px 0 0;padding:10px;border:1px solid #cbd5e1;border-radius:10px;background:white;font:inherit}
-    .button-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
     .small-note{font-size:.88rem;color:#64748b}
-    @media(max-width:680px){.me-layout{grid-template-columns:1fr}.profile-hero{min-height:220px}#avatar-host{width:170px;height:170px}.avatar-controls{grid-template-columns:1fr 1fr}}
+    @media(max-width:680px){.me-layout{grid-template-columns:1fr}.profile-hero{min-height:220px}#avatar-host{width:170px;height:170px}}
   </style>
 </head>
 <body>
@@ -31,6 +27,7 @@
   <header class="new-head">
     <a href="index.html">← 홈</a>
     <h1>마이페이지</h1>
+    <a href="shop.html">캐릭터 꾸미기 →</a>
   </header>
 
   <div id="not-logged-in" class="new-card hidden">
@@ -45,31 +42,49 @@
         <div id="avatar-host" aria-label="프로필 캐릭터"></div>
         <h2 id="nick" style="margin:8px 0 4px"></h2>
         <span class="small-note">내 프로필 캐릭터</span>
+        <p>
+          <a class="btn btn-primary" href="shop.html">
+            상점에서 캐릭터 꾸미기
+          </a>
+        </p>
       </section>
 
       <section class="new-card">
         <div style="display:flex;align-items:center;gap:12px">
-          <div class="level-pill">Lv.<span id="level">1</span></div>
+          <div class="level-pill">
+            Lv.<span id="level">1</span>
+          </div>
           <div style="flex:1;min-width:0">
-            <h2 style="margin:0">레벨 <span id="level-label">1</span> / 30</h2>
-            <p style="margin:4px 0 0">EXP <strong id="total-exp">0</strong></p>
+            <h2 style="margin:0">
+              레벨 <span id="level-label">1</span> / 30
+            </h2>
+            <p style="margin:4px 0 0">
+              EXP <strong id="total-exp">0</strong>
+            </p>
           </div>
         </div>
 
-        <div class="xp-track" role="progressbar"
+        <div class="xp-track"
+             role="progressbar"
              aria-label="레벨 경험치 진행도"
-             aria-valuemin="0" aria-valuemax="10"
-             aria-valuenow="0" id="xp-track">
+             aria-valuemin="0"
+             aria-valuemax="10"
+             aria-valuenow="0"
+             id="xp-track">
           <div id="xp-fill" class="xp-fill"></div>
         </div>
 
         <div class="xp-line">
-          <span>경험치 <strong id="current-exp">0</strong> /
-            <strong id="required-exp">10</strong> XP</span>
+          <span>
+            경험치 <strong id="current-exp">0</strong> /
+            <strong id="required-exp">10</strong> XP
+          </span>
           <span id="xp-left">다음 레벨까지 10 XP</span>
         </div>
 
-        <p id="level-message" class="small-note">경험치를 모아 레벨을 올려 보세요!</p>
+        <p id="level-message" class="small-note">
+          경험치를 모아 레벨을 올려 보세요!
+        </p>
 
         <div class="stat-grid" style="margin-top:16px">
           <div class="stat">
@@ -84,55 +99,50 @@
       </section>
     </div>
 
-    <section class="new-card">
-      <h2>프로필 캐릭터 꾸미기</h2>
-      <p class="small-note">부품을 선택하면 미리보기에 반영돼요. 저장하면 이 브라우저에 보관됩니다.</p>
-      <div id="avatar-controls" class="avatar-controls"></div>
-      <div class="button-row">
-        <button id="save-avatar" class="btn btn-primary" type="button">캐릭터 저장</button>
-        <button id="reset-avatar" class="btn btn-line" type="button">기본 캐릭터로</button>
-      </div>
-      <p id="avatar-status" class="small-note" role="status" aria-live="polite"></p>
-    </section>
-
     <p class="small-note">
-      최대 레벨은 30입니다. 레벨별 필요 경험치는 10 XP부터 조금씩 증가하며,
-      30레벨의 기준 경험치는 50 XP입니다.
+      레벨은 최대 30레벨입니다. 레벨별 필요 경험치는
+      10 XP부터 조금씩 올라가며, 30레벨에서는 50 XP를
+      기준으로 표시됩니다.
     </p>
   </div>
 </main>
 
 <script type="module">
-  import { avatarSVG, normalize, react } from './assets/js/avatar.js';
-  import { PARTS, SLOTS, SLOT_NAMES, DEFAULTS } from './assets/js/avatar-parts.js';
+  import { avatarSVG, normalize, react }
+    from './assets/js/avatar.js';
+  import { DEFAULTS }
+    from './assets/js/avatar-parts.js';
 
   const $ = id => document.getElementById(id);
   const MAX_LEVEL = 30;
 
+  const SUPABASE_URL =
+    'https://idzbckhztsdnzablelaf.supabase.co';
+
+  const SUPABASE_KEY =
+    'sb_publishable_PHyvEyFmkYgaAHdHOh1RCw_kwB7FLRo';
+
   let profile = null;
-  let avatar = null;
+  let avatar = normalize(DEFAULTS);
 
   const clampXp = value =>
     Math.max(0, Math.floor(Number(value) || 0));
 
-  // 레벨 1은 10 XP, 레벨 30은 50 XP.
   const needForLevel = level =>
-    Math.round(10 + ((Math.min(MAX_LEVEL, Math.max(1, level)) - 1) * 40 / 29));
+    Math.round(
+      10 + (
+        (Math.min(MAX_LEVEL, Math.max(1, level)) - 1)
+        * 40 / 29
+      )
+    );
 
   function getProfile() {
     try {
-      return JSON.parse(localStorage.getItem('arcade-profile') || 'null');
+      return JSON.parse(
+        localStorage.getItem('arcade-profile') || 'null'
+      );
     } catch {
       return null;
-    }
-  }
-
-  function saveProfile() {
-    try {
-      localStorage.setItem('arcade-profile', JSON.stringify(profile));
-      return true;
-    } catch {
-      return false;
     }
   }
 
@@ -148,7 +158,6 @@
           level,
           current: remaining,
           need,
-          total: clampXp(totalXp),
           maxed: false
         };
       }
@@ -159,16 +168,25 @@
 
     return {
       level: MAX_LEVEL,
-      current: Math.min(remaining, needForLevel(MAX_LEVEL)),
+      current: Math.min(
+        remaining,
+        needForLevel(MAX_LEVEL)
+      ),
       need: needForLevel(MAX_LEVEL),
-      total: clampXp(totalXp),
       maxed: remaining >= needForLevel(MAX_LEVEL)
     };
   }
 
   function renderAvatar() {
-    $('avatar-host').innerHTML =
-      avatarSVG(avatar, 190, { label: '내 프로필 캐릭터', live: true });
+    $('avatar-host').innerHTML = avatarSVG(
+      avatar,
+      190,
+      { label: '내 프로필 캐릭터', live: true }
+    );
+
+    const svg = $('avatar-host').querySelector('svg.av');
+
+    if (svg) react(svg, 'idle');
   }
 
   function renderLevel() {
@@ -177,8 +195,13 @@
 
     $('level').textContent = data.level;
     $('level-label').textContent = data.level;
-    $('total-exp').textContent = xp.toLocaleString('ko-KR');
-    $('exp-stat').textContent = xp.toLocaleString('ko-KR');
+
+    $('total-exp').textContent =
+      xp.toLocaleString('ko-KR');
+
+    $('exp-stat').textContent =
+      xp.toLocaleString('ko-KR');
+
     $('current-exp').textContent = data.current;
     $('required-exp').textContent = data.need;
 
@@ -189,93 +212,92 @@
     $('xp-fill').style.width =
       `${Math.min(100, data.current / data.need * 100)}%`;
 
-    $('xp-track').setAttribute('aria-valuemax', String(data.need));
-    $('xp-track').setAttribute('aria-valuenow', String(data.current));
+    $('xp-track').setAttribute(
+      'aria-valuemax',
+      String(data.need)
+    );
 
-    $('level-message').textContent = data.level === MAX_LEVEL
-      ? '최대 레벨 30에 도달했어요!'
-      : `레벨 ${data.level + 1}까지 ${data.need - data.current} XP가 필요해요.`;
+    $('xp-track').setAttribute(
+      'aria-valuenow',
+      String(data.current)
+    );
+
+    $('level-message').textContent =
+      data.level === MAX_LEVEL
+        ? '최대 레벨 30에 도달했어요!'
+        : `레벨 ${data.level + 1}까지 ${
+            data.need - data.current
+          } XP가 필요해요.`;
   }
 
-  function render() {
-    $('nick').textContent = profile.nickname || '플레이어';
+  async function loadServerProfile() {
+    const response = await fetch(
+      `${SUPABASE_URL}/rest/v1/rpc/get_game_shop`,
+      {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          p_profile_id: profile.id
+        })
+      }
+    );
+
+    const result = await response.json().catch(() => null);
+
+    if (!response.ok || !result?.ok) {
+      throw new Error(
+        result?.message ||
+        '캐릭터 정보를 불러오지 못했어요.'
+      );
+    }
+
+    avatar = normalize(result.avatar || DEFAULTS);
+
+    $('coins').textContent =
+      Number(result.coins || 0).toLocaleString('ko-KR');
+
+    renderAvatar();
+  }
+
+  profile = getProfile();
+
+  if (
+    !profile ||
+    profile.authVersion !== 2 ||
+    !profile.id
+  ) {
+    $('not-logged-in').classList.remove('hidden');
+  } else {
+    $('my-page').classList.remove('hidden');
+
+    profile.xp = clampXp(profile.xp);
+
+    $('nick').textContent =
+      profile.nickname || '플레이어';
+
     $('coins').textContent =
       Number(profile.coins || 0).toLocaleString('ko-KR');
 
     renderLevel();
     renderAvatar();
-  }
 
-  function buildControls() {
-    const host = $('avatar-controls');
-    host.innerHTML = '';
+    try {
+      await loadServerProfile();
+    } catch (error) {
+      console.error(error);
 
-    for (const slot of SLOTS) {
-      const label = document.createElement('label');
-      label.textContent = SLOT_NAMES[slot] || slot;
+      const note = document.createElement('p');
+      note.className = 'small-note';
+      note.textContent =
+        '저장된 캐릭터를 불러오지 못했어요. 상점에서 다시 확인해 주세요.';
 
-      const select = document.createElement('select');
-      select.dataset.slot = slot;
-
-      for (const [id, part] of Object.entries(PARTS[slot])) {
-        const option = document.createElement('option');
-        option.value = id;
-        option.textContent = part.name || id;
-        select.append(option);
-      }
-
-      select.value = avatar[slot];
-
-      select.addEventListener('change', () => {
-        avatar[slot] = select.value;
-        renderAvatar();
-        $('avatar-status').textContent =
-          '미리보기를 변경했어요. 저장을 눌러 적용하세요.';
-      });
-
-      label.append(select);
-      host.append(label);
+      $('avatar-host').after(note);
     }
   }
-
-  profile = getProfile();
-
-  if (!profile) {
-    $('not-logged-in').classList.remove('hidden');
-  } else {
-    $('my-page').classList.remove('hidden');
-
-    // 기존 계정은 XP가 없으면 0부터 시작합니다.
-    profile.xp = clampXp(profile.xp);
-    avatar = normalize(profile.avatar || DEFAULTS);
-
-    buildControls();
-    render();
-  }
-
-  $('save-avatar').addEventListener('click', () => {
-    profile.avatar = { ...avatar };
-
-    if (saveProfile()) {
-      $('avatar-status').textContent = '프로필 캐릭터를 저장했어요!';
-      renderAvatar();
-
-      const svg = $('avatar-host').querySelector('svg.av');
-      if (svg) react(svg, 'jump');
-    } else {
-      $('avatar-status').textContent =
-        '저장하지 못했어요. 브라우저 저장 공간을 확인해 주세요.';
-    }
-  });
-
-  $('reset-avatar').addEventListener('click', () => {
-    avatar = normalize(DEFAULTS);
-    buildControls();
-    renderAvatar();
-
-    $('avatar-status').textContent =
-      '기본 캐릭터 미리보기예요. 저장을 누르면 적용돼요.';
-  });
 </script>
 </body>
 </html>
