@@ -1,3 +1,4 @@
+
 import {
   SUPABASE_URL,
   SUPABASE_ANON_KEY
@@ -70,11 +71,12 @@ export const teacherGetAccounts = code =>
     p_code: code
   });
 
-export const teacherGrantCoins = (code, nickname, amount) =>
+export const teacherGrantCoins = (code, nickname, amount, reason) =>
   rpc('teacher_grant_coins', {
     p_code: code,
     p_nickname: nickname,
-    p_amount: amount
+    p_amount: amount,
+    p_reason: reason
   });
 
 export const teacherSaveSettings = (code, omok, rummikub) =>
