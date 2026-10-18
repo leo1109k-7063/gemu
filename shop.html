@@ -1,1 +1,15 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>상점</title><link rel="stylesheet" href="assets/css/design.css"><link rel="stylesheet" href="assets/css/site.css"><link rel="stylesheet" href="assets/css/game-new.css"></head><body><main class="new-wrap"><header class="new-head"><a href="index.html">← 홈</a><h1>상점</h1></header><section class="new-card"><h2>상점 준비 중</h2><p>아이템과 구매 기능은 추후 추가할 예정이에요.</p></section></main></body></html>
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>캐릭터 상점 - 게임 놀이터</title>
+<link rel="stylesheet" href="assets/css/design.css"><link rel="stylesheet" href="assets/css/site.css"><link rel="stylesheet" href="assets/css/game-new.css">
+<style>
+.shop-top{display:grid;grid-template-columns:160px 1fr;gap:18px;align-items:center}.shop-preview{min-height:150px;display:grid;place-items:center}.shop-preview svg{width:min(100%,170px);height:auto}.shop-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.shop-tabs button[aria-selected=true]{background:var(--accent);color:white}.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(125px,1fr));gap:12px}.shop-item{display:flex;flex-direction:column;align-items:center;gap:7px;padding:12px 8px;border:1px solid var(--line,#ddd);border-radius:16px;background:var(--card,#fff);cursor:pointer}.shop-item[aria-pressed=true]{outline:3px solid var(--accent)}.shop-item svg{width:90px;height:90px}.shop-item small{opacity:.8}.shop-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:16px}.shop-message{min-height:1.5em}@media(max-width:520px){.shop-top{grid-template-columns:1fr}.shop-preview{min-height:120px}}
+</style>
+</head>
+<body><main class="new-wrap">
+<header class="new-head"><a href="index.html">← 홈</a><h1>캐릭터 상점</h1><a href="me.html">마이페이지</a></header>
+<section id="shop" class="new-card hidden"><div class="shop-top"><div id="preview" class="shop-preview" aria-label="캐릭터 미리보기"></div><div><h2 id="hello">내 캐릭터</h2><p>보유 코인 <strong>🪙 <span id="coins">0</span></strong></p><p>레벨 <strong id="level">1</strong></p><p id="selected-name">아이템을 골라 보세요.</p><div class="shop-actions"><button id="action" class="btn btn-primary" type="button" disabled>아이템 선택</button><button id="cancel" class="btn btn-line" type="button">미리보기 취소</button></div><p id="status" class="shop-message" role="status"></p></div></div></section>
+<section class="new-card"><h2>꾸미기 아이템</h2><p>아이템을 눌러 미리 본 다음 구매하거나 착용할 수 있어요. 구매 시 코인과 소유 여부를 서버에서 확인합니다.</p><div id="tabs" class="shop-tabs" role="tablist"></div><div id="items" class="shop-grid"></div></section>
+</main><script type="module" src="assets/js/pages/account-shop.js"></script></body></html>
