@@ -1,4 +1,3 @@
-
 import {
   readSet,
   isJoker,
@@ -8,7 +7,7 @@ import {
   checkPlay
 } from '../rummikub.js';
 
-import { awardGameWin } from '../game-api.js';
+import { awardGameWin, getSession } from '../game-api.js';
 
 const $ = id => document.getElementById(id);
 
@@ -30,11 +29,67 @@ let targetMeld = -1;
 let matchId = '';
 let rewardSent = false;
 
+const CPU_HAND_SETTING_PREFIX = 'rummikub-show-cpu-hand:';
+
+/**
+ * 현재 로그인한 개발자 계정에서
+ * 컴퓨터 손패 공개 설정을 켰는지 확인합니다.
+ */
+function canRevealCpuHand() {
+  let profile;
+
+  try {
+    profile = getSession();
+  } catch (error) {
+    console.error(
+      '개발자 계정 정보를 읽지 못했습니다:',
+      error
+    );
+
+    return false;
+  }
+
+  // 개발자 권한이 있는 계정만 손패를 확인할 수 있습니다.
+  if (
+    !profile ||
+    profile.authVersion !== 2 ||
+    profile.is_developer !== true
+  ) {
+    return false;
+  }
+
+  // 계정 ID와 닉네임을 모두 확인해
+  // 설정 저장 키가 달라지는 문제를 방지합니다.
+  const identifiers = [profile.id, profile.nickname]
+    .filter(value =>
+      value !== null &&
+      value !== undefined &&
+      String(value).trim() !== ''
+    )
+    .map(value => String(value));
+
+  try {
+    return identifiers.some(identifier => {
+      const key = CPU_HAND_SETTING_PREFIX + identifier;
+
+      return localStorage.getItem(key) === 'true';
+    });
+  } catch (error) {
+    console.error(
+      '루미큐브 손패 공개 설정을 읽지 못했습니다:',
+      error
+    );
+
+    return false;
+  }
+}
+
 const shuffle = a => {
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [a[i], a[j]] = [a[j], a[i]];
   }
+
   return a;
 };
 
@@ -70,6 +125,7 @@ async function giveWinReward() {
     }
   } catch (error) {
     console.error('루미큐브 승리 보상 오류:', error);
+
     $('status').textContent =
       '승리했지만 보상 저장에 실패했어요. 로그인 상태와 서버 설정을 확인해 주세요.';
   }
@@ -91,6 +147,7 @@ function tile(t, chosen = false, clickable = true) {
   const b = document.createElement('button');
 
   b.type = 'button';
+
   b.className =
     'tile ' +
     (isJoker(t) ? '' : `c${color(t)}`) +
@@ -118,6 +175,7 @@ function tile(t, chosen = false, clickable = true) {
 
 function renderRack() {
   const el = $('rack');
+
   el.innerHTML = '';
 
   rack.forEach(t => {
@@ -131,12 +189,16 @@ function renderRack() {
     back.className = 'meld-add';
     back.textContent = '손패로 되돌리기';
     back.dataset.back = '1';
+
     back.onclick = () => moveToRack();
 
     el.append(back);
   }
 
   $('cpu-count').textContent = `${cpu.length}장 남음`;
+
+  // 내 손패를 렌더링할 때 컴퓨터 손패도 확인합니다.
+  renderCpuHand();
 
   if (done) {
     $('status').textContent =
@@ -154,8 +216,49 @@ function renderRack() {
   }
 }
 
+/**
+ * 개발자 계정에서 설정을 켰을 때만
+ * 컴퓨터의 실제 손패를 표시합니다.
+ */
+function renderCpuHand() {
+  const panel = $('cpu-hand-panel');
+  const hand = $('cpu-hand');
+
+  if (!panel || !hand) {
+    console.error(
+      '컴퓨터 손패 영역을 찾을 수 없습니다. rummikub.html에 cpu-hand-panel과 cpu-hand 요소가 있는지 확인하세요.'
+    );
+
+    return;
+  }
+
+  const visible = canRevealCpuHand();
+
+  // hidden 속성과 display 스타일을 모두 갱신합니다.
+  panel.hidden = !visible;
+  panel.style.display = visible ? 'block' : 'none';
+
+  // 이전에 표시한 타일을 먼저 비웁니다.
+  hand.replaceChildren();
+
+  if (!visible) return;
+
+  cpu.forEach(t => {
+    // 개발자 디버그용 표시이며,
+    // 컴퓨터 손패 타일은 선택하거나 조작할 수 없습니다.
+    const tileElement = tile(t, false, false);
+
+    tileElement.disabled = true;
+    tileElement.draggable = false;
+    tileElement.style.cursor = 'default';
+
+    hand.appendChild(tileElement);
+  });
+}
+
 function renderTable() {
   const el = $('table');
+
   el.innerHTML = '';
 
   const shown = editing ? workTable : table;
@@ -168,6 +271,7 @@ function renderTable() {
       (editing && targetMeld === i ? ' target-meld' : '');
 
     m.dataset.set = String(i);
+
     m.title = editing
       ? '여기에 타일을 끌어 놓거나 아래 버튼으로 붙이기'
       : '';
@@ -203,6 +307,7 @@ function renderTable() {
     fresh.className = 'meld-add new-meld-add';
     fresh.textContent = '+ 새 조합';
     fresh.dataset.new = '1';
+
     fresh.onclick = () => moveToNew();
 
     el.append(fresh);
@@ -221,6 +326,7 @@ function render() {
 
 function start() {
   pool = shuffle(makeDeck());
+
   rack = pool.splice(0, 14);
   cpu = pool.splice(0, 14);
 
@@ -269,6 +375,7 @@ function combinations(arr, min = 3, max = 13) {
   }
 
   rec(0, []);
+
   return out;
 }
 
@@ -333,6 +440,7 @@ function bestSets(hand, first) {
     }
 
     memo.set(mask, best);
+
     return best;
   }
 
@@ -341,7 +449,9 @@ function bestSets(hand, first) {
 
 function nextCpu() {
   turn = 'cpu';
+
   render();
+
   setTimeout(cpuTurn, 450);
 }
 
@@ -369,17 +479,21 @@ function humanPlay() {
   }
 
   table.push(set.order);
+
   rack = rack.filter(t => !selected.has(t));
+
   selected.clear();
   melded = true;
 
   if (!rack.length) {
     done = true;
     turn = 'human';
+
     render();
 
     // 사람이 승리한 경우에만 보상을 요청합니다.
     giveWinReward();
+
     return;
   }
 
@@ -395,9 +509,12 @@ function cpuTurn() {
     for (const s of sets) {
       const set = readSet(s.tiles);
 
-      if (set) table.push(set.order);
+      if (set) {
+        table.push(set.order);
+      }
 
       const used = new Set(s.tiles);
+
       cpu = cpu.filter(t => !used.has(t));
     }
 
@@ -406,6 +523,7 @@ function cpuTurn() {
     if (!cpu.length) {
       done = true;
       turn = 'cpu';
+
       render();
 
       // 컴퓨터가 이겼을 때는 사람에게 보상을 주지 않습니다.
@@ -416,6 +534,7 @@ function cpuTurn() {
   }
 
   turn = 'human';
+
   render();
 }
 
@@ -430,6 +549,7 @@ function beginEdit() {
 
   editing = true;
   workTable = table.map(s => [...s]);
+
   selected.clear();
   targetMeld = -1;
 
@@ -462,6 +582,7 @@ function moveToRack() {
     .filter(s => s.length);
 
   rack.push(...picked);
+
   selected.clear();
   targetMeld = -1;
 
@@ -478,6 +599,7 @@ function moveToNew() {
   }
 
   removeSelectedFromWork();
+
   workTable.push(picked);
 
   selected.clear();
@@ -514,7 +636,10 @@ function attachToTarget() {
 
   removeSelectedFromWork();
 
-  const idx = Math.min(targetMeld, workTable.length - 1);
+  const idx = Math.min(
+    targetMeld,
+    workTable.length - 1
+  );
 
   if (idx < 0) {
     return alert(
@@ -523,6 +648,7 @@ function attachToTarget() {
   }
 
   workTable[idx].push(...picked);
+
   selected.clear();
 
   render();
@@ -531,6 +657,7 @@ function attachToTarget() {
 function cancelEdit() {
   editing = false;
   workTable = [];
+
   selected.clear();
   targetMeld = -1;
 
@@ -566,21 +693,25 @@ function commitEdit() {
   const played = new Set(result.played);
 
   rack = rack.filter(t => !played.has(t));
+
   table = workTable.map(s => readSet(s).order);
 
   melded = true;
   editing = false;
   workTable = [];
+
   selected.clear();
   targetMeld = -1;
 
   if (!rack.length) {
     done = true;
     turn = 'human';
+
     render();
 
     // 테이블 편집으로 손패를 모두 비운 경우도 승리 보상을 요청합니다.
     giveWinReward();
+
     return;
   }
 
@@ -602,6 +733,7 @@ document.addEventListener('dragstart', e => {
   }
 
   draggingTile = true;
+
   e.dataTransfer.effectAllowed = 'move';
   e.dataTransfer.setData('text/plain', String(t));
 
@@ -673,6 +805,7 @@ $('draw').onclick = () => {
   }
 
   selected.clear();
+
   nextCpu();
 };
 
