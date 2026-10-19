@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="ko" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>ゲーム PONG 1972 - Retro Arcade Classic</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Press Start 2P & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        pixel: ['"Press Start 2P"', 'monospace'],
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        gemu: {
+                            bg: '#050508',
+                            card: '#0f111a',
+                            border: '#222738',
+                            neonGreen: '#00ff66',
+                            neonCyan: '#00f0ff',
+                            neonPink: '#ff0055',
+                            neonYellow: '#ffea00'
+                        }
+                    },
+                    boxShadow: {
+                        'neo': '4px 4px 0px #000000',
+                        'glow-green': '0 0 15px rgba(0, 255, 102, 0.6)',
+                        'glow-cyan': '0 0 15px rgba(0, 240, 255, 0.6)',
+                        'glow-pink': '0 0 15px rgba(255, 0, 85, 0.6)'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #030305;
+            background-image: 
+                radial-gradient(at 20% 20%, rgba(0, 255, 102, 0.05) 0px, transparent 40%),
+                radial-gradient(at 80% 80%, rgba(0, 240, 255, 0.05) 0px, transparent 40%);
+            color: #f1f5f9;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .pixel-font {
+            font-family: '"Press Start 2P"', monospace;
+        }
+
+        /* Scanlines Overlay Effect */
+        .scanlines {
+            background: linear-gradient(
+                rgba(18, 16, 16, 0) 50%, 
+                rgba(0, 0, 0, 0.6) 50%
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+
+        canvas {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        /* Neo Brutalist Buttons */
+        .btn-arcade {
+            transition: all 0.08s ease;
+            box-shadow: 3px 3px 0px #000;
+        }
+        .btn-arcade:active {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0px #000;
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0b0c16; }
+        ::-webkit-scrollbar-thumb { background: #282d46; border-radius: 3px; }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen antialiased overflow-x-hidden">
+
+    <!-- Header Navigation -->
+    <header class="border-b-2 border-gemu-border bg-gemu-bg/90 backdrop-blur-md sticky top-0 z-40">
+        <div class="max-w-4xl mx-auto px-4 py-2.5 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 bg-gemu-neonGreen rounded-lg border-2 border-black flex items-center justify-center shadow-neo">
+                    <i class="fa-solid fa-table-tennis-paddle-ball text-black text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="pixel-font text-xs sm:text-sm font-bold text-white tracking-wider flex items-center gap-2">
+                        ゲーム <span class="text-gemu-neonGreen">PONG 1972</span>
+                    </h1>
+                    <p class="text-[10px] text-gray-400 font-mono">초창기 클래식 레트로 아케이드 ge-mu</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-2">
+                <button id="soundToggleBtn" onclick="toggleSound()" class="btn-arcade bg-gemu-card hover:bg-gemu-border border-2 border-black p-2 rounded-lg text-gray-300 hover:text-white" title="Sound Toggle">
+                    <i id="soundIcon" class="fa-solid fa-volume-high text-sm"></i>
+                </button>
+                <button onclick="openHelpModal()" class="btn-arcade bg-gemu-neonYellow hover:bg-yellow-400 border-2 border-black text-black font-bold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5">
+                    <i class="fa-solid fa-circle-question"></i>
+                    <span class="pixel-font text-[10px]">게임 가이드</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Game Workspace -->
+    <main class="flex-grow max-w-4xl w-full mx-auto p-2 sm:p-4 flex flex-col items-center justify-center gap-2 sm:gap-3">
+        
+        <!-- Scoreboard Dashboard -->
+        <div class="w-full max-w-md bg-gemu-card border-2 border-gemu-border rounded-xl p-3 flex justify-between items-center shadow-lg font-mono">
+            <div class="flex flex-col items-start">
+                <span class="text-[9px] text-gemu-neonCyan pixel-font">PLAYER (YOU)</span>
+                <span id="playerScore" class="pixel-font text-2xl text-white font-bold">0</span>
+            </div>
+            
+            <div class="flex flex-col items-center">
+                <span id="gameModeDisplay" class="text-[9px] text-gray-400 pixel-font">FIRST TO 5</span>
+                <span id="rallyDisplay" class="pixel-font text-xs text-gemu-neonYellow font-bold mt-1">RALLY: 0</span>
+            </div>
+
+            <div class="flex flex-col items-end">
+                <span class="text-[9px] text-gemu-neonPink pixel-font">COMP (AI)</span>
+                <span id="aiScore" class="pixel-font text-2xl text-white font-bold">0</span>
+            </div>
+        </div>
+
+        <!-- Canvas Container -->
+        <div class="relative w-full max-w-md aspect-[4/3] bg-black border-4 border-gemu-border rounded-xl overflow-hidden shadow-2xl flex items-center justify-center">
+            <canvas id="pongCanvas" width="480" height="360" class="w-full h-full object-contain"></canvas>
+            <div class="scanlines absolute inset-0"></div>
+
+            <!-- Start Overlay -->
+            <div id="startOverlay" class="absolute inset-0 bg-black/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center z-10 transition-opacity duration-300">
+                <div class="w-14 h-14 bg-gemu-neonGreen rounded-full border-2 border-black flex items-center justify-center text-black text-2xl mb-3 shadow-glow-green animate-bounce">
+                    <i class="fa-solid fa-play"></i>
+                </div>
+                <h2 class="pixel-font text-base text-white mb-2">ゲーム PONG 1972</h2>
+                <p class="text-[11px] text-gray-300 max-w-xs mb-4 font-mono leading-relaxed">
+                    1972년 비디오 게임의 시초 PONG!<br>
+                    컴퓨터 AI를 상대로 5점을 먼저 획득하세요.
+                </p>
+
+                <!-- AI Difficulty Selector -->
+                <div class="mb-5 flex gap-1.5 bg-gemu-card p-1.5 border border-gemu-border rounded-lg">
+                    <button id="diff-easy" onclick="setDifficulty('easy')" class="px-3 py-1 text-[10px] pixel-font rounded border border-transparent text-gray-400">EASY</button>
+                    <button id="diff-medium" onclick="setDifficulty('medium')" class="px-3 py-1 text-[10px] pixel-font rounded border border-gemu-neonGreen bg-gemu-neonGreen text-black font-bold">NORMAL</button>
+                    <button id="diff-hard" onclick="setDifficulty('hard')" class="px-3 py-1 text-[10px] pixel-font rounded border border-transparent text-gray-400">HARD</button>
+                </div>
+
+                <button onclick="startGame()" class="btn-arcade bg-gemu-neonGreen hover:bg-emerald-400 text-black font-bold pixel-font text-xs px-6 py-3 rounded-xl border-2 border-black flex items-center gap-2 shadow-glow-green">
+                    <i class="fa-solid fa-gamepad"></i> START MATCH
+                </button>
+            </div>
+        </div>
+
+        <!-- Touch Controls Interface -->
+        <div class="w-full max-w-md flex justify-between gap-3 py-1">
+            <button ontouchstart="handleTouchUp(true)" ontouchend="handleTouchUp(false)" onmousedown="handleTouchUp(true)" onmouseup="handleTouchUp(false)" class="flex-1 btn-arcade bg-gemu-card border-2 border-gemu-border active:bg-gemu-neonGreen active:text-black text-gemu-neonGreen h-14 rounded-lg flex items-center justify-center gap-2 font-bold pixel-font text-sm">
+                <i class="fa-solid fa-chevron-up text-xl"></i> UP (W / ↑)
+            </button>
+            <button ontouchstart="handleTouchDown(true)" ontouchend="handleTouchDown(false)" onmousedown="handleTouchDown(true)" onmouseup="handleTouchDown(false)" class="flex-1 btn-arcade bg-gemu-card border-2 border-gemu-border active:bg-gemu-neonGreen active:text-black text-gemu-neonGreen h-14 rounded-lg flex items-center justify-center gap-2 font-bold pixel-font text-sm">
+                <i class="fa-solid fa-chevron-down text-xl"></i> DOWN (S / ↓)
+            </button>
+        </div>
+    </main>
+
+    <!-- HELP / INSTRUCTION MODAL -->
+    <div id="helpModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-gemu-card border-2 border-gemu-neonGreen rounded-xl max-w-md w-full p-5 shadow-glow-green relative transform scale-95 transition-transform duration-300" id="modalContainer">
+            <div class="flex justify-between items-center pb-3 border-b border-gemu-border mb-3">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-circle-info text-gemu-neonGreen text-lg"></i>
+                    <h3 class="pixel-font text-xs text-white">ゲーム PONG 규칙 및 조작</h3>
+                </div>
+                <button onclick="closeHelpModal()" class="text-gray-400 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3 text-xs text-gray-300 font-mono">
+                <div class="bg-black/50 border border-gemu-neonGreen/30 p-2.5 rounded-lg">
+                    <h4 class="pixel-font text-[10px] text-gemu-neonGreen mb-1">🏓 PONG 1972 규칙</h4>
+                    <p class="leading-relaxed text-gray-300 text-[11px]">
+                        왼쪽 패들(Player)을 조종해 공을 튕겨내세요! 랠리가 길어질수록 공의 속도가 비약적으로 빨라집니다. 먼저 **5점**에 도달하면 승리합니다.
+                    </p>
+                </div>
+
+                <div class="space-y-1.5">
+                    <h4 class="pixel-font text-[10px] text-gemu-neonYellow">🎮 컨트롤 방법</h4>
+                    <ul class="space-y-1 list-disc pl-4 text-gray-300 text-[11px]">
+                        <li><strong class="text-white">키보드:</strong> W / S 키 또는 방향키 (↑ / ↓)</li>
+                        <li><strong class="text-white">마우스 / 터치:</strong> 화면 터치 버튼 또는 캔버스 직접 드래그</li>
+                    </ul>
+                </div>
+
+                <div class="space-y-1">
+                    <h4 class="pixel-font text-[10px] text-gemu-neonCyan">🤖 AI 난이도 옵션</h4>
+                    <p class="text-[11px]">
+                        EASY(느린 반응), NORMAL(표준), HARD(정밀 추적) 난이도를 지원합니다.
+                    </p>
+                </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-gemu-border flex justify-end">
+                <button onclick="closeHelpModal()" class="btn-arcade bg-gemu-neonGreen hover:bg-emerald-400 text-black font-bold pixel-font text-[10px] px-4 py-2 rounded-lg border-2 border-black">
+                    게임 시작하기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- GAME OVER / SUMMARY MODAL -->
+    <div id="gameOverModal" class="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-gemu-card border-2 border-gemu-neonGreen rounded-xl max-w-sm w-full p-5 shadow-2xl text-center transform scale-95 transition-transform duration-300" id="gameOverContainer">
+            <div id="resultIcon" class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2 text-xl border-2"></div>
+            <h3 id="resultTitle" class="pixel-font text-base text-white mb-1">MATCH FINISHED</h3>
+            <p class="text-[10px] text-gray-400 font-mono mb-4">경기 요약 결과</p>
+
+            <div class="bg-black/60 border border-gemu-border rounded-lg p-3 space-y-2 font-mono text-xs mb-4">
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-400">최종 스코어:</span>
+                    <span id="summaryScore" class="pixel-font text-gemu-neonGreen font-bold text-sm">0 - 0</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-400">최대 랠리 횟수:</span>
+                    <span id="summaryRally" class="pixel-font text-gemu-neonYellow">0 HITS</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-400">총 터치 수:</span>
+                    <span id="summaryTotalHits" class="pixel-font text-gemu-neonCyan">0 HITS</span>
+                </div>
+                <div class="flex justify-between items-center border-t border-gray-800 pt-1.5 mt-1">
+                    <span class="text-gray-400">AI 난이도:</span>
+                    <span id="summaryDiff" class="pixel-font text-gray-200 uppercase">NORMAL</span>
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <button onclick="startGame()" class="flex-1 btn-arcade bg-gemu-neonGreen hover:bg-emerald-400 text-black font-bold pixel-font text-[10px] py-3 rounded-lg border-2 border-black">
+                    REMATCH (재경기)
+                </button>
+                <button onclick="closeGameOverModal()" class="btn-arcade bg-gemu-card border-2 border-black text-gray-300 hover:text-white px-3 py-3 rounded-lg text-xs">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game Engine Configuration
+        const config = {
+            targetScore: 5,
+            paddleWidth: 10,
+            paddleHeight: 60,
+            ballSize: 8,
+            initialBallSpeed: 4.5,
+            maxBallSpeed: 12,
+            speedStep: 0.35
+        };
+
+        // Engine State
+        const state = {
+            isRunning: false,
+            playerScore: 0,
+            aiScore: 0,
+            currentRally: 0,
+            maxRally: 0,
+            totalHits: 0,
+            difficulty: 'medium', // easy, medium, hard
+            soundEnabled: true
+        };
+
+        // Canvas Setup
+        const canvas = document.getElementById('pongCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Paddle & Ball Objects
+        const player = {
+            x: 15,
+            y: canvas.height / 2 - config.paddleHeight / 2,
+            vy: 0,
+            speed: 6.5
+        };
+
+        const ai = {
+            x: canvas.width - 25,
+            y: canvas.height / 2 - config.paddleHeight / 2,
+            speed: 4.2
+        };
+
+        const ball = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            vx: config.initialBallSpeed,
+            vy: config.initialBallSpeed,
+            speed: config.initialBallSpeed
+        };
+
+        let particles = [];
+        let keyState = { up: false, down: false };
+        let animId = null;
+
+        // Web Audio API Audio Engine
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function playSound(type) {
+            if (!state.soundEnabled) return;
+            try {
+                if (!audioCtx) audioCtx = new AudioCtx();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'hit') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(440, now);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.05);
+                    osc.start(now); osc.stop(now + 0.05);
+                } else if (type === 'wall') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(220, now);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.04);
+                    osc.start(now); osc.stop(now + 0.04);
+                } else if (type === 'score') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.exponentialRampToValueAtTime(60, now + 0.25);
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
+                    osc.start(now); osc.stop(now + 0.25);
+                } else if (type === 'win') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now);
+                    osc.frequency.setValueAtTime(659.25, now + 0.1);
+                    osc.frequency.setValueAtTime(783.99, now + 0.2);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.35);
+                    osc.start(now); osc.stop(now + 0.35);
+                }
+            } catch (e) {}
+        }
+
+        function toggleSound() {
+            state.soundEnabled = !state.soundEnabled;
+            document.getElementById('soundIcon').className = state.soundEnabled ? 
+                'fa-solid fa-volume-high text-sm' : 'fa-solid fa-volume-xmark text-sm text-gemu-neonPink';
+        }
+
+        function setDifficulty(diff) {
+            state.difficulty = diff;
+            ['easy', 'medium', 'hard'].forEach(d => {
+                const btn = document.getElementById(`diff-${d}`);
+                if (d === diff) {
+                    btn.className = 'px-3 py-1 text-[10px] pixel-font rounded border border-gemu-neonGreen bg-gemu-neonGreen text-black font-bold';
+                } else {
+                    btn.className = 'px-3 py-1 text-[10px] pixel-font rounded border border-transparent text-gray-400';
+                }
+            });
+
+            if (diff === 'easy') ai.speed = 3.2;
+            if (diff === 'medium') ai.speed = 4.4;
+            if (diff === 'hard') ai.speed = 5.8;
+        }
+
+        // Visual Particles Engine
+        function spawnImpactParticles(x, y, color = '#00ff66') {
+            for (let i = 0; i < 8; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 3 + 1;
+                particles.push({
+                    x, y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    size: Math.random() * 3 + 1,
+                    color,
+                    life: 1.0
+                });
+            }
+        }
+
+        // Input Handling
+        function handleTouchUp(pressed) { keyState.up = pressed; }
+        function handleTouchDown(pressed) { keyState.down = pressed; }
+
+        function setupControls() {
+            window.addEventListener('keydown', (e) => {
+                if (['KeyW', 'ArrowUp'].includes(e.code)) keyState.up = true;
+                if (['KeyS', 'ArrowDown'].includes(e.code)) keyState.down = true;
+            });
+
+            window.addEventListener('keyup', (e) => {
+                if (['KeyW', 'ArrowUp'].includes(e.code)) keyState.up = false;
+                if (['KeyS', 'ArrowDown'].includes(e.code)) keyState.down = false;
+            });
+
+            // Canvas Direct Drag Support
+            let isDragging = false;
+            canvas.addEventListener('touchstart', (e) => { isDragging = true; updatePaddleTouch(e); });
+            canvas.addEventListener('touchmove', (e) => { if (isDragging) updatePaddleTouch(e); });
+            canvas.addEventListener('touchend', () => { isDragging = false; });
+
+            function updatePaddleTouch(e) {
+                const rect = canvas.getBoundingClientRect();
+                const touchY = (e.touches[0].clientY - rect.top) * (canvas.height / rect.height);
+                player.y = Math.max(0, Math.min(canvas.height - config.paddleHeight, touchY - config.paddleHeight / 2));
+            }
+        }
+
+        // Ball Reset Logic
+        function resetBall(directionToAI = true) {
+            ball.x = canvas.width / 2;
+            ball.y = canvas.height / 2;
+            ball.speed = config.initialBallSpeed;
+
+            const angle = (Math.random() * 0.6 - 0.3); // Slight random incline
+            ball.vx = (directionToAI ? 1 : -1) * ball.speed * Math.cos(angle);
+            ball.vy = ball.speed * Math.sin(angle);
+
+            state.currentRally = 0;
+            updateHUD();
+        }
+
+        // Game Initialization
+        function startGame() {
+            closeGameOverModal();
+            document.getElementById('startOverlay').classList.add('opacity-0', 'pointer-events-none');
+
+            state.isRunning = true;
+            state.playerScore = 0;
+            state.aiScore = 0;
+            state.currentRally = 0;
+            state.maxRally = 0;
+            state.totalHits = 0;
+
+            player.y = canvas.height / 2 - config.paddleHeight / 2;
+            ai.y = canvas.height / 2 - config.paddleHeight / 2;
+
+            resetBall(Math.random() > 0.5);
+            updateHUD();
+
+            if (animId) cancelAnimationFrame(animId);
+            animId = requestAnimationFrame(gameLoop);
+        }
+
+        // Game Loop
+        function gameLoop() {
+            if (!state.isRunning) return;
+
+            updatePlayer();
+            updateAI();
+            updateBall();
+            updateParticles();
+
+            render();
+            animId = requestAnimationFrame(gameLoop);
+        }
+
+        // Update Player Movement
+        function updatePlayer() {
+            if (keyState.up) player.y -= player.speed;
+            if (keyState.down) player.y += player.speed;
+
+            player.y = Math.max(0, Math.min(canvas.height - config.paddleHeight, player.y));
+        }
+
+        // Smart AI Logic
+        function updateAI() {
+            const aiCenter = ai.y + config.paddleHeight / 2;
+            let targetY = ball.y;
+
+            // Add reaction imperfection based on difficulty
+            if (state.difficulty === 'easy' && ball.vx < 0) {
+                targetY = canvas.height / 2; // Idle in center when ball moves away
+            }
+
+            if (aiCenter < targetY - 6) {
+                ai.y += ai.speed;
+            } else if (aiCenter > targetY + 6) {
+                ai.y -= ai.speed;
+            }
+
+            ai.y = Math.max(0, Math.min(canvas.height - config.paddleHeight, ai.y));
+        }
+
+        // Physics Engine
+        function updateBall() {
+            ball.x += ball.vx;
+            ball.y += ball.vy;
+
+            // Top / Bottom Wall Rebound
+            if (ball.y <= config.ballSize || ball.y >= canvas.height - config.ballSize) {
+                ball.vy *= -1;
+                playSound('wall');
+                spawnImpactParticles(ball.x, ball.y, '#00f0ff');
+            }
+
+            // Player Paddle Collision
+            if (ball.vx < 0 && 
+                ball.x - config.ballSize <= player.x + config.paddleWidth &&
+                ball.x + config.ballSize >= player.x &&
+                ball.y >= player.y && ball.y <= player.y + config.paddleHeight) {
+
+                ball.speed = Math.min(config.maxBallSpeed, ball.speed + config.speedStep);
+                
+                // Calculate impact angle based on paddle hit location
+                const hitPos = (ball.y - (player.y + config.paddleHeight / 2)) / (config.paddleHeight / 2);
+                const angle = hitPos * (Math.PI / 3); // Max 60 deg angle
+
+                ball.vx = ball.speed * Math.cos(angle);
+                ball.vy = ball.speed * Math.sin(angle);
+
+                state.currentRally++;
+                state.totalHits++;
+                if (state.currentRally > state.maxRally) state.maxRally = state.currentRally;
+
+                playSound('hit');
+                spawnImpactParticles(ball.x, ball.y, '#00ff66');
+                updateHUD();
+            }
+
+            // AI Paddle Collision
+            if (ball.vx > 0 && 
+                ball.x + config.ballSize >= ai.x &&
+                ball.x - config.ballSize <= ai.x + config.paddleWidth &&
+                ball.y >= ai.y && ball.y <= ai.y + config.paddleHeight) {
+
+                ball.speed = Math.min(config.maxBallSpeed, ball.speed + config.speedStep);
+
+                const hitPos = (ball.y - (ai.y + config.paddleHeight / 2)) / (config.paddleHeight / 2);
+                const angle = hitPos * (Math.PI / 3);
+
+                ball.vx = -ball.speed * Math.cos(angle);
+                ball.vy = ball.speed * Math.sin(angle);
+
+                state.currentRally++;
+                state.totalHits++;
+                if (state.currentRally > state.maxRally) state.maxRally = state.currentRally;
+
+                playSound('hit');
+                spawnImpactParticles(ball.x, ball.y, '#ff0055');
+                updateHUD();
+            }
+
+            // Scoring Conditions
+            if (ball.x < 0) {
+                // AI Scores Point
+                state.aiScore++;
+                playSound('score');
+                updateHUD();
+
+                if (state.aiScore >= config.targetScore) {
+                    gameOver(false);
+                } else {
+                    resetBall(true);
+                }
+            } else if (ball.x > canvas.width) {
+                // Player Scores Point
+                state.playerScore++;
+                playSound('score');
+                updateHUD();
+
+                if (state.playerScore >= config.targetScore) {
+                    gameOver(true);
+                } else {
+                    resetBall(false);
+                }
+            }
+        }
+
+        function updateParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.05;
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+        }
+
+        // Render Graphics
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Center Net Line
+            ctx.strokeStyle = '#222738';
+            ctx.lineWidth = 4;
+            ctx.setLineDash([8, 8]);
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, 0);
+            ctx.lineTo(canvas.width / 2, canvas.height);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Player Paddle
+            ctx.fillStyle = '#00ff66';
+            ctx.shadowColor = '#00ff66';
+            ctx.shadowBlur = 10;
+            ctx.fillRect(player.x, player.y, config.paddleWidth, config.paddleHeight);
+
+            // AI Paddle
+            ctx.fillStyle = '#ff0055';
+            ctx.shadowColor = '#ff0055';
+            ctx.shadowBlur = 10;
+            ctx.fillRect(ai.x, ai.y, config.paddleWidth, config.paddleHeight);
+
+            // Ball
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowColor = '#00f0ff';
+            ctx.shadowBlur = 12;
+            ctx.fillRect(ball.x - config.ballSize / 2, ball.y - config.ballSize / 2, config.ballSize, config.ballSize);
+            ctx.shadowBlur = 0;
+
+            // Particles
+            particles.forEach(p => {
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.life;
+                ctx.fillRect(p.x, p.y, p.size, p.size);
+                ctx.globalAlpha = 1.0;
+            });
+        }
+
+        function updateHUD() {
+            document.getElementById('playerScore').innerText = state.playerScore;
+            document.getElementById('aiScore').innerText = state.aiScore;
+            document.getElementById('rallyDisplay').innerText = `RALLY: ${state.currentRally}`;
+        }
+
+        // Game Over Trigger
+        function gameOver(playerWon) {
+            state.isRunning = false;
+            if (playerWon) playSound('win');
+
+            const resTitle = document.getElementById('resultTitle');
+            const resIcon = document.getElementById('resultIcon');
+
+            if (playerWon) {
+                resTitle.innerText = 'YOU WIN!';
+                resTitle.className = 'pixel-font text-base text-gemu-neonGreen mb-1';
+                resIcon.className = 'w-12 h-12 bg-gemu-neonGreen/20 text-gemu-neonGreen border-2 border-gemu-neonGreen rounded-full flex items-center justify-center mx-auto mb-2 text-xl shadow-glow-green';
+                resIcon.innerHTML = '<i class="fa-solid fa-trophy"></i>';
+            } else {
+                resTitle.innerText = 'GAME OVER';
+                resTitle.className = 'pixel-font text-base text-gemu-neonPink mb-1';
+                resIcon.className = 'w-12 h-12 bg-gemu-neonPink/20 text-gemu-neonPink border-2 border-gemu-neonPink rounded-full flex items-center justify-center mx-auto mb-2 text-xl shadow-glow-pink';
+                resIcon.innerHTML = '<i class="fa-solid fa-skull"></i>';
+            }
+
+            document.getElementById('summaryScore').innerText = `${state.playerScore} - ${state.aiScore}`;
+            document.getElementById('summaryRally').innerText = `${state.maxRally} HITS`;
+            document.getElementById('summaryTotalHits').innerText = `${state.totalHits} HITS`;
+            document.getElementById('summaryDiff').innerText = state.difficulty;
+
+            setTimeout(() => {
+                const modal = document.getElementById('gameOverModal');
+                const container = document.getElementById('gameOverContainer');
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                container.classList.remove('scale-95');
+                container.classList.add('scale-100');
+            }, 300);
+        }
+
+        function openHelpModal() {
+            const modal = document.getElementById('helpModal');
+            const container = document.getElementById('modalContainer');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            container.classList.remove('scale-95');
+            container.classList.add('scale-100');
+        }
+
+        function closeHelpModal() {
+            const modal = document.getElementById('helpModal');
+            const container = document.getElementById('modalContainer');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            container.classList.remove('scale-100');
+            container.classList.add('scale-95');
+        }
+
+        function closeGameOverModal() {
+            const modal = document.getElementById('gameOverModal');
+            const container = document.getElementById('gameOverContainer');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            container.classList.remove('scale-100');
+            container.classList.add('scale-95');
+        }
+
+        window.addEventListener('load', () => {
+            setupControls();
+            setDifficulty('medium');
+            render();
+
+            setTimeout(() => {
+                openHelpModal();
+            }, 300);
+        });
+    </script>
+</body>
+</html>
