@@ -226,6 +226,42 @@
       </section>
     </div>
 
+    <!-- 홈 화면 공지사항 설정 -->
+    <div class="new-card">
+      <h2>홈 화면 공지사항</h2>
+
+      <p class="small-note">
+        공지사항을 저장하면 홈 화면의
+        “안녕하세요, 닉네임님!” 인사말 바로 위에 표시됩니다.
+        비활성화하면 홈 화면에서 숨겨집니다.
+      </p>
+
+      <p>
+        <label for="announcementEnabled">
+          <input type="checkbox" id="announcementEnabled">
+          공지사항 표시
+        </label>
+      </p>
+
+      <label for="announcementText">공지 내용 (최대 300자)</label>
+
+      <textarea
+        id="announcementText"
+        maxlength="300"
+        rows="4"
+        placeholder="예: 오늘 오후 3시부터 게임 점검이 진행됩니다."
+        style="width:100%;box-sizing:border-box;resize:vertical"
+      ></textarea>
+
+      <button
+        id="saveAnnouncement"
+        class="btn btn-primary"
+        type="button"
+      >공지사항 저장</button>
+
+      <p id="announcementStatus" role="status"></p>
+    </div>
+
     <div class="new-card">
       <h2>게임 ON/OFF</h2>
 
@@ -275,6 +311,7 @@
 
     <form id="coinGrantForm">
       <label for="coinGrantAmount">지급할 코인 수</label>
+
       <input
         id="coinGrantAmount"
         type="number"
@@ -286,6 +323,7 @@
       >
 
       <label for="coinGrantReason">지급 코멘트</label>
+
       <textarea
         id="coinGrantReason"
         maxlength="200"
