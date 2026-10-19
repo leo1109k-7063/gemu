@@ -5,126 +5,25 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>클래식 게임 센터 | 게임 놀이터</title>
-
   <link rel="stylesheet" href="assets/css/design.css">
   <link rel="stylesheet" href="assets/css/site.css">
   <link rel="stylesheet" href="assets/css/game-new.css">
-
   <style>
-    .center-hero {
-      padding: clamp(22px, 5vw, 42px);
-      border-radius: 24px;
-      background: linear-gradient(
-        135deg,
-        #eef2ff,
-        #f8fafc 55%,
-        #e0f2fe
-      );
-      border: 1px solid #dbe3f0;
-      color: #172033;
-    }
-
-    .center-kicker {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 7px 11px;
-      border-radius: 999px;
-      background: #fff;
-      border: 1px solid #dbe3f0;
-      color: #526079;
-      font-size: .82rem;
-      font-weight: 700;
-    }
-
-    .center-hero h1 {
-      margin: 16px 0 8px;
-      font-size: clamp(1.7rem, 5vw, 2.5rem);
-      letter-spacing: -.04em;
-    }
-
-    .center-hero p {
-      max-width: 650px;
-      line-height: 1.7;
-      color: #526079;
-    }
-
-    .center-games {
-      display: grid;
-      grid-template-columns: repeat(
-        auto-fit,
-        minmax(min(100%, 260px), 1fr)
-      );
-      gap: 16px;
-      margin-top: 18px;
-    }
-
-    .center-game {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      min-height: 220px;
-      padding: 22px;
-      text-decoration: none;
-      color: inherit;
-      border: 1px solid var(--border-color, #e5e7eb);
-      border-radius: 20px;
-      background: var(--card-bg, #fff);
-      transition: transform .18s ease, box-shadow .18s ease;
-    }
-
-    .center-game:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 14px 30px #18243a14;
-    }
-
-    .center-game-icon {
-      display: grid;
-      place-items: center;
-      width: 52px;
-      height: 52px;
-      border-radius: 16px;
-      background: #eef2ff;
-      font-size: 1.65rem;
-    }
-
-    .center-game h2 {
-      margin: 0;
-      font-size: 1.25rem;
-    }
-
-    .center-game p {
-      margin: 0;
-      line-height: 1.6;
-      opacity: .78;
-    }
-
-    .center-game .center-cta {
-      margin-top: auto;
-      font-weight: 700;
-      color: #4f46e5;
-    }
-
-    .center-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .center-game {
-        transition: none;
-      }
-
-      .center-game:hover {
-        transform: none;
-      }
-    }
+    .center-hero { padding: clamp(22px, 5vw, 42px); border-radius: 24px; background: linear-gradient(135deg, #eef2ff, #f8fafc 55%, #e0f2fe); border: 1px solid #dbe3f0; color: #172033; }
+    .center-kicker { display:inline-flex; align-items:center; gap:8px; padding:7px 11px; border-radius:999px; background:#fff; border:1px solid #dbe3f0; color:#526079; font-size:.82rem; font-weight:700; }
+    .center-hero h1 { margin:16px 0 8px; font-size:clamp(1.7rem, 5vw, 2.5rem); letter-spacing:-.04em; }
+    .center-hero p { max-width:650px; line-height:1.7; color:#526079; }
+    .center-games { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr)); gap:16px; margin-top:18px; }
+    .center-game { display:flex; flex-direction:column; gap:12px; min-height:220px; padding:22px; text-decoration:none; color:inherit; border:1px solid var(--border-color,#e5e7eb); border-radius:20px; background:var(--card-bg,#fff); transition:transform .18s ease, box-shadow .18s ease; }
+    .center-game:hover { transform:translateY(-3px); box-shadow:0 14px 30px #18243a14; }
+    .center-game-icon { display:grid; place-items:center; width:52px; height:52px; border-radius:16px; background:#eef2ff; font-size:1.65rem; }
+    .center-game h2 { margin:0; font-size:1.25rem; }
+    .center-game p { margin:0; line-height:1.6; opacity:.78; }
+    .center-game .center-cta { margin-top:auto; font-weight:700; color:#4f46e5; }
+    .center-top { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; }
+    @media (prefers-reduced-motion: reduce) { .center-game { transition:none; } .center-game:hover { transform:none; } }
   </style>
 </head>
-
 <body>
   <main class="new-wrap">
     <header class="center-top">
@@ -135,29 +34,35 @@
     <section class="center-hero">
       <span class="center-kicker">🎮 GAME CENTER</span>
       <h1>클래식 게임 센터</h1>
-      <p>
-        익숙한 규칙과 차분한 화면으로 즐기는 게임 모음이에요.
-        플레이하고 싶은 게임을 선택해 시작하세요.
-      </p>
+      <p>익숙한 규칙과 차분한 화면으로 즐기는 게임 모음이에요. 플레이하고 싶은 게임을 선택해 시작하세요.</p>
     </section>
 
     <section class="center-games" aria-label="클래식 게임 목록">
-      <a class="center-game new-card" href="omok.html">
+      <a class="center-game new-card" href="omok-solitaire.html">
+        <span class="center-game-icon" aria-hidden="true">🧩</span>
+        <h2>오목 솔리테어</h2>
+        <p>혼자서 퍼즐을 풀며 한 수로 오목을 완성해 보세요.</p>
+        <span class="center-cta">퍼즐 도전하기 →</span>
+      </a>
+
+      <a class="center-game new-card" href="omok.html?mode=pvp">
         <span class="center-game-icon" aria-hidden="true">⚫⚪</span>
-        <h2>오목</h2>
-        <p>
-          컴퓨터와 대전하거나 한 기기에서 번갈아 두며
-          오목을 즐겨 보세요.
-        </p>
-        <span class="center-cta">오목 시작하기 →</span>
+        <h2>오목 로컬플레이</h2>
+        <p>한 기기에서 친구와 흑돌과 백돌을 번갈아 두세요.</p>
+        <span class="center-cta">로컬 대전 시작 →</span>
+      </a>
+
+      <a class="center-game new-card" href="omok-online.html">
+        <span class="center-game-icon" aria-hidden="true">🌐</span>
+        <h2>오목 온라인</h2>
+        <p>온라인에서 상대를 찾아 실시간으로 대국해 보세요.</p>
+        <span class="center-cta">온라인 대전 →</span>
       </a>
 
       <a class="center-game new-card" href="rummikub.html">
-        <span class="center-game-icon" aria-hidden="true">🀄</span>
+        <span class="center-game-icon" aria-hidden="true">🔢</span>
         <h2>루미큐브</h2>
-        <p>
-          타일을 조합하고 테이블을 전략적으로 재배치해 보세요.
-        </p>
+        <p>숫자 타일을 조합하고 테이블을 전략적으로 재배치하세요.</p>
         <span class="center-cta">루미큐브 시작하기 →</span>
       </a>
     </section>
