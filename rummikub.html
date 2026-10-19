@@ -1,1 +1,164 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>루미큐브 AI</title><link rel="stylesheet" href="assets/css/design.css"><link rel="stylesheet" href="assets/css/site.css"><link rel="stylesheet" href="assets/css/game-new.css"></head><body><main class="new-wrap"><header class="new-head"><a href="index.html">← 홈</a><h1>루미큐브</h1><button id="newgame" class="btn btn-line">새 게임</button></header><section class="new-card"><p>컴퓨터 대전 · AI 개발 버전</p><div id="status" class="game-status">타일을 나눠 주는 중...</div><p>내 손패 — 타일을 선택한 뒤 세트로 내세요. 첫 등록은 30점 이상이어야 합니다.</p><div id="rack" class="tile-rack"></div><div class="game-controls"><button id="play" class="btn btn-primary">선택한 타일 내기</button><button id="draw" class="btn btn-line">타일 1장 가져오기</button><button id="sort" class="btn btn-line">손패 정렬</button><button id="edit-table" class="btn btn-line">기존 테이블 붙이기·옮기기</button></div><div id="edit-controls" class="game-controls hidden"><button id="move-new" class="btn btn-line">선택 타일을 새 조합으로 옮기기</button><button id="attach-target" class="btn btn-line">선택한 조합에 붙이기</button><button id="confirm-edit" class="btn btn-primary">배치 확정</button><button id="cancel-edit" class="btn btn-line">취소</button><p class="small-note">테이블 타일 또는 손패 타일을 선택하세요. 붙일 조합은 해당 조합을 클릭해 지정합니다. 확정할 때 모든 조합이 유효하고, 이번 차례에 손패 타일을 1개 이상 사용해야 합니다.</p></div></section><section class="new-card"><h2>테이블</h2><div id="table" class="tile-board"></div></section><section class="new-card"><h2>컴퓨터 손패</h2><p id="cpu-count">14장 남음</p><p class="small-note">AI는 가능한 그룹·줄 조합을 탐색합니다. 등록 이후에는 기존 테이블의 타일을 붙이거나 다른 조합으로 옮겨 재배치할 수 있습니다. 온라인 대전은 포함하지 않습니다.</p></section></main><script type="module" src="assets/js/pages/new-rummikub.js"></script></body></html>
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <title>루미큐브 AI</title>
+
+  <link rel="stylesheet" href="assets/css/design.css">
+  <link rel="stylesheet" href="assets/css/site.css">
+  <link rel="stylesheet" href="assets/css/game-new.css">
+</head>
+
+<body>
+<main class="new-wrap">
+
+  <header class="new-head">
+    <a href="index.html">← 홈</a>
+
+    <h1>루미큐브</h1>
+
+    <button
+      id="newgame"
+      class="btn btn-line"
+      type="button"
+    >
+      새 게임
+    </button>
+  </header>
+
+  <!-- 내 손패와 게임 조작 -->
+  <section class="new-card">
+    <p>컴퓨터 대전 · AI 개발 버전</p>
+
+    <div id="status" class="game-status">
+      타일을 나눠 주는 중...
+    </div>
+
+    <p>
+      내 손패 — 타일을 선택한 뒤 세트로 내세요.
+      첫 등록은 30점 이상이어야 합니다.
+    </p>
+
+    <div id="rack" class="tile-rack"></div>
+
+    <div class="game-controls">
+      <button
+        id="play"
+        class="btn btn-primary"
+        type="button"
+      >
+        선택한 타일 내기
+      </button>
+
+      <button
+        id="draw"
+        class="btn btn-line"
+        type="button"
+      >
+        타일 1장 가져오기
+      </button>
+
+      <button
+        id="sort"
+        class="btn btn-line"
+        type="button"
+      >
+        손패 정렬
+      </button>
+
+      <button
+        id="edit-table"
+        class="btn btn-line"
+        type="button"
+      >
+        기존 테이블 붙이기·옮기기
+      </button>
+    </div>
+
+    <div id="edit-controls" class="game-controls hidden">
+      <button
+        id="move-new"
+        class="btn btn-line"
+        type="button"
+      >
+        선택 타일을 새 조합으로 옮기기
+      </button>
+
+      <button
+        id="attach-target"
+        class="btn btn-line"
+        type="button"
+      >
+        선택한 조합에 붙이기
+      </button>
+
+      <button
+        id="confirm-edit"
+        class="btn btn-primary"
+        type="button"
+      >
+        배치 확정
+      </button>
+
+      <button
+        id="cancel-edit"
+        class="btn btn-line"
+        type="button"
+      >
+        취소
+      </button>
+
+      <p class="small-note">
+        테이블 타일 또는 손패 타일을 선택하세요.
+        붙일 조합은 해당 조합을 클릭해 지정합니다.
+        확정할 때 모든 조합이 유효하고,
+        이번 차례에 손패 타일을 1개 이상 사용해야 합니다.
+      </p>
+    </div>
+  </section>
+
+  <!-- 테이블 -->
+  <section class="new-card">
+    <h2>테이블</h2>
+
+    <div id="table" class="tile-board"></div>
+  </section>
+
+  <!-- 컴퓨터 손패 -->
+  <section class="new-card">
+    <h2>컴퓨터 손패</h2>
+
+    <p id="cpu-count">14장 남음</p>
+
+    <!-- 개발자 설정이 활성화된 경우에만 표시 -->
+    <div id="cpu-hand-panel" hidden>
+      <p>
+        <strong>🧪 개발자 설정: 컴퓨터 손패 공개 중</strong>
+      </p>
+
+      <div
+        id="cpu-hand"
+        class="tile-rack"
+        aria-label="컴퓨터 손패 타일"
+      ></div>
+    </div>
+
+    <p class="small-note">
+      AI는 가능한 그룹·줄 조합을 탐색합니다.
+      등록 이후에는 기존 테이블의 타일을 붙이거나
+      다른 조합으로 옮겨 재배치할 수 있습니다.
+      온라인 대전은 포함하지 않습니다.
+      컴퓨터 손패 공개는 개발자 센터의 설정에서 켤 수 있습니다.
+    </p>
+  </section>
+
+</main>
+
+<script
+  type="module"
+  src="assets/js/pages/new-rummikub.js"
+></script>
+</body>
+</html>
