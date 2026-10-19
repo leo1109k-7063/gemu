@@ -1,8 +1,8 @@
-
 import {
   registerAccount,
   loginAccount,
   getSettings,
+  getAnnouncement,
   getSession,
   saveSession,
   clearSession,
@@ -47,6 +47,24 @@ async function render() {
 
   $('hello').textContent = profile.nickname;
   $('coins').textContent = Number(profile.coins || 0);
+
+  // 로그인 후 공지사항을 불러와 인사말 바로 위에 표시합니다.
+  const banner = $('announcementBanner');
+
+  try {
+    const announcement = await getAnnouncement();
+    const text = String(announcement.message || '').trim();
+
+    $('announcementMessage').textContent = text;
+
+    banner.classList.toggle(
+      'visible',
+      !!announcement.enabled && !!text
+    );
+  } catch {
+    // 공지사항 조회에 실패하면 배너를 숨깁니다.
+    banner.classList.remove('visible');
+  }
 
   try {
     const settings = await getSettings();
