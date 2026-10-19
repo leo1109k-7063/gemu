@@ -265,6 +265,67 @@
     </div>
 
     <script>
+        // 서버에 게임 보상을 저장합니다. 보상 금액은 Supabase 함수에서 결정합니다.
+        const ARCADE_SUPABASE_URL = 'https://idzbckhztsdnzablelaf.supabase.co';
+        const ARCADE_SUPABASE_KEY = 'sb_publishable_PHyvEyFmkYgaAHdHOh1RCw_kwB7FLRo';
+
+        function showArcadeRewardToast(message, isError = false) {
+            let toast = document.getElementById('arcadeRewardToast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'arcadeRewardToast';
+                toast.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:99999;padding:12px 18px;border:2px solid #00f0ff;border-radius:12px;background:#07111f;color:#fff;font:700 12px monospace;text-align:center;box-shadow:0 0 22px #00f0ff66;max-width:calc(100vw - 24px);';
+                document.body.appendChild(toast);
+            }
+            toast.style.borderColor = isError ? '#ff0055' : '#00f0ff';
+            toast.textContent = message;
+            toast.style.display = 'block';
+            clearTimeout(toast._hideTimer);
+            toast._hideTimer = setTimeout(() => { toast.style.display = 'none'; }, 3600);
+        }
+
+        async function claimArcadeReward(gameName, rewardType, matchId) {
+            let profile;
+            try { profile = JSON.parse(localStorage.getItem('arcade-profile') || 'null'); } catch { profile = null; }
+            if (!profile || !profile.nickname) {
+                showArcadeRewardToast('보상을 저장하려면 게임 놀이터에 로그인해 주세요.', true);
+                return false;
+            }
+            try {
+                const response = await fetch(`${ARCADE_SUPABASE_URL}/rest/v1/rpc/claim_arcade_game_reward`, {
+                    method: 'POST',
+                    headers: {
+                        apikey: ARCADE_SUPABASE_KEY,
+                        Authorization: `Bearer ${ARCADE_SUPABASE_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        p_nickname: profile.nickname,
+                        p_game: gameName,
+                        p_reward_type: rewardType,
+                        p_match_id: matchId
+                    })
+                });
+                const result = await response.json().catch(() => null);
+                if (!response.ok || !result || result.ok === false) {
+                    throw new Error(result?.message || '보상 저장에 실패했어요. SQL 보상 함수를 적용했는지 확인해 주세요.');
+                }
+                if (result.duplicate) return false;
+                profile.coins = Number(result.coins ?? profile.coins ?? 0);
+                profile.xp = Number(result.xp ?? profile.xp ?? 0);
+                localStorage.setItem('arcade-profile', JSON.stringify(profile));
+                const bits = [];
+                if (Number(result.granted_coins || 0)) bits.push(`🪙 ${result.granted_coins}코인`);
+                if (Number(result.granted_xp || 0)) bits.push(`⭐ ${result.granted_xp} XP`);
+                if (bits.length) showArcadeRewardToast(`보상 획득! ${bits.join(' + ')}`);
+                return true;
+            } catch (error) {
+                console.error('아케이드 보상 저장 오류:', error);
+                showArcadeRewardToast(error.message || '보상 저장에 실패했어요.', true);
+                return false;
+            }
+        }
+
         // Game Engine Configuration
         const config = {
             targetScore: 5,
@@ -319,6 +380,9 @@
         let aiMissOffset = 0;
         let keyState = { up: false, down: false };
         let animId = null;
+        let pongMatchId = '';
+        let pongRallyRewarded = false;
+        let pongWinRewarded = false;
 
         // Web Audio API Audio Engine
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -458,6 +522,9 @@
             state.currentRally = 0;
             state.maxRally = 0;
             state.totalHits = 0;
+            pongMatchId = (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);
+            pongRallyRewarded = false;
+            pongWinRewarded = false;
 
             player.y = canvas.height / 2 - config.paddleHeight / 2;
             ai.y = canvas.height / 2 - config.paddleHeight / 2;
@@ -543,6 +610,10 @@
                 state.currentRally++;
                 state.totalHits++;
                 if (state.currentRally > state.maxRally) state.maxRally = state.currentRally;
+                if (state.currentRally >= 20 && !pongRallyRewarded) {
+                    pongRallyRewarded = true;
+                    claimArcadeReward('pong', 'rally20', pongMatchId);
+                }
 
                 playSound('hit');
                 spawnImpactParticles(ball.x, ball.y, '#00ff66');
@@ -567,6 +638,10 @@
                 state.currentRally++;
                 state.totalHits++;
                 if (state.currentRally > state.maxRally) state.maxRally = state.currentRally;
+                if (state.currentRally >= 20 && !pongRallyRewarded) {
+                    pongRallyRewarded = true;
+                    claimArcadeReward('pong', 'rally20', pongMatchId);
+                }
 
                 playSound('hit');
                 spawnImpactParticles(ball.x, ball.y, '#ff0055');
@@ -659,8 +734,15 @@
 
         // Game Over Trigger
         function gameOver(playerWon) {
+            if (!state.isRunning) return;
             state.isRunning = false;
-            if (playerWon) playSound('win');
+            if (playerWon) {
+                playSound('win');
+                if (!pongWinRewarded) {
+                    pongWinRewarded = true;
+                    claimArcadeReward('pong', 'win', pongMatchId);
+                }
+            }
 
             const resTitle = document.getElementById('resultTitle');
             const resIcon = document.getElementById('resultIcon');
