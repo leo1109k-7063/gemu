@@ -1,23 +1,505 @@
-<main class="omok-page" data-omok-mode="online">
-  <h1>오목 온라인</h1>
-  <p>상대 플레이어를 찾아 온라인 대전을 시작하세요.</p>
+```html
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#EDF1F7">
 
-  <section id="online-controls">
-    <button id="find-online" type="button">상대 찾기</button>
-    <button id="cancel-online" type="button" hidden>매칭 취소</button>
-  </section>
+  <title>오목 온라인 | 게임 놀이터</title>
 
-  <p id="status">상대 찾기를 눌러 주세요.</p>
-  <p id="opponent"></p>
+  <link rel="stylesheet" href="assets/css/design.css">
+  <link rel="stylesheet" href="assets/css/site.css">
+  <link rel="stylesheet" href="assets/css/game-new.css">
 
-  <div id="board" aria-label="온라인 오목 게임판"></div>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
-  <div class="game-info">
-    <p>흑돌 승리: <span id="winsB">0</span></p>
-    <p>백돌 승리: <span id="winsW">0</span></p>
-  </div>
+    body {
+      min-height: 100vh;
+    }
 
-  <button id="reset" type="button">다시 시작</button>
-</main>
+    .omok-shell {
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 16px 48px;
+    }
 
-<script type="module" src="assets/js/pages/new-omok.js"></script>
+    .omok-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+
+    .omok-header h1 {
+      margin: 0;
+      color: var(--ink, #172033);
+      font-size: clamp(1.5rem, 4vw, 2.2rem);
+      line-height: 1.3;
+    }
+
+    .omok-header-actions {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .omok-card {
+      min-width: 0;
+      margin-bottom: 16px;
+      padding: 22px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, .88);
+      border: 1px solid #dbe3ef;
+      border-radius: 20px;
+      box-shadow: 0 8px 26px #1d355710;
+    }
+
+    .omok-intro h2 {
+      margin: 0 0 8px;
+      font-size: 1.25rem;
+    }
+
+    .omok-intro p {
+      margin: 0;
+      color: #64748b;
+      line-height: 1.7;
+    }
+
+    .omok-match-card {
+      display: grid;
+      gap: 14px;
+    }
+
+    .omok-match-heading {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+
+    #online-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    #online-controls button {
+      flex: 1 1 150px;
+      min-height: 46px;
+    }
+
+    #find-online {
+      color: #fff;
+      background: var(--accent, #2457e6);
+      border: 1px solid var(--accent, #2457e6);
+      border-radius: 12px;
+      padding: 12px 18px;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform .15s, filter .15s;
+    }
+
+    #find-online:hover:not(:disabled) {
+      filter: brightness(.95);
+      transform: translateY(-1px);
+    }
+
+    #find-online:disabled {
+      cursor: not-allowed;
+      opacity: .55;
+    }
+
+    #cancel-online {
+      color: var(--ink, #172033);
+      background: #fff;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 12px 18px;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    #cancel-online:hover:not(:disabled) {
+      background: #f1f5f9;
+    }
+
+    #cancel-online:disabled {
+      cursor: not-allowed;
+      opacity: .55;
+    }
+
+    .omok-game-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .omok-board-card {
+      min-width: 0;
+      padding: clamp(12px, 3vw, 24px);
+    }
+
+    .omok-board-heading {
+      margin: 0 0 16px;
+      font-size: 1.1rem;
+    }
+
+    #board {
+      display: grid;
+      grid-template-columns: repeat(15, minmax(0, 1fr));
+      width: 100%;
+      max-width: 620px;
+      aspect-ratio: 1;
+      margin: 0 auto;
+      padding: 8px;
+      overflow: hidden;
+      background: #e9c27a;
+      border: 1px solid #c49a4b;
+      border-radius: 12px;
+      box-shadow: inset 0 0 0 1px #ffffff30;
+      touch-action: manipulation;
+    }
+
+    .new-cell {
+      position: relative;
+      display: block;
+      min-width: 0;
+      min-height: 0;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .new-cell::before {
+      position: absolute;
+      top: 50%;
+      right: 0;
+      left: 0;
+      height: 1px;
+      background: #956f3e;
+      content: "";
+      pointer-events: none;
+    }
+
+    .new-cell::after {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 1px;
+      background: #956f3e;
+      content: "";
+      pointer-events: none;
+    }
+
+    .new-cell i {
+      position: absolute;
+      z-index: 1;
+      top: 11%;
+      left: 11%;
+      width: 78%;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .new-cell.black i {
+      background: radial-gradient(
+        circle at 32% 28%,
+        #555,
+        #171717 72%
+      );
+      box-shadow: 1px 2px 4px #0005;
+    }
+
+    .new-cell.white i {
+      background: radial-gradient(
+        circle at 32% 28%,
+        #fff,
+        #e6eaf0 78%
+      );
+      border: 1px solid #b7c0cc;
+      box-shadow: 1px 2px 4px #0002;
+    }
+
+    .new-cell:disabled {
+      cursor: default;
+      opacity: 1;
+    }
+
+    .new-cell:focus-visible {
+      outline: 2px solid #2457e6;
+      outline-offset: -2px;
+      z-index: 2;
+    }
+
+    .omok-side {
+      display: grid;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .omok-status-card {
+      padding: 20px;
+    }
+
+    .omok-label {
+      margin: 0 0 10px;
+      color: #64748b;
+      font-size: .9rem;
+      font-weight: 700;
+    }
+
+    #status {
+      min-height: 3em;
+      margin: 0;
+      color: var(--ink, #172033);
+      font-size: 1.05rem;
+      font-weight: 800;
+      line-height: 1.6;
+      overflow-wrap: anywhere;
+    }
+
+    #opponent {
+      margin: 10px 0 0;
+      color: #64748b;
+      font-size: .92rem;
+      line-height: 1.6;
+      overflow-wrap: anywhere;
+    }
+
+    .game-info {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin: 0;
+    }
+
+    .game-info p {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-width: 0;
+      margin: 0;
+      padding: 18px 10px;
+      color: #64748b;
+      text-align: center;
+      font-size: .85rem;
+      font-weight: 700;
+      background: rgba(255, 255, 255, .88);
+      border: 1px solid #dbe3ef;
+      border-radius: 16px;
+      box-shadow: 0 5px 18px #1d355708;
+    }
+
+    .game-info span {
+      color: var(--ink, #172033);
+      font-size: 1.8rem;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .omok-actions {
+      display: grid;
+      gap: 10px;
+    }
+
+    .omok-actions button {
+      width: 100%;
+    }
+
+    .omok-note {
+      margin: 0;
+      color: #64748b;
+      font-size: .85rem;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 760px) {
+      .omok-shell {
+        padding: 18px 12px 32px;
+      }
+
+      .omok-game-layout {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .omok-side {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .omok-status-card {
+        grid-column: 1 / -1;
+      }
+
+      .omok-actions {
+        grid-column: 1 / -1;
+      }
+
+      .omok-card {
+        padding: 16px;
+        border-radius: 16px;
+      }
+
+      .omok-board-card {
+        padding: 12px;
+      }
+
+      #board {
+        padding: 5px;
+        border-radius: 8px;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .omok-header {
+        align-items: flex-start;
+      }
+
+      .omok-header-actions {
+        width: 100%;
+      }
+
+      .omok-header-actions .btn {
+        flex: 1;
+        text-align: center;
+      }
+
+      .omok-side {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .omok-status-card,
+      .omok-actions {
+        grid-column: auto;
+      }
+
+      #online-controls {
+        flex-direction: column;
+      }
+
+      #online-controls button {
+        width: 100%;
+      }
+
+      .game-info p {
+        padding: 14px 6px;
+        font-size: .78rem;
+      }
+
+      .game-info span {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="omok-shell omok-page" data-omok-mode="online">
+
+    <header class="omok-header">
+      <h1>🌐 오목 온라인</h1>
+
+      <div class="omok-header-actions">
+        <a class="btn btn-line" href="classic-game-center.html">
+          ← 게임 센터
+        </a>
+
+        <a class="btn btn-line" href="index.html">
+          홈으로
+        </a>
+      </div>
+    </header>
+
+    <section class="omok-card omok-intro">
+      <h2>온라인 오목 대전</h2>
+      <p>
+        상대 찾기를 눌러 다른 플레이어와 대결하세요.
+        상대가 연결되면 자신의 차례에 돌을 놓을 수 있습니다.
+      </p>
+    </section>
+
+    <section class="omok-card omok-match-card">
+      <h2 class="omok-match-heading">🔎 플레이어 매칭</h2>
+
+      <div id="online-controls">
+        <button id="find-online" type="button">
+          상대 찾기
+        </button>
+
+        <button id="cancel-online" type="button" hidden>
+          매칭 취소
+        </button>
+      </div>
+    </section>
+
+    <div class="omok-game-layout">
+
+      <section class="omok-card omok-board-card">
+        <h2 class="omok-board-heading">🎯 게임판</h2>
+
+        <div
+          id="board"
+          class="new-board"
+          role="group"
+          aria-label="온라인 오목 게임판"
+        ></div>
+      </section>
+
+      <aside class="omok-side">
+
+        <section class="omok-card omok-status-card">
+          <p class="omok-label">현재 게임 상태</p>
+
+          <p id="status" role="status" aria-live="polite">
+            상대 찾기를 눌러 주세요.
+          </p>
+
+          <p id="opponent"></p>
+        </section>
+
+        <div class="game-info" aria-label="승리 횟수">
+          <p>
+            흑돌 승리
+            <span id="winsB">0</span>
+          </p>
+
+          <p>
+            백돌 승리
+            <span id="winsW">0</span>
+          </p>
+        </div>
+
+        <section class="omok-card omok-actions">
+          <button id="reset" class="btn btn-primary" type="button">
+            새 게임 시작
+          </button>
+
+          <p class="omok-note">
+            온라인 대전 중에는 새 게임을 시작할 수 없습니다.
+            먼저 대전을 종료하거나 매칭 상태를 확인해 주세요.
+          </p>
+        </section>
+
+      </aside>
+    </div>
+  </main>
+
+  <script type="module" src="assets/js/pages/new-omok.js"></script>
+</body>
+</html>
+```
