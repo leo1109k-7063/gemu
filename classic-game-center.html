@@ -1,21 +1,83 @@
-<div class="game-grid">
-  <a class="game-card" href="omok.html">
-    <h3>오목 솔리테어</h3>
-    <p>컴퓨터 AI와 대결하기</p>
-  </a>
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#EDF1F7">
+  <title>클래식 게임 센터 | 게임 놀이터</title>
 
-  <a class="game-card" href="omok-local.html">
-    <h3>오목 로컬플레이</h3>
-    <p>한 기기에서 친구와 대결하기</p>
-  </a>
+  <!-- 홈 화면과 동일한 공통 스타일 -->
+  <link rel="stylesheet" href="assets/css/design.css">
+  <link rel="stylesheet" href="assets/css/site.css">
+  <link rel="stylesheet" href="assets/css/game-new.css">
+</head>
+<body>
+  <main class="new-wrap">
+    <header class="new-head">
+      <h1>🎮 클래식 게임 센터</h1>
+      <a class="btn btn-line" href="index.html">← 홈으로</a>
+    </header>
 
-  <a class="game-card" href="omok-online.html">
-    <h3>오목 온라인</h3>
-    <p>다른 플레이어와 온라인 대결하기</p>
-  </a>
+    <section class="new-card" aria-labelledby="classic-intro-title">
+      <h2 id="classic-intro-title">클래식 게임</h2>
+      <p>원하는 게임을 선택해 플레이해 보세요.</p>
+    </section>
 
-  <a class="game-card" href="rummikub.html">
-    <h3>루미큐브</h3>
-    <p>숫자 타일 전략 게임</p>
-  </a>
-</div>
+    <section class="new-grid" aria-label="클래식 게임 목록">
+      <a class="new-card game-link" href="omok.html">
+        <span aria-hidden="true">⚫</span>
+        <h2>오목 솔리테어</h2>
+        <p>컴퓨터 AI와 대결하기</p>
+        <span class="classic-card-action">게임 시작 →</span>
+      </a>
+
+      <a class="new-card game-link" href="omok-local.html">
+        <span aria-hidden="true">⚪</span>
+        <h2>오목 로컬플레이</h2>
+        <p>한 기기에서 친구와 대결하기</p>
+        <span class="classic-card-action">게임 시작 →</span>
+      </a>
+
+      <a class="new-card game-link" href="omok-online.html">
+        <span aria-hidden="true">🌐</span>
+        <h2>오목 온라인</h2>
+        <p>다른 플레이어와 온라인 대결하기</p>
+        <span class="classic-card-action">게임 시작 →</span>
+      </a>
+
+      <a class="new-card game-link" href="rummikub.html">
+        <span aria-hidden="true">🔢</span>
+        <h2>루미큐브</h2>
+        <p>숫자 타일 전략 게임</p>
+        <span class="classic-card-action">게임 시작 →</span>
+      </a>
+    </section>
+  </main>
+
+  <style>
+    /* 홈의 카드 스타일을 그대로 사용하고, 클릭 가능한 게임 카드만 보완 */
+    .new-head { gap: 12px; flex-wrap: wrap; }
+    .new-head h1 { overflow-wrap: anywhere; }
+    .new-grid > .game-link { min-width: 0; }
+    .new-grid > .game-link > span:first-child {
+      display: inline-block;
+      margin-bottom: 4px;
+      font-size: 2rem;
+      line-height: 1.4;
+    }
+    .new-grid > .game-link h2 { overflow-wrap: anywhere; }
+    .new-grid > .game-link p { line-height: 1.65; }
+    .classic-card-action {
+      display: inline-block;
+      margin-top: 12px;
+      color: var(--accent, #2457E6);
+      font-weight: 700;
+      font-size: .92rem;
+    }
+    .new-grid > .game-link:focus-visible {
+      outline: 3px solid var(--accent, #2457E6);
+      outline-offset: 3px;
+    }
+  </style>
+</body>
+</html>
