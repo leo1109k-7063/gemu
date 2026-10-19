@@ -315,6 +315,8 @@
         };
 
         let particles = [];
+        // 20% of AI-bound shots are intentionally misread; successful contacts are ~80%.
+        let aiMissOffset = 0;
         let keyState = { up: false, down: false };
         let animId = null;
 
@@ -432,6 +434,7 @@
 
         // Ball Reset Logic
         function resetBall(directionToAI = true) {
+            aiMissOffset = 0;
             ball.x = canvas.width / 2;
             ball.y = canvas.height / 2;
             ball.speed = config.initialBallSpeed;
@@ -490,7 +493,7 @@
         // Smart AI Logic
         function updateAI() {
             const aiCenter = ai.y + config.paddleHeight / 2;
-            let targetY = ball.y;
+            let targetY = ball.y + (ball.vx > 0 ? aiMissOffset : 0);
 
             // Add reaction imperfection based on difficulty
             if (state.difficulty === 'easy' && ball.vx < 0) {
@@ -525,6 +528,10 @@
                 ball.y >= player.y && ball.y <= player.y + config.paddleHeight) {
 
                 ball.speed = Math.min(config.maxBallSpeed, ball.speed + config.speedStep);
+                // Roll the AI's accuracy once per incoming shot: 4/5 accurate, 1/5 misses.
+                aiMissOffset = Math.random() < 0.2
+                    ? (ball.y < canvas.height / 2 ? 1 : -1) * (config.paddleHeight + 24)
+                    : 0;
                 
                 // Calculate impact angle based on paddle hit location
                 const hitPos = (ball.y - (player.y + config.paddleHeight / 2)) / (config.paddleHeight / 2);
@@ -548,6 +555,7 @@
                 ball.x - config.ballSize <= ai.x + config.paddleWidth &&
                 ball.y >= ai.y && ball.y <= ai.y + config.paddleHeight) {
 
+                aiMissOffset = 0;
                 ball.speed = Math.min(config.maxBallSpeed, ball.speed + config.speedStep);
 
                 const hitPos = (ball.y - (ai.y + config.paddleHeight / 2)) / (config.paddleHeight / 2);
