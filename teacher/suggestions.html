@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <title>건의사항 관리 - 게임 놀이터</title>
+
+  <link rel="stylesheet" href="../assets/css/design.css">
+  <link rel="stylesheet" href="../assets/css/site.css">
+  <link rel="stylesheet" href="../assets/css/game-new.css">
+
+  <style>
+    .suggestion-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .suggestion-card {
+      border: 1px solid #ddd;
+      border-radius: 14px;
+      padding: 16px;
+    }
+
+    .suggestion-card.resolved {
+      opacity: .72;
+      background: #f4f8f4;
+    }
+
+    .suggestion-top {
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .suggestion-category {
+      display: inline-block;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: #eef2ff;
+      font-size: .85rem;
+      font-weight: 700;
+    }
+
+    .suggestion-message {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .suggestion-meta {
+      font-size: .9rem;
+      opacity: .75;
+    }
+
+    .suggestion-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .error-text {
+      color: #b42318;
+    }
+  </style>
+</head>
+<body>
+<main class="new-wrap">
+  <header class="new-head">
+    <a href="index.html">← 교사 페이지</a>
+    <h1>건의사항 관리</h1>
+  </header>
+
+  <section id="gate" class="new-card">
+    <h2>교사 코드 확인</h2>
+
+    <form id="gateForm">
+      <input
+        id="teacherCode"
+        type="password"
+        inputmode="numeric"
+        maxlength="6"
+        placeholder="교사 코드"
+        required
+      >
+
+      <button class="btn btn-primary" type="submit">
+        확인
+      </button>
+    </form>
+
+    <p id="gateStatus" role="status"></p>
+  </section>
+
+  <section id="panel" class="new-card hidden">
+    <div
+      style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"
+    >
+      <h2>
+        접수된 건의사항
+        <span id="suggestionCount">(0)</span>
+      </h2>
+
+      <div class="suggestion-actions">
+        <button
+          id="filterAll"
+          class="btn btn-line"
+          type="button"
+        >전체</button>
+
+        <button
+          id="filterOpen"
+          class="btn btn-line"
+          type="button"
+        >미해결</button>
+
+        <button
+          id="filterResolved"
+          class="btn btn-line"
+          type="button"
+        >해결됨</button>
+
+        <button
+          id="refreshSuggestions"
+          class="btn btn-primary"
+          type="button"
+        >새로고침</button>
+      </div>
+    </div>
+
+    <p id="listStatus" role="status"></p>
+
+    <div id="suggestionList" class="suggestion-list"></div>
+  </section>
+</main>
+
+<script
+  type="module"
+  src="../assets/js/pages/teacher-suggestions.js"
+></script>
+</body>
+</html>
