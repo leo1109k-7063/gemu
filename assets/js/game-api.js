@@ -1,4 +1,3 @@
-
 import {
   SUPABASE_URL,
   SUPABASE_ANON_KEY
@@ -65,6 +64,18 @@ export const loginAccount = (nickname, password) =>
 
 export const getSettings = () =>
   rpc('get_game_settings');
+
+// 공지사항 조회
+export const getAnnouncement = () =>
+  rpc('get_game_announcement');
+
+// 교사 공지사항 저장
+export const teacherSaveAnnouncement = (code, enabled, message) =>
+  rpc('teacher_update_announcement', {
+    p_code: code,
+    p_enabled: enabled,
+    p_message: message
+  });
 
 export const teacherGetAccounts = code =>
   rpc('teacher_get_accounts', {
