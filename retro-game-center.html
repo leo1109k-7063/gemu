@@ -1,4 +1,4 @@
-
+```html
 <!doctype html>
 <html lang="ko" class="dark">
 <head>
@@ -26,16 +26,8 @@
       background: #030305;
       color: #f1f5f9;
       background-image:
-        radial-gradient(
-          at 15% 15%,
-          rgba(0, 240, 255, .09),
-          transparent 38%
-        ),
-        radial-gradient(
-          at 85% 75%,
-          rgba(255, 0, 85, .08),
-          transparent 40%
-        );
+        radial-gradient(at 15% 15%, rgba(0,240,255,.09), transparent 38%),
+        radial-gradient(at 85% 75%, rgba(255,0,85,.08), transparent 40%);
     }
 
     .retro-wrap {
@@ -110,7 +102,7 @@
       text-align: center;
       border: 2px solid #222738;
       border-radius: 16px;
-      background: rgba(15, 17, 26, .9);
+      background: rgba(15,17,26,.9);
       box-shadow: 0 0 26px #00f0ff12;
     }
 
@@ -174,26 +166,68 @@
       border-radius: 50%;
     }
 
-    .retro-panel {
+    .retro-games {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
       margin-top: 16px;
+    }
+
+    .retro-game-card {
+      min-width: 0;
       padding: 20px;
       border: 2px solid #222738;
       border-radius: 12px;
       background: #0f111a;
+      box-shadow: 0 8px 22px #0003;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      transition: border-color .15s, transform .15s;
     }
 
-    .retro-panel h2 {
+    .retro-game-card:hover {
+      border-color: #00f0ff;
+      transform: translateY(-2px);
+    }
+
+    .retro-game-icon {
+      display: grid;
+      place-items: center;
+      width: 54px;
+      height: 54px;
+      margin-bottom: 16px;
+      border: 2px solid #000;
+      border-radius: 10px;
+      font-size: 1.7rem;
+      box-shadow: 4px 4px #000;
+    }
+
+    .retro-game-card h2 {
       margin: 0 0 10px;
-      color: #00f0ff;
-      font-size: .7rem;
-      line-height: 1.9;
+      color: #fff;
+      font-size: .9rem;
+      line-height: 1.8;
     }
 
-    .retro-panel p {
-      margin: 0;
+    .retro-game-card p {
+      flex: 1;
+      margin: 0 0 18px;
       color: #9ca3af;
+      font-size: .85rem;
       line-height: 1.8;
-      font-size: .88rem;
+    }
+
+    .retro-game-tag {
+      display: inline-block;
+      margin-bottom: 12px;
+      padding: 5px 7px;
+      border: 1px solid #ffffff24;
+      border-radius: 5px;
+      color: #00f0ff;
+      font-family: 'Press Start 2P', monospace;
+      font-size: .5rem;
+      line-height: 1.7;
     }
 
     .retro-actions {
@@ -215,12 +249,29 @@
       font-weight: 800;
       text-decoration: none;
       font-size: .8rem;
+      transition: transform .08s;
+    }
+
+    .retro-button:active {
+      transform: translate(2px, 2px);
+      box-shadow: 1px 1px #000;
     }
 
     .retro-button.secondary {
       color: #00f0ff;
       background: #0f111a;
       border-color: #222738;
+    }
+
+    .retro-game-card .retro-button {
+      width: 100%;
+      text-align: center;
+    }
+
+    @media (max-width: 600px) {
+      .retro-games {
+        grid-template-columns: minmax(0, 1fr);
+      }
     }
 
     @media (max-width: 480px) {
@@ -238,6 +289,7 @@
 
 <body>
   <main class="retro-wrap">
+
     <header class="retro-head">
       <div class="retro-brand">
         <div class="retro-mark" aria-hidden="true">👾</div>
@@ -259,23 +311,66 @@
       <h1 class="pixel">레트로 게임 센터</h1>
 
       <p>
-        픽셀 화면과 네온 불빛이 떠오르는 아케이드 공간이에요.
-        레트로 게임을 모아둘 센터를 먼저 준비했어요.
+        픽셀 화면과 네온 불빛이 빛나는 클래식 아케이드!
+        팩맨과 PONG 1972를 플레이하고 레트로 게임의 재미를 느껴보세요.
       </p>
 
       <div class="retro-status pixel">
         <span class="retro-dot" aria-hidden="true"></span>
-        MORE GAMES COMING SOON
+        2 ARCADE GAMES READY
       </div>
     </section>
 
-    <section class="retro-panel">
-      <h2 class="pixel">SYSTEM MESSAGE</h2>
-      <p>
-        현재는 게임 센터 디자인만 준비되어 있어요.
-        이번 변경에서는 새로운 게임을 추가하거나
-        기존 게임 파일을 수정하지 않았어요.
-      </p>
+    <section class="retro-games" aria-label="레트로 게임 목록">
+
+      <article class="retro-game-card">
+        <div
+          class="retro-game-icon"
+          style="color:#030305;background:#ffea00"
+          aria-hidden="true"
+        >👻</div>
+
+        <span class="retro-game-tag">CLASSIC ARCADE</span>
+
+        <h2 class="pixel">팩맨 클래식</h2>
+
+        <p>
+          미로 속 펠릿을 모두 먹고 유령을 피하세요.
+          파워 펠릿을 먹으면 유령을 역으로 사냥할 수 있어요!
+        </p>
+
+        <a class="retro-button" href="pac_man_arcade_classic.html">
+          PLAY PAC-MAN →
+        </a>
+      </article>
+
+      <article class="retro-game-card">
+        <div
+          class="retro-game-icon"
+          style="color:#030305;background:#00ff66"
+          aria-hidden="true"
+        >🏓</div>
+
+        <span class="retro-game-tag" style="color:#00ff66">
+          ARCADE · 1972
+        </span>
+
+        <h2 class="pixel">PONG 1972</h2>
+
+        <p>
+          오리지널 아케이드 감성의 탁구 대결!
+          패들을 움직여 공을 튕기고 컴퓨터보다 먼저 5점을 획득하세요.
+        </p>
+
+        <a
+          class="retro-button"
+          href="pong_1972.html"
+          style="background:#00ff66"
+        >
+          PLAY PONG →
+        </a>
+      </article>
+
     </section>
 
     <div class="retro-actions">
@@ -290,6 +385,8 @@
         CLASSIC CENTER
       </a>
     </div>
+
   </main>
 </body>
 </html>
+```
