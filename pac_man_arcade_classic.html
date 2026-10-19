@@ -280,6 +280,67 @@
     </div>
 
     <script>
+        // 서버에 게임 보상을 저장합니다. 보상 금액은 Supabase 함수에서 결정합니다.
+        const ARCADE_SUPABASE_URL = 'https://idzbckhztsdnzablelaf.supabase.co';
+        const ARCADE_SUPABASE_KEY = 'sb_publishable_PHyvEyFmkYgaAHdHOh1RCw_kwB7FLRo';
+
+        function showArcadeRewardToast(message, isError = false) {
+            let toast = document.getElementById('arcadeRewardToast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'arcadeRewardToast';
+                toast.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:99999;padding:12px 18px;border:2px solid #00f0ff;border-radius:12px;background:#07111f;color:#fff;font:700 12px monospace;text-align:center;box-shadow:0 0 22px #00f0ff66;max-width:calc(100vw - 24px);';
+                document.body.appendChild(toast);
+            }
+            toast.style.borderColor = isError ? '#ff0055' : '#00f0ff';
+            toast.textContent = message;
+            toast.style.display = 'block';
+            clearTimeout(toast._hideTimer);
+            toast._hideTimer = setTimeout(() => { toast.style.display = 'none'; }, 3600);
+        }
+
+        async function claimArcadeReward(gameName, rewardType, matchId) {
+            let profile;
+            try { profile = JSON.parse(localStorage.getItem('arcade-profile') || 'null'); } catch { profile = null; }
+            if (!profile || !profile.nickname) {
+                showArcadeRewardToast('보상을 저장하려면 게임 놀이터에 로그인해 주세요.', true);
+                return false;
+            }
+            try {
+                const response = await fetch(`${ARCADE_SUPABASE_URL}/rest/v1/rpc/claim_arcade_game_reward`, {
+                    method: 'POST',
+                    headers: {
+                        apikey: ARCADE_SUPABASE_KEY,
+                        Authorization: `Bearer ${ARCADE_SUPABASE_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        p_nickname: profile.nickname,
+                        p_game: gameName,
+                        p_reward_type: rewardType,
+                        p_match_id: matchId
+                    })
+                });
+                const result = await response.json().catch(() => null);
+                if (!response.ok || !result || result.ok === false) {
+                    throw new Error(result?.message || '보상 저장에 실패했어요. SQL 보상 함수를 적용했는지 확인해 주세요.');
+                }
+                if (result.duplicate) return false;
+                profile.coins = Number(result.coins ?? profile.coins ?? 0);
+                profile.xp = Number(result.xp ?? profile.xp ?? 0);
+                localStorage.setItem('arcade-profile', JSON.stringify(profile));
+                const bits = [];
+                if (Number(result.granted_coins || 0)) bits.push(`🪙 ${result.granted_coins}코인`);
+                if (Number(result.granted_xp || 0)) bits.push(`⭐ ${result.granted_xp} XP`);
+                if (bits.length) showArcadeRewardToast(`보상 획득! ${bits.join(' + ')}`);
+                return true;
+            } catch (error) {
+                console.error('아케이드 보상 저장 오류:', error);
+                showArcadeRewardToast(error.message || '보상 저장에 실패했어요.', true);
+                return false;
+            }
+        }
+
         // Maze Grid Blueprint (19 cols x 22 rows)
         // 1 = Wall, 0 = Dot, 2 = Power Pellet, 3 = Empty, 4 = Ghost House Gate/Inside
         const originalMap = [
@@ -324,6 +385,10 @@
         let isRunning = false;
         let animId = null;
         let soundEnabled = true;
+        let pacmanMatchId = '';
+        let pacmanAliveSince = 0;
+        let pacmanSurvivalRewarded = false;
+        let pacmanWinRewarded = false;
 
         // Canvas Setup
         const canvas = document.getElementById('pacmanCanvas');
@@ -457,6 +522,7 @@
             });
 
             frightenedTimer = 0;
+            pacmanAliveSince = performance.now();
         }
 
         // Setup Controls
@@ -475,9 +541,9 @@
             }
         }
 
-        function canMove(pixelX, pixelY, dir) {
-            const nextPixelX = pixelX + dir.x * pacman.speed;
-            const nextPixelY = pixelY + dir.y * pacman.speed;
+        function canMove(pixelX, pixelY, dir, allowGhostHouse = false, stepSpeed = pacman.speed) {
+            const nextPixelX = pixelX + dir.x * stepSpeed;
+            const nextPixelY = pixelY + dir.y * stepSpeed;
 
             // Tunnel Wrapping Check
             if (nextPixelX < 0 || nextPixelX >= (COLS - 1) * TILE_SIZE) return true;
@@ -495,7 +561,8 @@
             const t3 = map[tileBottom][tileLeft];
             const t4 = map[tileBottom][tileRight];
 
-            return (t1 !== 1 && t2 !== 1 && t3 !== 1 && t4 !== 1 && t1 !== 4 && t2 !== 4 && t3 !== 4 && t4 !== 4);
+            const tiles = [t1, t2, t3, t4];
+            return tiles.every(tile => tile !== 1 && (allowGhostHouse || tile !== 4));
         }
 
         // Start Game
@@ -506,6 +573,10 @@
             score = 0;
             lives = 3;
             ghostsEatenTotal = 0;
+            pacmanMatchId = (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);
+            pacmanSurvivalRewarded = false;
+            pacmanWinRewarded = false;
+            pacmanAliveSince = performance.now();
             initMap();
             resetPositions();
             updateHUD();
@@ -522,6 +593,7 @@
             updatePacman();
             updateGhosts();
             checkCollisions();
+            checkPacmanSurvivalReward();
             render();
 
             animId = requestAnimationFrame(gameLoop);
@@ -590,80 +662,81 @@
             });
         }
 
-        // Ghosts Movement AI
+        // Ghosts Movement AI. Ghosts may pass through tile 4 (the ghost-house gate);
+        // Pac-Man still cannot enter it. Integer tile speeds keep ghosts aligned to the grid.
         function updateGhosts() {
             if (frightenedTimer > 0) {
                 frightenedTimer--;
-                if (frightenedTimer <= 0) {
-                    ghosts.forEach(g => g.isScared = false);
-                }
+                if (frightenedTimer <= 0) ghosts.forEach(g => g.isScared = false);
             }
 
             ghosts.forEach(g => {
-                const speed = g.isScared ? 1.2 : g.speed;
-                // Ghost speeds such as 1.8/1.2 do not always land on exact tile multiples.
-                // Snap near tile centers so direction decisions keep running and ghosts don't
-                // continue straight through walls and disappear off the maze.
-                const nearTileX = Math.abs(g.pixelX / TILE_SIZE - Math.round(g.pixelX / TILE_SIZE)) <= speed / TILE_SIZE + 0.015;
-                const nearTileY = Math.abs(g.pixelY / TILE_SIZE - Math.round(g.pixelY / TILE_SIZE)) <= speed / TILE_SIZE + 0.015;
-                const isGridAligned = nearTileX && nearTileY;
+                const speed = g.isScared ? 1 : 2;
+                const tileX = Math.round(g.pixelX / TILE_SIZE);
+                const tileY = Math.round(g.pixelY / TILE_SIZE);
+                const aligned = Math.abs(g.pixelX - tileX * TILE_SIZE) < 0.01 &&
+                                Math.abs(g.pixelY - tileY * TILE_SIZE) < 0.01;
 
-                if (isGridAligned) {
-                    g.pixelX = Math.round(g.pixelX / TILE_SIZE) * TILE_SIZE;
-                    g.pixelY = Math.round(g.pixelY / TILE_SIZE) * TILE_SIZE;
-                    g.x = Math.round(g.pixelX / TILE_SIZE);
-                    g.y = Math.round(g.pixelY / TILE_SIZE);
+                if (aligned) {
+                    g.pixelX = tileX * TILE_SIZE;
+                    g.pixelY = tileY * TILE_SIZE;
+                    g.x = tileX;
+                    g.y = tileY;
 
-                    const validDirs = [];
-                    [DIRS.UP, DIRS.DOWN, DIRS.LEFT, DIRS.RIGHT].forEach(d => {
-                        // Prevent instant 180 turn unless necessary
-                        if (d.x === -g.dir.x && d.y === -g.dir.y) return;
-                        if (canMove(g.pixelX, g.pixelY, d)) validDirs.push(d);
-                    });
-
-                    if (validDirs.length === 0) {
+                    const candidates = [DIRS.UP, DIRS.DOWN, DIRS.LEFT, DIRS.RIGHT];
+                    let validDirs = candidates.filter(d =>
+                        !(d.x === -g.dir.x && d.y === -g.dir.y) &&
+                        canMove(g.pixelX, g.pixelY, d, true, speed)
+                    );
+                    if (!validDirs.length) {
                         const reverse = { x: -g.dir.x, y: -g.dir.y };
-                        if (canMove(g.pixelX, g.pixelY, reverse)) validDirs.push(reverse);
-                        else return; // Stay in place rather than walk through a wall.
+                        if (canMove(g.pixelX, g.pixelY, reverse, true, speed)) validDirs = [reverse];
                     }
+                    if (!validDirs.length) {
+                        // Recover safely if a ghost was previously left on a blocked tile.
+                        validDirs = candidates.filter(d => canMove(g.pixelX, g.pixelY, d, true, speed));
+                    }
+                    if (!validDirs.length) return;
 
                     if (g.isScared) {
-                        // Random Movement in Scared State
                         g.dir = validDirs[Math.floor(Math.random() * validDirs.length)];
                     } else {
-                        // Target AI Logic
                         let target = { x: pacman.x, y: pacman.y };
-
                         if (g.name === 'Pinky') {
                             target = { x: pacman.x + pacman.dir.x * 4, y: pacman.y + pacman.dir.y * 4 };
                         } else if (g.name === 'Inky') {
                             target = { x: pacman.x - pacman.dir.x * 2, y: pacman.y - pacman.dir.y * 2 };
-                        } else if (g.name === 'Clyde') {
-                            const dist = Math.hypot(g.x - pacman.x, g.y - pacman.y);
-                            if (dist < 5) target = { x: 1, y: 20 };
+                        } else if (g.name === 'Clyde' && Math.hypot(g.x - pacman.x, g.y - pacman.y) < 5) {
+                            target = { x: 1, y: 20 };
                         }
-
-                        // Pick direction that minimizes distance to target
-                        let bestDir = validDirs[0];
-                        let minDist = Infinity;
-
-                        validDirs.forEach(d => {
-                            const nextX = g.x + d.x;
-                            const nextY = g.y + d.y;
-                            const dist = Math.hypot(nextX - target.x, nextY - target.y);
-                            if (dist < minDist) {
-                                minDist = dist;
-                                bestDir = d;
-                            }
-                        });
-
-                        g.dir = bestDir;
+                        validDirs.sort((a, b) =>
+                            Math.hypot(g.x + a.x - target.x, g.y + a.y - target.y) -
+                            Math.hypot(g.x + b.x - target.x, g.y + b.y - target.y)
+                        );
+                        g.dir = validDirs[0];
                     }
                 }
 
-                g.pixelX += g.dir.x * speed;
-                g.pixelY += g.dir.y * speed;
+                if (canMove(g.pixelX, g.pixelY, g.dir, true, speed)) {
+                    g.pixelX += g.dir.x * speed;
+                    g.pixelY += g.dir.y * speed;
+                } else {
+                    // Force a direction decision next frame instead of freezing permanently.
+                    g.pixelX = Math.round(g.pixelX / TILE_SIZE) * TILE_SIZE;
+                    g.pixelY = Math.round(g.pixelY / TILE_SIZE) * TILE_SIZE;
+                    g.x = Math.round(g.pixelX / TILE_SIZE);
+                    g.y = Math.round(g.pixelY / TILE_SIZE);
+                    g.dir = { x: -g.dir.x, y: -g.dir.y };
+                }
             });
+        }
+
+        function checkPacmanSurvivalReward() {
+            if (!isRunning || pacmanSurvivalRewarded || !pacmanMatchId) return;
+            if (performance.now() - pacmanAliveSince >= 60000) {
+                pacmanSurvivalRewarded = true;
+                claimArcadeReward('pacman', 'survive60', pacmanMatchId);
+            }
         }
 
         // Check Pacman / Ghost Collisions
@@ -813,7 +886,12 @@
 
         // Game Over & Summary
         function gameOver(isVictory) {
+            if (!isRunning) return;
             isRunning = false;
+            if (isVictory && !pacmanWinRewarded) {
+                pacmanWinRewarded = true;
+                claimArcadeReward('pacman', 'win', pacmanMatchId);
+            }
 
             const resTitle = document.getElementById('resultTitle');
             const resIcon = document.getElementById('resultIcon');
