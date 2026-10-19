@@ -3,6 +3,7 @@ import {
   loginAccount,
   getSettings,
   getAnnouncement,
+  submitSuggestion,
   getSession,
   saveSession,
   clearSession,
@@ -11,6 +12,7 @@ import {
 } from '../game-api.js';
 
 const $ = id => document.getElementById(id);
+
 let busy = false;
 
 function message(text, error = false) {
@@ -35,6 +37,7 @@ async function render() {
   $('login').classList.toggle('hidden', !!profile);
   $('home').classList.toggle('hidden', !profile);
   $('logout').classList.toggle('hidden', !profile);
+  $('suggestionButton').classList.toggle('hidden', !profile);
 
   $('developerTab').classList.toggle(
     'hidden',
@@ -48,7 +51,7 @@ async function render() {
   $('hello').textContent = profile.nickname;
   $('coins').textContent = Number(profile.coins || 0);
 
-  // 로그인 후 공지사항을 불러와 인사말 바로 위에 표시합니다.
+  // 공지사항은 로그인 후 인사말 바로 위에 표시합니다.
   const banner = $('announcementBanner');
 
   try {
@@ -62,7 +65,6 @@ async function render() {
       !!announcement.enabled && !!text
     );
   } catch {
-    // 공지사항 조회에 실패하면 배너를 숨깁니다.
     banner.classList.remove('visible');
   }
 
@@ -193,4 +195,116 @@ $('developerTab').addEventListener('click', () => {
 
 $('closeDeveloperPanel').addEventListener('click', () => {
   $('developerPanel').classList.add('hidden');
+});
+
+/* 건의사항 작성 창 */
+
+function openSuggestion() {
+  $('suggestionCategory').value = '';
+  $('suggestionMessage').value = '';
+  $('suggestionStatus').textContent = '';
+  $('suggestionStatus').classList.remove('error-text');
+
+  $('suggestionBackdrop').hidden = false;
+  $('suggestionCategory').focus();
+}
+
+function closeSuggestion() {
+  $('suggestionBackdrop').hidden = true;
+}
+
+$('suggestionButton').addEventListener(
+  'click',
+  openSuggestion
+);
+
+$('cancelSuggestion').addEventListener(
+  'click',
+  closeSuggestion
+);
+
+$('suggestionBackdrop').addEventListener('click', event => {
+  if (event.target === $('suggestionBackdrop')) {
+    closeSuggestion();
+  }
+});
+
+document.addEventListener('keydown', event => {
+  if (
+    event.key === 'Escape' &&
+    !$('suggestionBackdrop').hidden
+  ) {
+    closeSuggestion();
+  }
+});
+
+/* 건의사항 전송 */
+
+$('suggestionForm').addEventListener('submit', async event => {
+  event.preventDefault();
+
+  const profile = getSession();
+
+  if (!profile || !profile.nickname) {
+    $('suggestionStatus').textContent =
+      '건의사항을 보내려면 먼저 로그인해 주세요.';
+
+    $('suggestionStatus').classList.add('error-text');
+    return;
+  }
+
+  const category = $('suggestionCategory').value;
+  const content = $('suggestionMessage').value.trim();
+
+  const allowedCategories = [
+    '버그 발생',
+    '기능 추가',
+    '게임 추가',
+    '기타'
+  ];
+
+  if (!allowedCategories.includes(category)) {
+    $('suggestionStatus').textContent =
+      '카테고리를 선택해 주세요.';
+
+    $('suggestionStatus').classList.add('error-text');
+    return;
+  }
+
+  if (!content || content.length > 1000) {
+    $('suggestionStatus').textContent =
+      '건의 내용을 1~1000자로 입력해 주세요.';
+
+    $('suggestionStatus').classList.add('error-text');
+    return;
+  }
+
+  const button = $('sendSuggestion');
+
+  button.disabled = true;
+
+  $('suggestionStatus').classList.remove('error-text');
+  $('suggestionStatus').textContent =
+    '건의사항을 보내는 중…';
+
+  try {
+    await submitSuggestion(
+      profile.nickname,
+      category,
+      content
+    );
+
+    $('suggestionStatus').textContent =
+      '건의사항을 보냈어요. 확인해 주셔서 감사합니다!';
+
+    $('suggestionCategory').value = '';
+    $('suggestionMessage').value = '';
+  } catch (error) {
+    $('suggestionStatus').textContent =
+      error.message || '건의사항을 보내지 못했어요.';
+
+    $('suggestionStatus').classList.add('error-text');
+  } finally {
+    button.disabled = false;
+  }
 });
