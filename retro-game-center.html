@@ -1,0 +1,295 @@
+
+<!doctype html>
+<html lang="ko" class="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>레트로 게임 센터 | 게임 놀이터</title>
+
+  <link rel="stylesheet" href="assets/css/design.css">
+  <link rel="stylesheet" href="assets/css/site.css">
+  <link rel="stylesheet" href="assets/css/game-new.css">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;800&display=swap"
+    rel="stylesheet"
+  >
+
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+
+    body {
+      background: #030305;
+      color: #f1f5f9;
+      background-image:
+        radial-gradient(
+          at 15% 15%,
+          rgba(0, 240, 255, .09),
+          transparent 38%
+        ),
+        radial-gradient(
+          at 85% 75%,
+          rgba(255, 0, 85, .08),
+          transparent 40%
+        );
+    }
+
+    .retro-wrap {
+      width: min(900px, 100%);
+      margin: 0 auto;
+      padding: 18px 14px 44px;
+    }
+
+    .retro-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0 18px;
+      border-bottom: 2px solid #222738;
+    }
+
+    .retro-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .retro-mark {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border: 2px solid #000;
+      border-radius: 10px;
+      color: #030305;
+      background: #00f0ff;
+      box-shadow: 4px 4px #000;
+      font-size: 1.25rem;
+    }
+
+    .pixel {
+      font-family: 'Press Start 2P', monospace;
+    }
+
+    .retro-title {
+      margin: 0;
+      font-size: clamp(.72rem, 2.4vw, 1rem);
+      line-height: 1.7;
+    }
+
+    .retro-sub {
+      margin: 4px 0 0;
+      color: #9ca3af;
+      font-size: .75rem;
+    }
+
+    .retro-back {
+      color: #00f0ff;
+      text-decoration: none;
+      border: 1px solid #273344;
+      border-radius: 8px;
+      padding: 9px 11px;
+      font-size: .82rem;
+      white-space: nowrap;
+    }
+
+    .retro-back:hover {
+      background: #101827;
+    }
+
+    .retro-hero {
+      position: relative;
+      overflow: hidden;
+      margin-top: 22px;
+      padding: clamp(24px, 6vw, 48px) 22px;
+      text-align: center;
+      border: 2px solid #222738;
+      border-radius: 16px;
+      background: rgba(15, 17, 26, .9);
+      box-shadow: 0 0 26px #00f0ff12;
+    }
+
+    .retro-hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: .15;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0 3px,
+        #000 4px 5px
+      );
+    }
+
+    .retro-label {
+      display: inline-block;
+      padding: 9px 10px;
+      border: 1px solid #00f0ff70;
+      border-radius: 6px;
+      color: #00f0ff;
+      font-size: .58rem;
+      line-height: 1.8;
+    }
+
+    .retro-hero h1 {
+      position: relative;
+      margin: 24px 0 14px;
+      color: #ffea00;
+      font-size: clamp(1rem, 4vw, 1.7rem);
+      line-height: 1.9;
+      text-shadow: 0 0 16px #ffea0044;
+    }
+
+    .retro-hero p {
+      position: relative;
+      max-width: 590px;
+      margin: 0 auto;
+      color: #cbd5e1;
+      line-height: 1.9;
+      font-size: .92rem;
+    }
+
+    .retro-status {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      margin: 24px auto 0;
+      color: #ffb8ff;
+      font-size: .66rem;
+      line-height: 1.8;
+    }
+
+    .retro-dot {
+      width: 8px;
+      height: 8px;
+      background: #ff0055;
+      box-shadow: 0 0 12px #ff0055;
+      border-radius: 50%;
+    }
+
+    .retro-panel {
+      margin-top: 16px;
+      padding: 20px;
+      border: 2px solid #222738;
+      border-radius: 12px;
+      background: #0f111a;
+    }
+
+    .retro-panel h2 {
+      margin: 0 0 10px;
+      color: #00f0ff;
+      font-size: .7rem;
+      line-height: 1.9;
+    }
+
+    .retro-panel p {
+      margin: 0;
+      color: #9ca3af;
+      line-height: 1.8;
+      font-size: .88rem;
+    }
+
+    .retro-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .retro-button {
+      display: inline-block;
+      padding: 12px 15px;
+      border: 2px solid #000;
+      border-radius: 8px;
+      color: #030305;
+      background: #ffea00;
+      box-shadow: 3px 3px #000;
+      font-weight: 800;
+      text-decoration: none;
+      font-size: .8rem;
+    }
+
+    .retro-button.secondary {
+      color: #00f0ff;
+      background: #0f111a;
+      border-color: #222738;
+    }
+
+    @media (max-width: 480px) {
+      .retro-sub {
+        font-size: .65rem;
+      }
+
+      .retro-back {
+        font-size: .72rem;
+        padding: 8px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="retro-wrap">
+    <header class="retro-head">
+      <div class="retro-brand">
+        <div class="retro-mark" aria-hidden="true">👾</div>
+
+        <div>
+          <h1 class="retro-title pixel">
+            게임 <span style="color:#00f0ff">놀이터</span>
+          </h1>
+          <p class="retro-sub">RETRO ARCADE · INSERT COIN</p>
+        </div>
+      </div>
+
+      <a class="retro-back" href="index.html">← 홈으로</a>
+    </header>
+
+    <section class="retro-hero">
+      <span class="retro-label pixel">PLAYER 1 READY</span>
+
+      <h1 class="pixel">레트로 게임 센터</h1>
+
+      <p>
+        픽셀 화면과 네온 불빛이 떠오르는 아케이드 공간이에요.
+        레트로 게임을 모아둘 센터를 먼저 준비했어요.
+      </p>
+
+      <div class="retro-status pixel">
+        <span class="retro-dot" aria-hidden="true"></span>
+        MORE GAMES COMING SOON
+      </div>
+    </section>
+
+    <section class="retro-panel">
+      <h2 class="pixel">SYSTEM MESSAGE</h2>
+      <p>
+        현재는 게임 센터 디자인만 준비되어 있어요.
+        이번 변경에서는 새로운 게임을 추가하거나
+        기존 게임 파일을 수정하지 않았어요.
+      </p>
+    </section>
+
+    <div class="retro-actions">
+      <a class="retro-button" href="index.html">
+        BACK TO LOBBY
+      </a>
+
+      <a
+        class="retro-button secondary"
+        href="classic-game-center.html"
+      >
+        CLASSIC CENTER
+      </a>
+    </div>
+  </main>
+</body>
+</html>
