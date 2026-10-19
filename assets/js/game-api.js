@@ -65,24 +65,62 @@ export const loginAccount = (nickname, password) =>
 export const getSettings = () =>
   rpc('get_game_settings');
 
-// 공지사항 조회
 export const getAnnouncement = () =>
   rpc('get_game_announcement');
 
-// 교사 공지사항 저장
-export const teacherSaveAnnouncement = (code, enabled, message) =>
+export const teacherSaveAnnouncement = (
+  code,
+  enabled,
+  message
+) =>
   rpc('teacher_update_announcement', {
     p_code: code,
     p_enabled: enabled,
     p_message: message
   });
 
+/* 건의사항 관련 API */
+
+export const submitSuggestion = (
+  nickname,
+  category,
+  message
+) =>
+  rpc('submit_game_suggestion', {
+    p_nickname: nickname,
+    p_category: category,
+    p_message: message
+  });
+
+export const teacherGetSuggestions = code =>
+  rpc('teacher_get_suggestions', {
+    p_code: code
+  });
+
+export const teacherSetSuggestionResolved = (
+  code,
+  suggestionId,
+  resolved
+) =>
+  rpc('teacher_set_suggestion_resolved', {
+    p_code: code,
+    p_suggestion_id: suggestionId,
+    p_resolved: resolved
+  });
+
+/* 교사 관리 API */
+
 export const teacherGetAccounts = code =>
   rpc('teacher_get_accounts', {
     p_code: code
   });
 
-export const teacherGrantCoins = (code, nickname, amount, reason) =>
+export const teacherGrantCoins = (
+  code,
+  nickname,
+  amount,
+  reason
+) =>
   rpc('teacher_grant_coins', {
     p_code: code,
     p_nickname: nickname,
@@ -90,7 +128,11 @@ export const teacherGrantCoins = (code, nickname, amount, reason) =>
     p_reason: reason
   });
 
-export const teacherSaveSettings = (code, omok, rummikub) =>
+export const teacherSaveSettings = (
+  code,
+  omok,
+  rummikub
+) =>
   rpc('teacher_update_settings', {
     p_code: code,
     p_omok: omok,
@@ -103,7 +145,11 @@ export const teacherSetShortcut = (code, enabled) =>
     p_enabled: enabled
   });
 
-export const teacherSetAccountRole = (code, nickname, enabled) =>
+export const teacherSetAccountRole = (
+  code,
+  nickname,
+  enabled
+) =>
   rpc('teacher_set_account_role', {
     p_code: code,
     p_nickname: nickname,
@@ -121,13 +167,19 @@ export const developerSetAccount = (
     p_enabled: enabled
   });
 
-export const teacherFlagNickname = (code, nickname) =>
+export const teacherFlagNickname = (
+  code,
+  nickname
+) =>
   rpc('teacher_flag_nickname', {
     p_code: code,
     p_nickname: nickname
   });
 
-export const teacherCreateDeleteChallenge = (code, nickname) =>
+export const teacherCreateDeleteChallenge = (
+  code,
+  nickname
+) =>
   rpc('teacher_create_delete_challenge', {
     p_code: code,
     p_nickname: nickname
@@ -145,6 +197,8 @@ export const teacherDeleteAccount = (
     p_nickname: nickname,
     p_challenge: challenge
   });
+
+/* 로그인 세션 */
 
 export function getSession() {
   try {
