@@ -3,6 +3,8 @@ import {
   teacherGrantCoins,
   teacherSaveSettings,
   getSettings,
+  getAnnouncement,
+  teacherSaveAnnouncement,
   developerSetAccount,
   teacherSetAccountRole,
   teacherFlagNickname,
@@ -63,6 +65,7 @@ async function loadAccounts() {
       }
 
       const small = document.createElement('small');
+
       small.textContent =
         `계정 순번 ${String(account.account_number || 0).padStart(3, '0')} · 🪙 ${Number(account.coins || 0)}`;
 
@@ -73,6 +76,7 @@ async function loadAccounts() {
 
       // 코인 지급 버튼
       const grant = document.createElement('button');
+
       grant.type = 'button';
       grant.className = 'btn btn-primary';
       grant.textContent = '코인 지급';
@@ -80,6 +84,7 @@ async function loadAccounts() {
 
       // 부적절한 이름 처리 버튼
       const flag = document.createElement('button');
+
       flag.type = 'button';
       flag.className = 'btn btn-line';
       flag.textContent = '부적절한 이름 처리';
@@ -110,6 +115,7 @@ async function loadAccounts() {
 
       // 계정 삭제 버튼
       const del = document.createElement('button');
+
       del.type = 'button';
       del.className = 'btn btn-line';
       del.textContent = '계정 삭제';
@@ -131,11 +137,13 @@ async function loadAccounts() {
           const reTeacher = prompt(
             '교사 코드를 다시 입력하세요.'
           );
+
           if (reTeacher === null) return;
 
           const developerCode = prompt(
             '개발자 코드를 입력하세요.'
           );
+
           if (developerCode === null) return;
 
           const challenge = await teacherCreateDeleteChallenge(
@@ -164,6 +172,7 @@ async function loadAccounts() {
           );
 
           alert(done.message || '계정을 삭제했습니다.');
+
           await loadAccounts();
         } catch (error) {
           alert(
@@ -190,6 +199,7 @@ function openCoinGrant(account) {
   $('coinTargetNickname').textContent = account.nickname;
   $('coinGrantAmount').value = '';
   $('coinGrantReason').value = '';
+
   show('coinGrantStatus', '');
 
   $('coinDialogBackdrop').hidden = false;
@@ -255,6 +265,7 @@ $('coinGrantForm').addEventListener('submit', async event => {
   }
 
   const submitButton = $('submitCoinGrant');
+
   submitButton.disabled = true;
   show('coinGrantStatus', '코인을 지급하는 중…');
 
@@ -287,6 +298,7 @@ $('gateform').addEventListener('submit', async event => {
   event.preventDefault();
 
   const code = $('code').value.trim();
+
   show('gateStatus', '확인 중…');
 
   try {
@@ -301,6 +313,29 @@ $('gateform').addEventListener('submit', async event => {
     $('omokToggle').checked = !!settings.omok_enabled;
     $('rkToggle').checked = !!settings.rummikub_enabled;
 
+    // 기존에 저장된 공지사항을 설정 화면에 불러옵니다.
+    try {
+      const announcement = await getAnnouncement();
+
+      $('announcementEnabled').checked =
+        !!announcement.enabled;
+
+      $('announcementText').value =
+        announcement.message || '';
+
+      show(
+        'announcementStatus',
+        '현재 공지사항을 불러왔어요.'
+      );
+    } catch (announcementError) {
+      show(
+        'announcementStatus',
+        announcementError.message ||
+          '공지사항을 불러오지 못했어요.',
+        true
+      );
+    }
+
     await loadAccounts();
   } catch (error) {
     show(
@@ -313,6 +348,61 @@ $('gateform').addEventListener('submit', async event => {
 
 $('refreshAccounts').addEventListener('click', loadAccounts);
 
+// 공지사항 저장
+$('saveAnnouncement').addEventListener('click', async () => {
+  const enabled = $('announcementEnabled').checked;
+  const announcement = $('announcementText').value.trim();
+
+  if (announcement.length > 300) {
+    return show(
+      'announcementStatus',
+      '공지사항은 300자 이내로 입력해 주세요.',
+      true
+    );
+  }
+
+  if (enabled && !announcement) {
+    return show(
+      'announcementStatus',
+      '표시할 공지 내용을 입력해 주세요.',
+      true
+    );
+  }
+
+  const button = $('saveAnnouncement');
+
+  button.disabled = true;
+
+  show(
+    'announcementStatus',
+    '공지사항을 저장하는 중…'
+  );
+
+  try {
+    await teacherSaveAnnouncement(
+      teacherCode,
+      enabled,
+      announcement
+    );
+
+    show(
+      'announcementStatus',
+      enabled
+        ? '공지사항을 저장하고 홈 화면에 표시했어요.'
+        : '공지사항을 저장했어요. 홈 화면에서는 숨겨집니다.'
+    );
+  } catch (error) {
+    show(
+      'announcementStatus',
+      error.message || '공지사항 저장에 실패했어요.',
+      true
+    );
+  } finally {
+    button.disabled = false;
+  }
+});
+
+// 기존 게임 설정 저장
 $('saveSettings').addEventListener('click', async () => {
   try {
     await teacherSaveSettings(
@@ -341,6 +431,7 @@ function openAccountDetail(account) {
 
   $('roleDeveloperCode').value = '';
   $('roleTeacherCode').value = '';
+
   show('roleStatus', '');
 }
 
@@ -350,6 +441,7 @@ $('closeAccountDetail').addEventListener('click', () => {
 
 $('assignDeveloper').addEventListener('click', async () => {
   const account = window.selectedAccount;
+
   if (!account) return;
 
   const code = $('roleDeveloperCode').value.trim();
@@ -382,6 +474,7 @@ $('assignDeveloper').addEventListener('click', async () => {
 
 $('assignTeacher').addEventListener('click', async () => {
   const account = window.selectedAccount;
+
   if (!account) return;
 
   const code = $('roleTeacherCode').value.trim();
