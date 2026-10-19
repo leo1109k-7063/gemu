@@ -26,9 +26,7 @@
       overflow-wrap: anywhere;
     }
 
-    .announcement-banner.visible {
-      display: block;
-    }
+    .announcement-banner.visible { display: block; }
 
     .announcement-label {
       display: block;
@@ -43,22 +41,80 @@
       white-space: pre-wrap;
       line-height: 1.55;
     }
+
+    .coin-dialog-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 9998;
+      background: rgb(0 0 0 / 50%);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+    }
+
+    .coin-dialog-backdrop[hidden] {
+      display: none;
+    }
+
+    .coin-dialog {
+      width: min(100%, 480px);
+      max-height: calc(100vh - 32px);
+      overflow: auto;
+      padding: 22px;
+      border-radius: 16px;
+      background: white;
+      color: #222;
+      box-shadow: 0 12px 40px rgb(0 0 0 / 25%);
+    }
+
+    .coin-dialog h2 { margin-top: 0; }
+
+    .coin-dialog label {
+      display: block;
+      margin: 14px 0 6px;
+      font-weight: 600;
+    }
+
+    .coin-dialog input,
+    .coin-dialog select,
+    .coin-dialog textarea {
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .coin-dialog textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .coin-dialog-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
   </style>
 </head>
 <body>
 <main class="new-wrap">
   <header class="new-head">
     <h1>🎮 게임 놀이터</h1>
-    <div style="display:flex;gap:8px;align-items:center">
+
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <button id="logout" class="btn btn-line hidden" type="button">
+        로그아웃
+      </button>
+
+      <button id="suggestionButton" class="btn btn-line hidden" type="button">
+        건의사항
+      </button>
+
       <button
         id="developerTab"
         class="btn btn-primary hidden"
         type="button"
       >개발자 탭</button>
-
-      <button id="logout" class="btn btn-line hidden">
-        로그아웃
-      </button>
     </div>
   </header>
 
@@ -109,8 +165,6 @@
 
   <section id="home" class="hidden">
     <div class="new-card">
-
-      <!-- 공지사항: 인사말 바로 위에 표시 -->
       <section
         id="announcementBanner"
         class="announcement-banner"
@@ -118,10 +172,7 @@
         aria-label="공지사항"
       >
         <span class="announcement-label">📢 공지사항</span>
-        <p
-          id="announcementMessage"
-          class="announcement-message"
-        ></p>
+        <p id="announcementMessage" class="announcement-message"></p>
       </section>
 
       <p>안녕하세요, <b id="hello"></b>님!</p>
@@ -215,6 +266,62 @@
     </section>
   </section>
 </main>
+
+<!-- 건의사항 작성 창 -->
+<div id="suggestionBackdrop" class="coin-dialog-backdrop" hidden>
+  <section
+    class="coin-dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="suggestionTitle"
+  >
+    <h2 id="suggestionTitle">건의사항 보내기</h2>
+
+    <form id="suggestionForm">
+      <label for="suggestionCategory">카테고리</label>
+
+      <select
+        id="suggestionCategory"
+        required
+        style="width:100%;box-sizing:border-box"
+      >
+        <option value="">카테고리를 선택해 주세요</option>
+        <option value="버그 발생">버그 발생</option>
+        <option value="기능 추가">기능 추가</option>
+        <option value="게임 추가">게임 추가</option>
+        <option value="기타">기타</option>
+      </select>
+
+      <label for="suggestionMessage">
+        건의 내용 (최대 1000자)
+      </label>
+
+      <textarea
+        id="suggestionMessage"
+        maxlength="1000"
+        rows="6"
+        required
+        placeholder="어떤 점을 개선하면 좋을지 자세히 적어 주세요."
+      ></textarea>
+
+      <p id="suggestionStatus" role="status" aria-live="polite"></p>
+
+      <div class="coin-dialog-actions">
+        <button
+          id="cancelSuggestion"
+          class="btn btn-line"
+          type="button"
+        >취소</button>
+
+        <button
+          id="sendSuggestion"
+          class="btn btn-primary"
+          type="submit"
+        >보내기</button>
+      </div>
+    </form>
+  </section>
+</div>
 
 <script type="module" src="assets/js/pages/new-home.js"></script>
 </body>
