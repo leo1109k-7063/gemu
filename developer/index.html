@@ -4,9 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>개발자 센터</title>
+
   <link rel="stylesheet" href="../assets/css/design.css">
   <link rel="stylesheet" href="../assets/css/site.css">
   <link rel="stylesheet" href="../assets/css/game-new.css">
+
   <style>
     .dev-grid {
       display: grid;
@@ -62,40 +64,136 @@
       font-weight: 600;
       vertical-align: middle;
     }
+
+    .dev-setting-label {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+
+    .dev-setting-label input {
+      margin-top: 5px;
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+
+    .dev-setting-description {
+      display: block;
+      margin-top: 5px;
+      line-height: 1.6;
+      font-size: .9rem;
+      opacity: .8;
+    }
+
+    #devSettingsStatus {
+      min-height: 1.5em;
+      margin-bottom: 0;
+    }
   </style>
 </head>
+
 <body>
 <main class="new-wrap">
+
   <header class="new-head">
     <a href="../index.html">← 홈으로</a>
+
     <h1>개발자 센터</h1>
-    <button id="devLogout" class="btn btn-line" hidden>
+
+    <button
+      id="devLogout"
+      class="btn btn-line"
+      type="button"
+      hidden
+    >
       로그아웃
     </button>
   </header>
 
+  <!-- 개발자 권한이 없을 때 -->
   <section id="denied" class="new-card denied" hidden>
     <h2>권한이 없습니다</h2>
-    <p>이 주소는 개발자 권한이 있는 계정만 이용할 수 있습니다.</p>
+
+    <p>
+      이 주소는 개발자 권한이 있는 계정만 이용할 수 있습니다.
+    </p>
+
     <a class="btn btn-primary" href="../index.html">
       홈으로 돌아가기
     </a>
   </section>
 
+  <!-- 개발자 전용 콘텐츠 -->
   <section id="content" hidden>
+
+    <!-- 센터 안내 -->
     <div class="new-card">
       <h2>개발자 센터</h2>
+
       <p>
-        코드 설명 페이지 외의 화면은 더미데이터로 묶어 두었습니다.
-        학급, 교사 및 관리 기능, 수업 자료, 시뮬레이션을 아래에서 확인할 수 있습니다.
+        게임 놀이터의 개발자 전용 도구와 프로젝트 바로가기를
+        모아 둔 공간입니다.
       </p>
+
       <p>
-        기능이 실제로 동작하는지는 각 페이지의 JavaScript와
-        Supabase 서버 함수 구현 상태에 따라 달라집니다.
+        현재 제공되는 기능에는 개발자 권한 확인, 코드 설명 문서,
+        계정별 루미큐브 컴퓨터 손패 공개 설정,
+        교사 관리 페이지 바로가기 등이 있습니다.
+      </p>
+
+      <p class="muted">
+        아래에서 실제 기능과 화면 확인용 페이지를 구분해서 확인할 수 있습니다.
       </p>
     </div>
 
+    <!-- 개발자 설정 -->
+    <h2 class="dev-section-title">개발자 설정</h2>
+
+    <section class="new-card" aria-labelledby="devSettingsTitle">
+      <h3 id="devSettingsTitle">🧪 루미큐브 디버그 설정</h3>
+
+      <p>
+        현재 로그인한 개발자 계정으로 루미큐브를 실행할 때
+        컴퓨터가 보유한 타일을 확인할 수 있습니다.
+      </p>
+
+      <label class="dev-setting-label">
+        <input
+          id="showCpuHandSetting"
+          type="checkbox"
+        >
+
+        <span>
+          <strong>컴퓨터 루미큐브 패 공개</strong>
+
+          <span class="dev-setting-description">
+            활성화하면 루미큐브 게임 화면의
+            '컴퓨터 손패' 영역에 컴퓨터가 보유한 타일이 표시됩니다.
+            비활성화하면 다시 숨겨집니다.
+          </span>
+        </span>
+      </label>
+
+      <p class="muted">
+        이 설정은 개발자 계정별로 현재 브라우저에 저장됩니다.
+        다른 기기나 브라우저에는 자동으로 동기화되지 않습니다.
+      </p>
+
+      <p
+        id="devSettingsStatus"
+        role="status"
+        aria-live="polite"
+      ></p>
+    </section>
+
+    <!-- 개발자 문서 -->
     <h2 class="dev-section-title">개발자 문서</h2>
+
     <div class="dev-grid">
       <a
         class="dev-card"
@@ -104,6 +202,7 @@
         rel="noopener noreferrer"
       >
         <h3>📘 코드 설명 및 작동 원리 ↗</h3>
+
         <p>
           프로젝트 구조, 로그인 흐름, Supabase RPC,
           권한 확인, 데이터 처리 방식과 보안상 주의점을 확인합니다.
@@ -112,126 +211,223 @@
       </a>
     </div>
 
-    <h2 class="dev-section-title">더미데이터</h2>
+    <!-- 프로젝트 바로가기 -->
+    <h2 class="dev-section-title">프로젝트 바로가기</h2>
+
     <div class="new-card" style="margin-bottom:16px">
       <p>
-        <strong>더미데이터</strong> — 아래 항목은 개발자 센터에서
-        분류해 확인하기 위한 링크 모음입니다.
+        <strong>더미데이터</strong>로 표시된 항목은 화면 확인용입니다.
+        해당 표시가 있는 페이지는 실제 저장이나 관리 기능이
+        완성되어 있다고 보장하지 않습니다.
+      </p>
+
+      <p>
+        교사 관리 페이지의 공지사항과 건의사항 등은
+        각 페이지의 실제 구현 상태를 따릅니다.
       </p>
     </div>
 
+    <!-- 학급 -->
     <h3 class="dev-section-title">학급</h3>
+
     <div class="dev-grid">
       <a class="dev-card" href="../class.html">
-        <h3>🏫 학급 <span class="dummy-tag">더미데이터</span></h3>
+        <h3>
+          🏫 학급
+          <span class="dummy-tag">더미데이터</span>
+        </h3>
+
         <p>학급 관련 화면</p>
       </a>
     </div>
 
+    <!-- 교사 및 관리 -->
     <h3 class="dev-section-title">교사 및 관리 기능</h3>
+
     <div class="dev-grid">
       <a class="dev-card" href="../teacher/index.html">
-        <h3>🧑‍🏫 교사 관리 <span class="dummy-tag">더미데이터</span></h3>
-        <p>계정 목록, 코인 지급, 게임 설정 및 권한 관리</p>
+        <h3>
+          🧑‍🏫 교사 관리
+          <span class="dummy-tag">확인 필요</span>
+        </h3>
+
+        <p>
+          계정 목록, 코인 지급, 게임 설정, 권한 관리,
+          공지사항 설정 및 건의사항 관리
+        </p>
       </a>
 
       <a class="dev-card" href="../teacher/check.html">
-        <h3>교사 확인 <span class="dummy-tag">더미데이터</span></h3>
+        <h3>
+          교사 확인
+          <span class="dummy-tag">더미데이터</span>
+        </h3>
+
         <p>교사 확인 기능</p>
       </a>
 
       <a class="dev-card" href="../teacher/groups.html">
-        <h3>그룹 관리 <span class="dummy-tag">더미데이터</span></h3>
+        <h3>
+          그룹 관리
+          <span class="dummy-tag">더미데이터</span>
+        </h3>
+
         <p>그룹 관리 화면</p>
       </a>
 
       <a class="dev-card" href="../teacher/live.html">
-        <h3>실시간 관리 <span class="dummy-tag">더미데이터</span></h3>
+        <h3>
+          실시간 관리
+          <span class="dummy-tag">더미데이터</span>
+        </h3>
+
         <p>실시간 수업 및 진행 화면</p>
       </a>
 
       <a class="dev-card" href="../teacher/reveal.html">
-        <h3>공개 관리 <span class="dummy-tag">더미데이터</span></h3>
+        <h3>
+          공개 관리
+          <span class="dummy-tag">더미데이터</span>
+        </h3>
+
         <p>공개 및 표시 관련 화면</p>
       </a>
 
       <a class="dev-card" href="../teacher/owner-tools.html">
-        <h3>소유자 도구 <span class="dummy-tag">더미데이터</span></h3>
+        <h3>
+          소유자 도구
+          <span class="dummy-tag">더미데이터</span>
+        </h3>
+
         <p>소유자 도구 화면</p>
       </a>
     </div>
 
+    <!-- 수업 자료 -->
     <h3 class="dev-section-title">수업 자료</h3>
+
     <div class="dev-grid">
       <a class="dev-card" href="../lessons/611.html">
-        <h3>수업 자료 611 <span class="dummy-tag">더미데이터</span></h3>
+        <h3>
+          수업 자료 611
+          <span class="dummy-tag">더미데이터</span>
+        </h3>
+
         <p>611 단원 수업 콘텐츠</p>
       </a>
 
       <a class="dev-card" href="../lessons/612.html">
-        <h3>수업 자료 612 <span class="dummy-tag">더미데이터</span></h3>
+        <h3>
+          수업 자료 612
+          <span class="dummy-tag">더미데이터</span>
+        </h3>
+
         <p>612 단원 수업 콘텐츠</p>
       </a>
     </div>
 
+    <!-- 시뮬레이션 -->
     <h3 class="dev-section-title">시뮬레이션</h3>
+
     <div class="dev-grid">
       <a class="dev-card" href="../sims/611_bottle.html">
-        <h3>병 시뮬레이션 <span class="dummy-tag">더미데이터</span></h3>
+        <h3>
+          병 시뮬레이션
+          <span class="dummy-tag">더미데이터</span>
+        </h3>
+
         <p>과학 시뮬레이션 화면</p>
       </a>
 
       <a class="dev-card" href="../sims/611_particle_box.html">
-        <h3>입자 상자 611 <span class="dummy-tag">더미데이터</span></h3>
+        <h3>
+          입자 상자 611
+          <span class="dummy-tag">더미데이터</span>
+        </h3>
+
         <p>입자 모델 시뮬레이션</p>
       </a>
 
       <a class="dev-card" href="../sims/612_balloon_jar.html">
-        <h3>풍선 병 <span class="dummy-tag">더미데이터</span></h3>
+        <h3>
+          풍선 병
+          <span class="dummy-tag">더미데이터</span>
+        </h3>
+
         <p>기체 관련 시뮬레이션</p>
       </a>
 
       <a class="dev-card" href="../sims/612_gas_fill.html">
-        <h3>기체 채우기 <span class="dummy-tag">더미데이터</span></h3>
+        <h3>
+          기체 채우기
+          <span class="dummy-tag">더미데이터</span>
+        </h3>
+
         <p>기체 관련 시뮬레이션</p>
       </a>
 
       <a class="dev-card" href="../sims/612_particle_box.html">
-        <h3>입자 상자 612 <span class="dummy-tag">더미데이터</span></h3>
+        <h3>
+          입자 상자 612
+          <span class="dummy-tag">더미데이터</span>
+        </h3>
+
         <p>입자 모델 시뮬레이션</p>
       </a>
 
       <a class="dev-card" href="../sims/612_press_clay.html">
-        <h3>점토 압축 <span class="dummy-tag">더미데이터</span></h3>
+        <h3>
+          점토 압축
+          <span class="dummy-tag">더미데이터</span>
+        </h3>
+
         <p>압력 및 부피 관련 시뮬레이션</p>
       </a>
 
       <a class="dev-card" href="../sims/612_syringe.html">
-        <h3>주사기 <span class="dummy-tag">더미데이터</span></h3>
+        <h3>
+          주사기
+          <span class="dummy-tag">더미데이터</span>
+        </h3>
+
         <p>기체 부피 관련 시뮬레이션</p>
       </a>
 
       <a class="dev-card" href="../sims/612_syringe_particles.html">
-        <h3>주사기 입자 <span class="dummy-tag">더미데이터</span></h3>
+        <h3>
+          주사기 입자
+          <span class="dummy-tag">더미데이터</span>
+        </h3>
+
         <p>입자 표현 시뮬레이션</p>
       </a>
 
       <a class="dev-card" href="../sims/612_volume_blocks.html">
-        <h3>부피 블록 <span class="dummy-tag">더미데이터</span></h3>
+        <h3>
+          부피 블록
+          <span class="dummy-tag">더미데이터</span>
+        </h3>
+
         <p>부피 시각화 화면</p>
       </a>
     </div>
 
+    <!-- 보안 안내 -->
     <div class="new-card" style="margin-top:28px">
       <h3>보안 안내</h3>
+
       <p>
         이 페이지의 브라우저 측 권한 확인만으로는 보안이 완성되지 않습니다.
-        민감한 데이터 조회와 변경은 Supabase 서버에서도 권한을 확인해야 합니다.
+        민감한 데이터 조회와 변경은 서버에서도 권한을 확인해야 합니다.
       </p>
     </div>
+
   </section>
 </main>
 
-<script type="module" src="../assets/js/pages/developer-center.js"></script>
+<script
+  type="module"
+  src="../assets/js/pages/developer-center.js"
+></script>
 </body>
 </html>
