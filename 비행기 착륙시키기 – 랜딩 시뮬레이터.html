@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>비행기 착륙시키기 – 랜딩 시뮬레이터</title>
+<style>
+:root{--bg:#0b0f14;--fg:#e8eef5;--ac:#ffb020;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#0b0f14;--fg:#e8eef5}}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;overflow:hidden}
+canvas{position:fixed;inset:0;width:100%;height:100%}
+#ov{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(5,10,16,.8);padding:12px}
+#box{max-width:660px;max-height:92vh;overflow:auto;background:#121a24;border:1px solid #2c3a4b;border-radius:14px;padding:20px 26px;line-height:1.5;font-size:15px}
+h1,h2{margin:.2em 0 .4em}h1{font-size:24px}
+.k{display:grid;grid-template-columns:1fr 1fr;gap:4px 18px;margin:10px 0;font-size:14px}
+kbd{background:#263445;border:1px solid #3c4f66;border-radius:4px;padding:0 6px;font-family:ui-monospace,monospace;font-size:13px}
+button{background:var(--ac);color:#111;border:0;border-radius:8px;padding:10px 22px;font-size:16px;font-weight:700;cursor:pointer;margin-top:8px}
+.s{display:grid;grid-template-columns:auto auto;gap:2px 20px;margin:10px 0}.s b{text-align:right}
+small{color:#9fb0c3}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="ov"><div id="box"></div></div>
+<script>
+const $=i=>document.getElementById(i),cv=$('c'),ctx=cv.getContext('2d'),ov=$('ov'),bx=$('box');
+const K=.001668,D=Math.PI/180,HZc=[178,200,222],HZ='rgb(178,200,222)';
+let W,H,Py,PH,cx,cy,F,u,C,cps,sps,cth,sth,cph,sph;
+function rs(){const d=Math.min(devicePixelRatio||1,1.5);W=innerWidth;H=innerHeight;cv.width=W*d;cv.height=H*d;ctx.setTransform(d,0,0,d,0,0)}
+addEventListener('resize',rs);rs();
+let sd=7;const rnd=()=>(sd=sd*16807%2147483647)/2147483647;
+const OBJ=[],add=(x,z,w,d,h,c)=>OBJ.push({x,z,w,d,h,c});
+add(140,1000,40,320,20,[170,170,180]);add(85,560,9,9,46,[205,205,210]);add(190,1650,50,90,16,[140,150,160]);add(190,1850,50,90,16,[140,150,160]);
+for(let i=0;i<90;i++){const x=(rnd()-.5)*3600,z=-2500+rnd()*7500;if(Math.abs(x)<380&&z>-1500&&z<4500)continue;add(x,z,7,7,10+rnd()*8,[25+rnd()*20,70+rnd()*40,35+rnd()*20])}
+for(let i=0;i<14;i++)add(-1100+rnd()*500,1500+rnd()*2200,30+rnd()*30,30+rnd()*30,40+rnd()*80,[130+rnd()*40,135+rnd()*40,145+rnd()*40]);
+const PAL=[[84,130,60],[104,142,64],[140,138,70],[62,108,52],[120,100,66]];
+let S,st='intro',T=0,keys={},inv=false,msg='',msgT=0,shake=0,paused=false,res=null,actx,osc,gn,lastRA=999,call='',callT=0,beepT=0,wtxt=[];
+function reset(){const wx=(Math.random()-.5)*8;S={x:(Math.random()-.5)*160,y:356,z:-6500,psi:0,th:0,ph:0,V:76,gam:-.052,thr:.3,n1:.3,gear:0,gt:0,fl:1,ft:1,spo:0,spt:0,rev:false,on:false,wind:wx,td:null,brk:0,al:0};
+ const cl=9.81*Math.cos(S.gam)/(K*S.V*S.V);S.th=(cl-(.25+.3*S.fl))/5+S.gam;T=0;res=null;msg='';lastRA=999;paused=false}
+const thrust=n=>3.4*Math.max(0,n-.06);
+function say(t){msg=t;msgT=3}
+function step(dt){const s=S;T+=dt;
+ const pi=((keys.ArrowDown?1:0)-(keys.ArrowUp?1:0))*(inv?-1:1),ri=(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0),ru=(keys.KeyE?1:0)-(keys.KeyQ?1:0);
+ if(keys.KeyW)s.thr=Math.min(1,s.thr+.35*dt);if(keys.KeyS)s.thr=Math.max(0,s.thr-.35*dt);
+ const mv=(a,b,r)=>a+Math.sign(b-a)*Math.min(Math.abs(b-a),r*dt);
+ s.n1=mv(s.n1,Math.max(.05,s.thr),.45);s.gear=mv(s.gear,s.gt,.2);s.fl=mv(s.fl,s.ft,.4);s.spo=mv(s.spo,s.spt,2);s.brk=keys.KeyB?1:0;
+ const V=Math.max(s.V,1),q=K*V*V,cl0=.25+.3*s.fl,t1=Math.sin(T*1.7)+.7*Math.sin(T*2.9+1)+.5*Math.sin(T*.6+2);
+ const wx=s.wind+1.2*Math.sin(T*.43)+.8*Math.sin(T*1.1+3),cd=.03+.025*s.gear+.025*s.fl+.08*s.spo;
+ if(!s.on){
+  const al=s.th-s.gam;let CL=cl0+5*al;if(al>.24)CL=cl0+1.2-12*(al-.24);CL=Math.max(-.6,CL)*(1-.35*s.spo);s.al=al;
+  const aL=q*CL,aD=q*(cd+.05*CL*CL),Th=thrust(s.n1);
+  s.V=Math.max(15,s.V+(Th*Math.cos(al)-aD-9.81*Math.sin(s.gam))*dt);
+  s.gam+=((aL*Math.cos(s.ph)+Th*Math.sin(al)-9.81*Math.cos(s.gam))/V+.012*t1)*dt;s.gam=Math.max(-1.4,Math.min(1,s.gam));
+  s.psi+=(aL*Math.sin(s.ph)/V+ru*.03)*dt;
+  s.th+=(pi*.1-(al>.26?.15:0))*dt;s.th=Math.max(-.6,Math.min(.6,s.th));
+  s.ph+=(ri*.5-s.ph*.02+.03*t1)*dt;s.ph=Math.max(-.8,Math.min(.8,s.ph));
+  s.x+=(s.V*Math.cos(s.gam)*Math.sin(s.psi)+wx)*dt;s.z+=s.V*Math.cos(s.gam)*Math.cos(s.psi)*dt;s.y+=s.V*Math.sin(s.gam)*dt;
+  if(s.y<=(s.gear>.9?0:1.6)&&s.gam<=.02)land();
+  else if(s.z>3300)end('활주로를 지나쳐 버렸습니다 (착륙 실패)');
+ }else{
+  const CL=(cl0+5*s.th)*(1-.75*s.spo),aL=q*CL,aD=q*(cd+.05*CL*CL),grass=Math.abs(s.x)>24;
+  const Th=s.rev?-1.8*Math.max(0,s.n1-.06)*Math.min(1,s.V/10):thrust(s.n1);
+  const fr=(grass?1.8:.15)+(s.brk?2.8*(.6+.4*s.spo):0)+.9*s.spo;
+  s.V=Math.max(0,s.V+(Th-aD)*dt-fr*dt);
+  if(aL>9.81&&s.V>40){s.on=false;s.gam=.02;s.y=.2;s.rev=false;say('이륙했습니다! 다시 접근하세요')}
+  s.th+=(pi*.12-s.th*.4)*dt;s.th=Math.max(0,Math.min(.2,s.th));s.ph*=Math.max(0,1-4*dt);
+  s.psi+=(ru*.3*Math.min(1,s.V/15)-s.psi*.15*Math.min(1,s.V/20))*dt;
+  s.x+=s.V*Math.sin(s.psi)*dt;s.z+=s.V*Math.cos(s.psi)*dt;
+  if(grass&&s.V>38)end('고속으로 활주로를 이탈했습니다');
+  else if(s.z>3100&&s.V>12)end('활주로를 오버런했습니다');
+  else if(s.V<=.01&&s.thr<.4)finish();
+ }
+ const ra=s.y*3.281;if(!s.on&&s.gear>.9){for(const t of[100,50,30,20,10])if(lastRA>t&&ra<=t){call=''+t;callT=1.1}}lastRA=ra;
+ callT=Math.max(0,callT-dt);msgT=Math.max(0,msgT-dt);shake*=Math.pow(.05,dt);
+}
+function land(){const s=S,vs=s.V*Math.sin(s.gam);let c=null;
+ if(s.gear<.9)c='랜딩기어를 내리지 않아 동체착륙, 기체가 파손되었습니다';
+ else if(s.z<-30)c='활주로 앞 지면에 충돌했습니다';
+ else if(Math.abs(s.x)>30)c='활주로 밖에 착지했습니다';
+ else if(s.z>2950)c='활주로 끝을 넘어 착지했습니다';
+ else if(Math.abs(s.ph)>.16)c='날개 끝이 지면에 닿았습니다 (기울기 과다)';
+ else if(s.th>.21)c='꼬리가 활주로에 닿았습니다 (기수 너무 높음)';
+ else if(s.th<-.03)c='앞바퀴가 먼저 닿아 파손되었습니다 (기수 너무 낮음)';
+ else if(vs<-5.5)c='너무 강하게 착지했습니다 (강하율 과다)';
+ if(c)return end(c);
+ s.on=true;s.y=0;s.gam=0;s.td={vs,x:s.x,z:s.z,pit:s.th,V:s.V};shake=Math.min(1,-vs/4+.25);thump(.25+(-vs)*.1);
+ say(vs>-1.2?'부드러운 착지!':vs>-3?'착지! 스포일러·역추진·브레이크로 감속하세요':'쿵! 거친 착지');
+}
+function showOv(h){bx.innerHTML=h;ov.style.display='flex';if(gn)gn.gain.value=0}
+function end(c){st='over';shake=1.5;thump(.8);showOv(`<h2>💥 착륙 실패</h2><p>${c}</p><button onclick="start()">다시 도전 (Enter)</button>`)}
+function finish(){const s=S,t=s.td,vs=-t.vs,a=Math.max(0,40-Math.max(0,vs-1)*13),b=Math.max(0,20-Math.abs(t.x)*.9),
+ dz=t.z<250?250-t.z:t.z>800?t.z-800:0,c=Math.max(0,20-dz*.03),pd=t.pit/D,d=Math.max(0,10-Math.max(0,Math.abs(pd-6)-3)*1.5),ok=Math.abs(s.x)<=22.5&&s.z<=3000,e=ok?10:0;
+ const tot=Math.round(a+b+c+d+e),g=tot>=90?'🏆 완벽한 착륙! 승객들이 박수를 칩니다':tot>=75?'👍 훌륭한 착륙':tot>=55?'🙂 무난한 착륙':'😅 안전하게 멈췄지만 거칠었습니다';
+ st='over';showOv(`<h2>${g}</h2><div class="s"><span>점수</span><b>${tot} / 100</b><span>접지 강하율</span><b>${Math.round(vs*196.85)} fpm</b><span>접지 위치</span><b>문턱 뒤 ${Math.round(t.z)} m</b><span>중심선 편차</span><b>${Math.abs(t.x).toFixed(1)} m</b><span>접지 피치</span><b>${pd.toFixed(1)}°</b><span>접지 속도</span><b>${Math.round(t.V*1.944)} kt</b><span>정지 위치</span><b>${ok?'활주로 위':'활주로 밖'} (${Math.round(s.z)} m)</b></div><button onclick="start()">다시 도전 (Enter)</button>`)}
+function start(){reset();st='fly';ov.style.display='none';initAudio();actx&&actx.resume()}
+function intro(){showOv(`<h1>✈ 비행기 착륙시키기</h1><p>활주로 36(길이 3000 m, 폭 45 m)에 접근 중입니다. 약 130~145 kt, 3° 글라이드 경로를 따라 내려와 착륙 후 활주로 위에서 멈추세요. 횡풍이 불어 기체가 밀립니다. 기수를 바람 쪽으로 살짝 돌려(크랩) 중심선을 유지하세요.</p>
+<div class="k"><span><kbd>↓</kbd> 기수 올림 (조종간 당김)</span><span><kbd>↑</kbd> 기수 내림</span><span><kbd>←</kbd><kbd>→</kbd> 좌우 기울이기</span><span><kbd>Q</kbd><kbd>E</kbd> 방향타 / 지상 조향</span><span><kbd>W</kbd><kbd>S</kbd> 스로틀 올림/내림</span><span><kbd>G</kbd> 랜딩기어 내림/올림</span><span><kbd>F</kbd><kbd>V</kbd> 플랩 내림/올림</span><span><kbd>X</kbd> 스포일러</span><span><kbd>R</kbd> 역추진 (착지 후)</span><span><kbd>B</kbd> 브레이크 (누르는 동안)</span><span><kbd>Y</kbd> 상하 조작 반전</span><span><kbd>P</kbd> 일시정지</span></div>
+<small>순서 팁: 기어 내리기(G) → 플랩 30°(F×2) → 속도 약 125 kt → PAPI 빨강2·흰색2 유지 → 지면 직전 스로틀 아이들 + 기수 살짝 올림(플레어) → 착지 후 스포일러·역추진·브레이크. 지면 가까이 뜨면 계기판 전방 중앙에 전파고도가 표시됩니다.</small><br><button onclick="start()">시작 (Enter)</button>`)}
+addEventListener('keydown',e=>{if(/^(Arrow|Space|Enter)/.test(e.code))e.preventDefault();keys[e.code]=true;if(!e.repeat)press(e.code)});
+addEventListener('keyup',e=>keys[e.code]=false);addEventListener('blur',()=>keys={});
+function press(c){const s=S;if(c==='Enter'){if(st!=='fly')start();return}if(st!=='fly')return;
+ if(c==='KeyP')paused=!paused;
+ if(c==='KeyG'){if(s.on&&s.gt)say('지상에서는 기어를 올릴 수 없습니다');else s.gt=s.gt?0:1}
+ if(c==='KeyF')s.ft=Math.min(3,Math.round(s.ft)+1);if(c==='KeyV')s.ft=Math.max(0,Math.round(s.ft)-1);
+ if(c==='KeyX')s.spt=s.spt?0:1;
+ if(c==='KeyR'){if(!s.on)say('역추진은 착지 후에만 사용할 수 있습니다');else{s.rev=!s.rev;say(s.rev?'역추진 작동 – 스로틀을 올리세요':'역추진 해제')}}
+ if(c==='KeyY'){inv=!inv;say('상하 조작 반전: '+(inv?'ON (↑ 기수 올림)':'OFF (↓ 기수 올림)'))}}
+function initAudio(){if(actx)return;try{actx=new AudioContext();osc=actx.createOscillator();osc.type='sawtooth';gn=actx.createGain();gn.gain.value=0;const f=actx.createBiquadFilter();f.frequency.value=420;osc.connect(f);f.connect(gn);gn.connect(actx.destination);osc.start()}catch(e){}}
+function tone(f,d,v,t='square'){if(!actx)return;const o=actx.createOscillator(),g=actx.createGain();o.type=t;o.frequency.value=f;g.gain.value=v;g.gain.exponentialRampToValueAtTime(.0001,actx.currentTime+d);o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+d)}
+function thump(v){tone(70,.35,Math.min(.6,v),'sine');tone(40,.5,Math.min(.5,v),'sine')}
+// ---- 3D ----
+function cam(px,py,pz){const dx=px-C.x,dy=py-C.y,dz=pz-C.z,xr=dx*cps-dz*sps,zf=dx*sps+dz*cps,y2=dy*cth-zf*sth,z2=dy*sth+zf*cth;return[xr*cph-y2*sph,xr*sph+y2*cph,z2]}
+function poly(P,fill){const v=P.map(p=>cam(p[0],p[1],p[2])),o=[];
+ for(let i=0;i<v.length;i++){const a=v[i],b=v[(i+1)%v.length],ia=a[2]>=1,ib=b[2]>=1;if(ia)o.push(a);if(ia!==ib){const t=(1-a[2])/(b[2]-a[2]);o.push([a[0]+t*(b[0]-a[0]),a[1]+t*(b[1]-a[1]),1])}}
+ if(o.length<3)return;ctx.fillStyle=ctx.strokeStyle=fill;ctx.lineWidth=.7;ctx.beginPath();o.forEach((q,i)=>{const X=cx+F*q[0]/q[2],Y=cy-F*q[1]/q[2];i?ctx.lineTo(X,Y):ctx.moveTo(X,Y)});ctx.closePath();ctx.fill();ctx.stroke()}
+const fg=(c,d)=>{const k=Math.min(1,Math.pow(d/7000,.9));return`rgb(${c[0]+(HZc[0]-c[0])*k|0},${c[1]+(HZc[1]-c[1])*k|0},${c[2]+(HZc[2]-c[2])*k|0})`};
+function rg(x0,x1,z0,z1,c,y=.03){poly([[x0,y,z0],[x1,y,z0],[x1,y,z1],[x0,y,z1]],fg(c,Math.hypot((x0+x1)/2-C.x,(z0+z1)/2-C.z)))}
+function dot(x,y,z,c,sz){const p=cam(x,y,z);if(p[2]<1)return;ctx.fillStyle=c;ctx.beginPath();ctx.arc(cx+F*p[0]/p[2],cy-F*p[1]/p[2],Math.max(.8,Math.min(7,sz*F/p[2])),0,7);ctx.fill()}
+function boxes(){const L=OBJ.map(o=>[o,Math.hypot(o.x-C.x,o.z-C.z)]).sort((a,b)=>b[1]-a[1]);
+ for(const[o,d]of L){if(d>7000)continue;const x0=o.x-o.w/2,x1=o.x+o.w/2,z0=o.z-o.d/2,z1=o.z+o.d/2,h=o.h;
+  const fs=[[[x0,0,z0],[x1,0,z0],[x1,h,z0],[x0,h,z0],.8,z0],[[x0,0,z1],[x1,0,z1],[x1,h,z1],[x0,h,z1],.8,z1],[[x0,0,z0],[x0,0,z1],[x0,h,z1],[x0,h,z0],.65,(z0+z1)/2],[[x1,0,z0],[x1,0,z1],[x1,h,z1],[x1,h,z0],.9,(z0+z1)/2],[[x0,h,z0],[x1,h,z0],[x1,h,z1],[x0,h,z1],1.12,-1e9]];
+  fs.map(f=>[f,f[4]===1.12?-1:Math.hypot((f[0][0]+f[1][0])/2-C.x,f[5]-C.z)]).sort((a,b)=>b[1]-a[1]).forEach(([f])=>poly(f.slice(0,4),fg(o.c.map(v=>Math.min(255,v*f[4])),d)))}}
+// ---- render ----
+function tx(t,x,y,sz,col,al='center'){ctx.font=`${sz}px ui-monospace,Consolas,"Apple SD Gothic Neo","Malgun Gothic",monospace`;ctx.fillStyle=col;ctx.textAlign=al;ctx.fillText(t,x,y)}
+function render(){const s=S;PH=Math.max(240,H*.37);Py=H-PH;const sk=shake*10+(s.on?Math.min(s.V,70)*.02:0);
+ cx=W/2+(Math.random()-.5)*sk;cy=Py*.52+(Math.random()-.5)*sk;F=W*.75;u=Math.min(PH/275,W/1260);
+ C={x:s.x,y:s.y+4.5,z:s.z};cps=Math.cos(s.psi);sps=Math.sin(s.psi);cth=Math.cos(s.th);sth=Math.sin(s.th);cph=Math.cos(s.ph);sph=Math.sin(s.ph);
+ ctx.save();ctx.beginPath();ctx.rect(0,0,W,Py);ctx.clip();
+ const hy=F*Math.tan(s.th),R=Math.max(W,H)*2.5,rot=fn=>{ctx.save();ctx.translate(cx,cy);ctx.rotate(-s.ph);fn();ctx.restore()};
+ rot(()=>{const g=ctx.createLinearGradient(0,hy-F*.9,0,hy);g.addColorStop(0,'#3f78c4');g.addColorStop(1,HZ);ctx.fillStyle=g;ctx.fillRect(-R,hy-R,2*R,R)});
+ {const p=cam(C.x+Math.sin(40*D)*Math.cos(35*D)*2e4*1,C.y+Math.sin(35*D)*2e4,C.z+Math.cos(40*D)*Math.cos(35*D)*2e4);
+  const a=Math.sin(40*D)*Math.cos(35*D),b=Math.sin(35*D),c=Math.cos(40*D)*Math.cos(35*D),q=cam(C.x+a*2e4,C.y+b*2e4,C.z+c*2e4);
+  if(q[2]>1){const X=cx+F*q[0]/q[2],Y=cy-F*q[1]/q[2],g=ctx.createRadialGradient(X,Y,0,X,Y,90);g.addColorStop(0,'#fff');g.addColorStop(.12,'rgba(255,250,220,.9)');g.addColorStop(1,'rgba(255,250,220,0)');ctx.fillStyle=g;ctx.fillRect(X-90,Y-90,180,180)}}
+ rot(()=>{ctx.fillStyle='rgba(95,120,150,.9)';ctx.beginPath();ctx.moveTo(-W*1.2,hy);for(let dx=-W*1.2;dx<=W*1.2;dx+=8){const an=s.psi+Math.atan(dx/F),h=Math.max(0,Math.sin(an*2.3+.5)*.5+Math.sin(an*5.1+2)*.3+Math.sin(an*11)*.12+.25)*F*.07;ctx.lineTo(dx,hy-h)}ctx.lineTo(W*1.2,hy);ctx.fill();
+  const g=ctx.createLinearGradient(0,hy,0,hy+F*.5);g.addColorStop(0,HZ);g.addColorStop(1,'#4f7a3d');ctx.fillStyle=g;ctx.fillRect(-R,hy,2*R,R)});
+ const TS=400,i0=Math.floor((C.x-5200)/TS),i1=Math.floor((C.x+5200)/TS),j0=Math.floor((C.z-5200)/TS),j1=Math.floor((C.z+5200)/TS);
+ for(let i=i0;i<=i1;i++)for(let j=j0;j<=j1;j++){const a=i*TS,b=j*TS;if(a+TS>-350&&a<350&&b+TS>-1500&&b<4500)continue;const d=Math.hypot(a+200-C.x,b+200-C.z);if(d>5600||(a+200-C.x)*sps+(b+200-C.z)*cps<-500)continue;
+  poly([[a,0,b],[a+TS,0,b],[a+TS,0,b+TS],[a,0,b+TS]],fg(PAL[(((i*73856093)^(j*19349663))>>>0)%5],d))}
+ for(let z=-1500;z<4500;z+=500)rg(-350,350,z,z+500,[96,150,74],.01);
+ for(let z=0;z<3000;z+=150)rg(-22.5,22.5,z,z+150,[62,64,68]);
+ const wm=[236,236,230];for(let z=60;z<2950;z+=50)rg(-.5,.5,z,z+28,wm,.06);
+ for(let z=0;z<3000;z+=300){rg(-22,-21.4,z,z+300,wm,.06);rg(21.4,22,z,z+300,wm,.06)}
+ for(let k=0;k<6;k++){const x=3+k*3.5;rg(x,x+1.8,8,38,wm,.06);rg(-x-1.8,-x,8,38,wm,.06)}
+ rg(6,10,300,345,wm,.06);rg(-10,-6,300,345,wm,.06);for(const z of[450,600,750,900]){rg(8,10,z,z+22,wm,.06);rg(-10,-8,z,z+22,wm,.06)}
+ boxes();
+ for(let z=0;z<=3000;z+=60){dot(-24.5,.6,z,'#fff',.35);dot(24.5,.6,z,'#fff',.35)}
+ for(let x=-22;x<=22;x+=4){dot(x,.5,-1,'#3f6',.45);dot(x,.5,3001,'#f33',.45)}
+ for(let k=1;k<=24;k++){dot(0,.6,-k*30,'#ffe9b0',.5);if(k%5==0)for(const x of[-9,-6,-3,3,6,9])dot(x,.6,-k*30,'#ffe9b0',.5)}
+ {const dz=300-C.z,ang=dz>40?Math.atan2(C.y,dz)/D:9;[2.5,2.83,3.17,3.5].forEach((t,i)=>dot(-(30+i*7),.9,300,ang>t?'#fff':'#f22',1.2))}
+ ctx.restore();
+ // cockpit frame
+ ctx.fillStyle='#10151b';ctx.fillRect(0,0,W,Py*.06);ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(W*.09,0);ctx.lineTo(W*.04,Py);ctx.lineTo(0,Py);ctx.fill();
+ ctx.beginPath();ctx.moveTo(W,0);ctx.lineTo(W*.91,0);ctx.lineTo(W*.96,Py);ctx.lineTo(W,Py);ctx.fill();
+ hud();panel()}
+function hud(){const s=S,ra=s.y*3.281,al=s.al;wtxt=[];
+ tx(`횡풍 ${s.wind>0?'좌→우':'우→좌'} ${Math.abs(s.wind).toFixed(1)} m/s`,W*.1,Py*.1,14,'#fff','left');
+ tx(inv?'조작 반전 ON':'',W*.1,Py*.1+18,12,'#ffb020','left');
+ if(!s.on){if(al>.22)wtxt.push('STALL – 실속! 기수를 내리고 스로틀 ↑');if(s.gear<.99&&ra<900&&s.z<3000)wtxt.push('GEAR – 랜딩기어를 내리세요 (G)');if(s.V*Math.sin(s.gam)<-6&&ra<1000)wtxt.push('SINK RATE – 강하율 과다');if(Math.abs(s.ph)>.5&&ra<250)wtxt.push('BANK ANGLE')}
+ wtxt.forEach((t,i)=>tx(t,W/2,Py*.2+i*26,22,Math.floor(T*4)%2?'#ff4040':'#ffb0b0'));
+ if(callT>0)tx(call,W/2,Py*.38,56,`rgba(255,255,255,${Math.min(1,callT)})`);
+ if(!s.on&&ra<25&&ra>2&&s.thr>.15&&s.gear>.9)tx('RETARD – 스로틀을 줄이세요',W/2,Py*.3,24,'#ffb020');
+ if(msgT>0)tx(msg,W/2,Py*.8,20,`rgba(255,255,255,${Math.min(1,msgT)})`);
+ if(paused)tx('일시정지 (P)',W/2,Py*.5,36,'#fff')}
+function panel(){const s=S;const g=ctx.createLinearGradient(0,Py,0,H);g.addColorStop(0,'#2a323c');g.addColorStop(1,'#12171d');ctx.fillStyle=g;ctx.fillRect(0,Py,W,PH);ctx.fillStyle='#4b5764';ctx.fillRect(0,Py,W,3);
+ ctx.save();ctx.translate(W/2,Py+4);ctx.scale(u,u);
+ const box=(x,y,w,h)=>{ctx.fillStyle='#070a0d';ctx.strokeStyle='#59687a';ctx.lineWidth=2;ctx.beginPath();ctx.roundRect(x-w/2,y-h/2,w,h,8);ctx.fill();ctx.stroke()};
+ const kt=s.V*1.944,altf=s.y*3.281,vsf=s.on?0:s.V*Math.sin(s.gam)*196.85,hdg=((s.psi/D)%360+360)%360||360;
+ box(-300,62,190,86);tx('SPEED kt',-300,36,12,'#8fb4d8');tx(Math.round(kt),-300,76,40,kt<110&&!s.on?'#ffb020':'#7dff9a');tx('VREF 125 (FLAP 30)',-300,96,11,'#8fb4d8');
+ box(-300,172,190,86);tx('HDG  (RWY 36)',-300,146,12,'#8fb4d8');tx(String(Math.round(hdg)).padStart(3,'0')+'°',-300,186,40,'#7dff9a');tx(`GS ${Math.round(s.V*1.944)} kt`,-300,206,11,'#8fb4d8');
+ box(300,62,190,86);tx('ALT ft',300,36,12,'#8fb4d8');tx(Math.round(altf),300,76,40,'#7dff9a');tx('전파고도 = 고도',300,96,11,'#8fb4d8');
+ box(300,172,190,86);tx('V/S fpm',300,146,12,'#8fb4d8');tx(Math.round(vsf/10)*10,300,186,40,vsf<-900?'#ff5050':'#7dff9a');tx(`받음각 ${(s.al/D).toFixed(1)}°`,300,206,11,'#8fb4d8');
+ // attitude
+ const r=95,ppd=r/26;ctx.save();ctx.translate(0,135);ctx.beginPath();ctx.arc(0,0,r,0,7);ctx.clip();ctx.rotate(-s.ph);const oy=s.th/D*ppd;
+ ctx.fillStyle='#3a76c2';ctx.fillRect(-200,-300+oy,400,300);ctx.fillStyle='#7a5a38';ctx.fillRect(-200,oy,400,300);ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-200,oy);ctx.lineTo(200,oy);ctx.stroke();ctx.lineWidth=1.5;
+ for(let a=-30;a<=30;a+=5){if(!a)continue;const y=oy-a*ppd,w=a%10?14:28;ctx.beginPath();ctx.moveTo(-w,y);ctx.lineTo(w,y);ctx.stroke();if(!(a%10))tx(Math.abs(a),-w-12,y+3,10,'#fff')}
+ ctx.restore();ctx.strokeStyle='#59687a';ctx.lineWidth=4;ctx.beginPath();ctx.arc(0,135,r,0,7);ctx.stroke();
+ ctx.save();ctx.translate(0,135);ctx.rotate(-s.ph);ctx.fillStyle='#fff';ctx.beginPath();ctx.moveTo(0,-r+2);ctx.lineTo(-7,-r+16);ctx.lineTo(7,-r+16);ctx.fill();ctx.restore();
+ ctx.strokeStyle='#ffb020';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-62,135);ctx.lineTo(-24,135);ctx.lineTo(-24,146);ctx.moveTo(62,135);ctx.lineTo(24,135);ctx.lineTo(24,146);ctx.stroke();ctx.fillStyle='#ffb020';ctx.fillRect(-3,132,6,6);
+ tx(`피치 ${(s.th/D).toFixed(1)}°`,-60,248,12,'#cfe0f2');tx(`기울기 ${(s.ph/D).toFixed(1)}°`,60,248,12,'#cfe0f2');
+ // ILS
+ if(!s.on&&s.z<3000){const dz=300-s.z,gs=dz>30?(Math.atan2(s.y,dz)/D-3)/.7:0,lc=Math.atan(s.x/Math.max(200,3000-s.z))/(2.5*D),cl=v=>Math.max(-2.3,Math.min(2.3,v));
+  ctx.strokeStyle='#59687a';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(122,55);ctx.lineTo(122,215);ctx.moveTo(-90,262);ctx.lineTo(90,262);ctx.stroke();ctx.fillStyle='#ccc';
+  for(let i=-2;i<=2;i++){ctx.beginPath();ctx.arc(122,135+i*32,3,0,7);ctx.fill();ctx.beginPath();ctx.arc(i*32,262,3,0,7);ctx.fill()}
+  ctx.fillStyle='#ff4fd8';const dm=(x,y)=>{ctx.beginPath();ctx.moveTo(x,y-9);ctx.lineTo(x+7,y);ctx.lineTo(x,y+9);ctx.lineTo(x-7,y);ctx.fill()};dm(122,135+cl(gs)*32);dm(-cl(lc)*32,262);tx('GS',122,48,11,'#ccc');tx('LOC',-108,266,11,'#ccc')}
+ // throttle
+ tx('THR',-545,22,12,'#8fb4d8');ctx.fillStyle='#070a0d';ctx.fillRect(-565,30,40,190);ctx.fillStyle='#3d8bff';ctx.fillRect(-565,220-190*s.n1,40,190*s.n1);ctx.strokeStyle='#ffb020';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-572,220-190*s.thr);ctx.lineTo(-518,220-190*s.thr);ctx.stroke();ctx.strokeStyle='#59687a';ctx.lineWidth=2;ctx.strokeRect(-565,30,40,190);
+ tx(`N1 ${Math.round(s.n1*100)}%`,-545,240,12,'#7dff9a');if(s.rev)tx('REV',-545,258,14,'#ffb020');
+ // status
+ const gc=s.gear>.99?'#31e06a':s.gear>.01?'#ff3b30':'#222';['N','L','R'].forEach((n,i)=>{ctx.fillStyle=gc;ctx.beginPath();ctx.arc(470+i*38,48,11,0,7);ctx.fill();tx(n,470+i*38,78,11,'#8fb4d8')});tx('GEAR 랜딩기어',510,22,12,'#8fb4d8');
+ tx(`FLAPS  ${['0°','10°','20°','30°'][Math.round(s.fl)]}`,470,108,16,'#7dff9a','left');ctx.fillStyle='#070a0d';ctx.fillRect(470,116,120,8);ctx.fillStyle='#3d8bff';ctx.fillRect(470,116,120*s.fl/3,8);
+ const lamp=(t,on,y,c)=>tx(t,470,y,15,on?c:'#3a4552','left');lamp('SPOILER 스포일러',s.spo>.5,152,'#ffb020');lamp('BRAKE 브레이크',s.brk,176,'#ff5050');lamp('REV 역추진',s.rev,200,'#ffb020');
+ tx(s.z<0?`활주로까지 ${Math.round(-s.z)} m`:`활주로 잔여 ${Math.max(0,Math.round(3000-s.z))} m`,470,228,14,'#cfe0f2','left');tx(`중심선 ${s.x>=0?'우':'좌'} ${Math.abs(s.x).toFixed(0)} m`,470,248,14,'#cfe0f2','left');
+ ctx.restore()}
+function audio(){if(!gn||st!=='fly'||paused){if(gn&&st!=='fly')gn.gain.value=0;return}const s=S;osc.frequency.value=60+s.n1*170;gn.gain.value=.02+.05*s.n1*(s.rev?1.5:1);
+ if(wtxt.length&&performance.now()-beepT>650){beepT=performance.now();tone(880,.18,.06)}}
+let last=0;function loop(t){requestAnimationFrame(loop);const dt=Math.min(.05,(t-last)/1000||0);last=t;if(st==='fly'&&!paused){step(dt/2);if(st==='fly')step(dt/2)}render();audio()}
+reset();intro();requestAnimationFrame(loop);
+</script></body></html>
