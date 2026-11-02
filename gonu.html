@@ -1,0 +1,1358 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>전래놀이 고누 (Gonu Game Suite)</title>
+<!-- Font Awesome Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<!-- Canvas Confetti -->
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Pretendard", sans-serif;
+    background: #F5F5F7;
+    margin: 0;
+    padding: 20px 16px 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #1D1D1F;
+    min-height: 100vh;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  h1 { font-size: 24px; font-weight: 800; margin: 0 0 4px; text-align: center; letter-spacing: -0.02em; }
+  .sub { color: #6E6E73; font-size: 14px; margin-bottom: 20px; text-align: center; font-weight: 500; }
+
+  /* Control Panel */
+  .control-panel {
+    background: white;
+    border-radius: 20px;
+    padding: 16px 20px;
+    width: 100%;
+    max-width: 800px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.06);
+    margin-bottom: 18px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .control-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .control-group label {
+    font-weight: 700;
+    font-size: 13.5px;
+    color: #1D1D1F;
+    white-space: nowrap;
+  }
+
+  select {
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #1D1D1F;
+    background: #F0F0F3;
+    border: 1px solid #E5E5EA;
+    border-radius: 10px;
+    padding: 8px 12px;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  select:hover { background: #E8E8ED; }
+
+  .btn {
+    font-family: inherit;
+    border: none;
+    border-radius: 12px;
+    padding: 9px 16px;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+
+  .btn-primary { background: #0066CC; color: white; }
+  .btn-primary:hover { background: #0055BB; transform: translateY(-1px); }
+
+  .btn-secondary { background: #E8E8ED; color: #1D1D1F; }
+  .btn-secondary:hover { background: #DDDDE2; }
+
+  .btn-danger { background: #FF3B30; color: white; }
+  .btn-danger:hover { background: #D70015; }
+
+  /* Player Status Cards */
+  .cards {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    width: 100%;
+    max-width: 800px;
+    margin-bottom: 16px;
+  }
+
+  .card {
+    background: white;
+    border-radius: 18px;
+    padding: 14px 18px;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    border: 2px solid transparent;
+    transition: all 0.25s ease;
+  }
+
+  .card.active-p1 {
+    border-color: #0066CC;
+    box-shadow: 0 4px 16px rgba(0,102,204,0.15);
+  }
+
+  .card.active-p2 {
+    border-color: #FF3B30;
+    box-shadow: 0 4px 16px rgba(255,59,48,0.15);
+  }
+
+  .card-user { display: flex; align-items: center; gap: 12px; }
+
+  .avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+
+  .avatar.p1 { background: rgba(0,102,204,0.12); color: #0066CC; }
+  .avatar.p2 { background: rgba(255,59,48,0.12); color: #FF3B30; }
+
+  .user-info h3 { margin: 0; font-size: 14.5px; font-weight: 700; color: #1D1D1F; }
+  .user-info .badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 6px;
+    margin-top: 3px;
+  }
+
+  .badge-p1 { background: rgba(0,102,204,0.12); color: #0066CC; }
+  .badge-p2 { background: rgba(255,59,48,0.12); color: #FF3B30; }
+  .badge-waiting { background: #F0F0F3; color: #8E8E93; }
+
+  .score-val { font-size: 24px; font-weight: 800; }
+  .p1-color { color: #0066CC; }
+  .p2-color { color: #FF3B30; }
+
+  /* Status Banner */
+  .status-banner {
+    width: 100%;
+    max-width: 800px;
+    background: white;
+    border-radius: 14px;
+    padding: 10px 16px;
+    text-align: center;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #1D1D1F;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  /* GAME CANVAS WRAPPER */
+  .board-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+    background: white;
+    border-radius: 28px;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  canvas {
+    background: #FAF8F5; /* Soft traditional Hanji tone */
+    border-radius: 20px;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.06);
+    cursor: pointer;
+    touch-action: none;
+  }
+
+  /* Action Buttons Bar below canvas */
+  .action-bar {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Record Table */
+  .table-card {
+    background: white;
+    border-radius: 20px;
+    width: 100%;
+    max-width: 800px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.06);
+    overflow: hidden;
+  }
+
+  .table-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid #EEEEF0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .table-header h3 {
+    margin: 0;
+    font-size: 14.5px;
+    font-weight: 700;
+    color: #1D1D1F;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .table-wrapper {
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: center;
+  }
+
+  th {
+    background: #0066CC;
+    color: white;
+    font-size: 12.5px;
+    font-weight: 700;
+    padding: 9px 12px;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+
+  td {
+    padding: 9px 12px;
+    font-size: 13px;
+    color: #1D1D1F;
+    border-bottom: 1px solid #EEEEF0;
+  }
+
+  tr:nth-child(even) td { background: #F9F9FB; }
+
+  .empty-row td {
+    color: #B0B0B5;
+    padding: 20px;
+  }
+
+  /* Modals */
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(6px);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+
+  .modal-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .modal-card {
+    background: white;
+    border-radius: 28px;
+    max-width: 460px;
+    width: 100%;
+    padding: 28px;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    transform: scale(0.95);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .modal-overlay.show .modal-card { transform: scale(1); }
+
+  .modal-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 18px;
+    margin: 0 auto 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+  }
+
+  .modal-title { font-size: 21px; font-weight: 800; margin: 0 0 6px; color: #1D1D1F; }
+  .modal-sub { font-size: 13.5px; color: #6E6E73; margin-bottom: 18px; }
+
+  .rules-body {
+    text-align: left;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #3A3A3C;
+    background: #F5F5F7;
+    padding: 14px 18px;
+    border-radius: 16px;
+    margin-bottom: 18px;
+    max-height: 260px;
+    overflow-y: auto;
+  }
+
+  .rules-body h4 { margin: 10px 0 4px; font-size: 14px; color: #0066CC; }
+  .rules-body h4:first-child { margin-top: 0; }
+
+  @media (max-width: 640px) {
+    body { padding: 12px 10px 30px; }
+    .control-panel { padding: 14px; gap: 8px; }
+    .btn { padding: 8px 12px; font-size: 12.5px; }
+    .score-val { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<h1>한국 전통 전래놀이 — 고누 모음</h1>
+<div class="sub">우물고누 · 줄고누 · 참고누를 현대적인 감각으로 즐겨보세요</div>
+
+<!-- Control Bar -->
+<div class="control-panel">
+  <div class="control-group">
+    <label for="gonuType">고누 종류</label>
+    <select id="gonuType" onchange="changeGonuGame()">
+      <option value="well">우물고누 (3x3 형태)</option>
+      <option value="line" selected>줄고누 (4x4 선 이동)</option>
+      <option value="three">참고누 (3목 만들기)</option>
+    </select>
+  </div>
+
+  <div class="control-group">
+    <label for="gameMode">게임 모드</label>
+    <select id="gameMode" onchange="changeGameMode()">
+      <option value="ai">AI와 겨루기</option>
+      <option value="pvp">2인용 (한 기기)</option>
+    </select>
+  </div>
+
+  <div class="control-group" id="aiDiffGroup">
+    <label for="aiDifficulty">AI 난이도</label>
+    <select id="aiDifficulty" onchange="changeDifficulty()">
+      <option value="easy">쉬움</option>
+      <option value="medium" selected>보통</option>
+      <option value="hard">어려움</option>
+    </select>
+  </div>
+
+  <div class="control-group">
+    <button class="btn btn-secondary" onclick="toggleRulesModal(true)">
+      <i class="fa-solid fa-book-open"></i> 규칙
+    </button>
+  </div>
+</div>
+
+<!-- Player Status Cards -->
+<div class="cards">
+  <!-- Player 1 Card -->
+  <div class="card active-p1" id="card-p1">
+    <div class="card-user">
+      <div class="avatar p1"><i class="fa-solid fa-circle"></i></div>
+      <div class="user-info">
+        <h3>플레이어 1 (청)</h3>
+        <span class="badge badge-p1" id="badge-p1">내 차례</span>
+      </div>
+    </div>
+    <div class="score-val p1-color" id="score-p1">4개</div>
+  </div>
+
+  <!-- Player 2 / AI Card -->
+  <div class="card" id="card-p2">
+    <div class="card-user">
+      <div class="avatar p2" id="avatar-p2"><i class="fa-solid fa-robot"></i></div>
+      <div class="user-info">
+        <h3 id="name-p2">컴퓨터 (홍)</h3>
+        <span class="badge badge-waiting" id="badge-p2">대기중</span>
+      </div>
+    </div>
+    <div class="score-val p2-color" id="score-p2">4개</div>
+  </div>
+</div>
+
+<!-- Status Banner -->
+<div class="status-banner" id="status-banner">
+  <i class="fa-solid fa-circle-info" style="color:#0066CC"></i>
+  <span id="status-text">청색 말을 선택해 이동할 위치로 옮기세요.</span>
+</div>
+
+<!-- Game Canvas Container -->
+<div class="board-wrapper">
+  <canvas id="gonuCanvas" width="480" height="480"></canvas>
+  
+  <div class="action-bar">
+    <button class="btn btn-secondary" onclick="undoMove()">
+      <i class="fa-solid fa-rotate-left"></i> 무르기
+    </button>
+    <button class="btn btn-primary" onclick="initGame()">
+      <i class="fa-solid fa-arrows-rotate"></i> 다시 시작
+    </button>
+  </div>
+</div>
+
+<!-- Action Log Record Table -->
+<div class="table-card">
+  <div class="table-header">
+    <h3><i class="fa-solid fa-list-check" style="color:#0066CC"></i> 수순 및 행동 기록표</h3>
+    <span id="log-count" style="font-size: 12px; color: #8E8E93; font-weight: 600;">0수 진행</span>
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>수순</th>
+          <th>플레이어</th>
+          <th>행동 / 위치</th>
+          <th>남은 말 (청/홍)</th>
+        </tr>
+      </thead>
+      <tbody id="logBody">
+        <tr class="empty-row">
+          <td colspan="4">아직 기록이 없습니다. 대국을 시작해보세요.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Rules Modal -->
+<div class="modal-overlay" id="rules-modal">
+  <div class="modal-card">
+    <div class="modal-icon" style="background: rgba(0,102,204,0.1); color: #0066CC;">
+      <i class="fa-solid fa-book-open"></i>
+    </div>
+    <h2 class="modal-title">고누 게임 규칙</h2>
+    <div class="modal-sub">선택한 고누 게임의 상세 규칙입니다</div>
+
+    <div class="rules-body" id="rules-content">
+      <!-- Dynamic content injected -->
+    </div>
+
+    <button class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="toggleRulesModal(false)">확인했습니다</button>
+  </div>
+</div>
+
+<!-- Game Over Modal -->
+<div class="modal-overlay" id="gameover-modal">
+  <div class="modal-card">
+    <div class="modal-icon" id="go-icon-bg">
+      <i id="go-icon" class="fa-solid fa-trophy"></i>
+    </div>
+    <h2 class="modal-title" id="go-title">대국 종료</h2>
+    <div class="modal-sub" id="go-sub">승자가 결정되었습니다!</div>
+
+    <button class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="initGame(); toggleGameOverModal(false);">새 대국 시작</button>
+  </div>
+</div>
+
+<script>
+/* ==========================================================================
+   WEB AUDIO API (Sound Effects)
+   ========================================================================== */
+class SoundEngine {
+  constructor() {
+    this.ctx = null;
+  }
+  init() {
+    if (!this.ctx) {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+  }
+  playSelect() {
+    this.init();
+    if (!this.ctx) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(440, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(880, this.ctx.currentTime + 0.08);
+    gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.08);
+  }
+  playMove() {
+    this.init();
+    if (!this.ctx) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(220, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(110, this.ctx.currentTime + 0.12);
+    gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.12);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.12);
+  }
+  playCapture() {
+    this.init();
+    if (!this.ctx) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(300, this.ctx.currentTime);
+    osc.frequency.linearRampToValueAtTime(150, this.ctx.currentTime + 0.18);
+    gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.18);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.18);
+  }
+  playWin() {
+    this.init();
+    if (!this.ctx) return;
+    const notes = [523.25, 659.25, 783.99, 1046.50];
+    notes.forEach((freq, idx) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.15, this.ctx.currentTime + idx * 0.1);
+      gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + idx * 0.1 + 0.25);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(this.ctx.currentTime + idx * 0.1);
+      osc.stop(this.ctx.currentTime + idx * 0.1 + 0.25);
+    });
+  }
+}
+const sound = new SoundEngine();
+
+/* ==========================================================================
+   GAME STATE & CONFIGURATIONS
+   ========================================================================== */
+const P1 = 1; // Blue
+const P2 = 2; // Red
+const EMPTY = 0;
+
+let currentGame = 'line'; // 'well', 'line', 'three'
+let gameMode = 'ai';      // 'ai', 'pvp'
+let aiDiff = 'medium';    // 'easy', 'medium', 'hard'
+let turn = P1;
+let selectedPos = null;
+let validMoves = [];
+let historyStack = [];
+let moveCount = 0;
+let isAnimating = false;
+let animPiece = null; // { fromPos, toPos, p, progress }
+
+// Canvas
+const canvas = document.getElementById('gonuCanvas');
+const ctx = canvas.getContext('2d');
+
+/* Board Geometries & Connections */
+let nodes = [];       // Array of {x, y, id}
+let adj = [];         // Adjacency matrix or list
+let boardState = [];  // Array of player IDs matching nodes
+let phase = 'MOVE';   // 'PLACE' or 'MOVE' (specifically for 참고누)
+let p1Unplaced = 0, p2Unplaced = 0;
+
+/* Rules Descriptions */
+const RULES_INFO = {
+  well: `
+    <h4>우물고누 규칙</h4>
+    <p>• <b>배치:</b> 각자 말 2개씩 모서리에 배치하고 시작합니다.</p>
+    <p>• <b>이동:</b> 선을 따라 한 칸씩 이동합니다. 단, 처음에 상대방 우물(중앙 입구)을 바로 막을 수는 없습니다.</p>
+    <p>• <b>승리 조건:</b> 상대방 말을 더 이상 움직이지 못하도록 길을 모두 가두면 승리합니다.</p>
+  `,
+  line: `
+    <h4>줄고누 규칙</h4>
+    <p>• <b>배치:</b> 4x4 격자판에 양 끝 줄에 4개씩 말을 배치하고 시작합니다.</p>
+    <p>• <b>이동:</b> 선을 따라 상하좌우로 1칸씩 자유롭게 이동합니다.</p>
+    <p>• <b>따내기 (가로채기):</b> 상대 말을 양쪽에서 양협(양옆을 내 말로 끼움)하면 상대 말을 따냅니다.</p>
+    <p>• <b>승리 조건:</b> 상대 말을 1개 이하로 만들면 승리합니다.</p>
+  `,
+  three: `
+    <h4>참고누 규칙</h4>
+    <p>• <b>1단계 (말 놓기):</b> 판의 빈 교차점에 1개씩 번갈아 가며 총 12개의 말을 놓습니다. 가로/세로/대각선 3목(곤)을 만들면 상대 말을 1개 따냅니다.</p>
+    <p>• <b>2단계 (말 이동):</b> 말을 다 놓으면 선을 따라 1칸씩 이동하며 3목을 만들어 상대 말을 따냅니다.</p>
+    <p>• <b>승리 조건:</b> 상대 말을 2개 이하로 만들거나 상대가 둘 곳이 없게 만들면 승리합니다.</p>
+  `
+};
+
+window.onload = () => {
+  initGame();
+  setupCanvasEvents();
+};
+
+function changeGonuGame() {
+  currentGame = document.getElementById('gonuType').value;
+  initGame();
+}
+
+function changeGameMode() {
+  gameMode = document.getElementById('gameMode').value;
+  document.getElementById('aiDiffGroup').style.display = gameMode === 'ai' ? 'flex' : 'none';
+  document.getElementById('name-p2').innerText = gameMode === 'ai' ? '컴퓨터 (홍)' : '플레이어 2 (홍)';
+  document.getElementById('avatar-p2').innerHTML = gameMode === 'ai' ? '<i class="fa-solid fa-robot"></i>' : '<i class="fa-solid fa-user-gear"></i>';
+  initGame();
+}
+
+function changeDifficulty() {
+  aiDiff = document.getElementById('aiDifficulty').value;
+}
+
+function toggleRulesModal(show) {
+  document.getElementById('rules-content').innerHTML = RULES_INFO[currentGame];
+  document.getElementById('rules-modal').classList.toggle('show', show);
+}
+
+function toggleGameOverModal(show) {
+  document.getElementById('gameover-modal').classList.toggle('show', show);
+}
+
+/* ==========================================================================
+   BOARD INITIALIZATION LOGIC
+   ========================================================================== */
+function initGame() {
+  turn = P1;
+  selectedPos = null;
+  validMoves = [];
+  historyStack = [];
+  moveCount = 0;
+  isAnimating = false;
+
+  document.getElementById('logBody').innerHTML = `
+    <tr class="empty-row">
+      <td colspan="4">아직 기록이 없습니다. 대국을 시작해보세요.</td>
+    </tr>
+  `;
+  document.getElementById('log-count').innerText = '0수 진행';
+
+  if (currentGame === 'well') {
+    initWellGonu();
+  } else if (currentGame === 'line') {
+    initLineGonu();
+  } else if (currentGame === 'three') {
+    initThreeGonu();
+  }
+
+  updateUI();
+  render();
+}
+
+function initWellGonu() {
+  // 5 Nodes
+  // 0: top-left, 1: top-right, 2: center, 3: bottom-left, 4: bottom-right
+  const w = canvas.width, h = canvas.height;
+  nodes = [
+    { id: 0, x: w * 0.25, y: h * 0.25 },
+    { id: 1, x: w * 0.75, y: h * 0.25 },
+    { id: 2, x: w * 0.50, y: h * 0.50 },
+    { id: 3, x: w * 0.25, y: h * 0.75 },
+    { id: 4, x: w * 0.75, y: h * 0.75 }
+  ];
+
+  adj = [
+    [1, 2, 3],    // 0
+    [0, 2, 4],    // 1
+    [0, 1, 3, 4], // 2
+    [0, 2],       // 3
+    [1, 2]        // 4
+  ];
+
+  boardState = [P1, P1, EMPTY, P2, P2];
+  phase = 'MOVE';
+}
+
+function initLineGonu() {
+  // 4x4 Grid = 16 Nodes
+  const w = canvas.width, h = canvas.height;
+  const padding = 60;
+  const step = (w - padding * 2) / 3;
+
+  nodes = [];
+  for (let r = 0; r < 4; r++) {
+    for (let c = 0; c < 4; c++) {
+      nodes.push({ id: r * 4 + c, x: padding + c * step, y: padding + r * step });
+    }
+  }
+
+  adj = Array(16).fill(null).map(() => []);
+  for (let r = 0; r < 4; r++) {
+    for (let c = 0; c < 4; c++) {
+      const idx = r * 4 + c;
+      if (r > 0) adj[idx].push((r - 1) * 4 + c);
+      if (r < 3) adj[idx].push((r + 1) * 4 + c);
+      if (c > 0) adj[idx].push(r * 4 + (c - 1));
+      if (c < 3) adj[idx].push(r * 4 + (c + 1));
+    }
+  }
+
+  boardState = [
+    P1, P1, P1, P1,
+    EMPTY, EMPTY, EMPTY, EMPTY,
+    EMPTY, EMPTY, EMPTY, EMPTY,
+    P2, P2, P2, P2
+  ];
+  phase = 'MOVE';
+}
+
+function initThreeGonu() {
+  // 3 concentric squares or 3x3 connected (12 node setup or 16 node setup)
+  // Standard 참고누: 3x3 Grid with 9 nodes or 16 nodes. Let's use 12 placement pieces (6 each)
+  const w = canvas.width, h = canvas.height;
+  const padding = 60;
+  const step = (w - padding * 2) / 3;
+
+  nodes = [];
+  for (let r = 0; r < 4; r++) {
+    for (let c = 0; c < 4; c++) {
+      nodes.push({ id: r * 4 + c, x: padding + c * step, y: padding + r * step });
+    }
+  }
+
+  adj = Array(16).fill(null).map(() => []);
+  for (let r = 0; r < 4; r++) {
+    for (let c = 0; c < 4; c++) {
+      const idx = r * 4 + c;
+      if (r > 0) adj[idx].push((r - 1) * 4 + c);
+      if (r < 3) adj[idx].push((r + 1) * 4 + c);
+      if (c > 0) adj[idx].push(r * 4 + (c - 1));
+      if (c < 3) adj[idx].push(r * 4 + (c + 1));
+    }
+  }
+
+  boardState = Array(16).fill(EMPTY);
+  phase = 'PLACE';
+  p1Unplaced = 6;
+  p2Unplaced = 6;
+}
+
+/* ==========================================================================
+   CANVAS RENDERING ENGINE
+   ========================================================================== */
+function render() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // 1. Draw Traditional Hanji Pattern Texture / Grid Background
+  drawBoardGrid();
+
+  // 2. Draw Valid Move Indicators
+  if (selectedPos !== null) {
+    validMoves.forEach(targetId => {
+      const targetNode = nodes[targetId];
+      ctx.beginPath();
+      ctx.arc(targetNode.x, targetNode.y, 16, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(52, 199, 89, 0.35)';
+      ctx.fill();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = '#34C759';
+      ctx.stroke();
+    });
+  }
+
+  // 3. Draw Pieces
+  nodes.forEach((node, idx) => {
+    // If this piece is currently animating, don't draw in static position
+    if (animPiece && animPiece.fromPos === idx) return;
+
+    const p = boardState[idx];
+    if (p !== EMPTY) {
+      const isSelected = selectedPos === idx;
+      drawPiece(node.x, node.y, p, isSelected);
+    }
+  });
+
+  // 4. Draw Animated Moving Piece
+  if (animPiece) {
+    const fromNode = nodes[animPiece.fromPos];
+    const toNode = nodes[animPiece.toPos];
+    const curX = fromNode.x + (toNode.x - fromNode.x) * animPiece.progress;
+    const curY = fromNode.y + (toNode.y - fromNode.y) * animPiece.progress;
+
+    // Lift scale & shadow effect
+    const liftScale = 1 + Math.sin(animPiece.progress * Math.PI) * 0.25;
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+    ctx.shadowBlur = 12 * liftScale;
+    ctx.shadowOffsetY = 6 * liftScale;
+
+    drawPiece(curX, curY, animPiece.p, false, liftScale);
+    ctx.restore();
+  }
+}
+
+function drawBoardGrid() {
+  ctx.strokeStyle = '#4A3B32';
+  ctx.lineWidth = 4;
+  ctx.lineCap = 'round';
+
+  if (currentGame === 'well') {
+    // Draw Well Gonu Board Lines
+    ctx.beginPath();
+    // Outer box
+    ctx.moveTo(nodes[0].x, nodes[0].y); ctx.lineTo(nodes[1].x, nodes[1].y);
+    ctx.lineTo(nodes[4].x, nodes[4].y); ctx.lineTo(nodes[3].x, nodes[3].y);
+    ctx.closePath();
+    // Inner connections
+    ctx.moveTo(nodes[0].x, nodes[0].y); ctx.lineTo(nodes[4].x, nodes[4].y);
+    ctx.moveTo(nodes[1].x, nodes[1].y); ctx.lineTo(nodes[3].x, nodes[3].y);
+    ctx.stroke();
+
+    // Arc for 'Well'
+    ctx.beginPath();
+    ctx.arc(nodes[2].x, nodes[2].y, 36, 0, Math.PI * 2);
+    ctx.fillStyle = '#EFEBE4';
+    ctx.fill();
+    ctx.stroke();
+  } else if (currentGame === 'line' || currentGame === 'three') {
+    // Grid Lines for 4x4
+    for (let r = 0; r < 4; r++) {
+      ctx.beginPath();
+      ctx.moveTo(nodes[r * 4].x, nodes[r * 4].y);
+      ctx.lineTo(nodes[r * 4 + 3].x, nodes[r * 4 + 3].y);
+      ctx.stroke();
+    }
+    for (let c = 0; c < 4; c++) {
+      ctx.beginPath();
+      ctx.moveTo(nodes[c].x, nodes[c].y);
+      ctx.lineTo(nodes[12 + c].x, nodes[12 + c].y);
+      ctx.stroke();
+    }
+  }
+
+  // Draw Node Points
+  nodes.forEach(node => {
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, 6, 0, Math.PI * 2);
+    ctx.fillStyle = '#4A3B32';
+    ctx.fill();
+  });
+}
+
+function drawPiece(x, y, player, isSelected = false, scale = 1.0) {
+  const radius = 22 * scale;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, Math.PI * 2);
+
+  // Gradient 3D effect
+  const grad = ctx.createRadialGradient(
+    x - radius * 0.3, y - radius * 0.3, radius * 0.1,
+    x, y, radius
+  );
+
+  if (player === P1) {
+    grad.addColorStop(0, '#4DA6FF');
+    grad.addColorStop(1, '#0055B8');
+  } else {
+    grad.addColorStop(0, '#FF7A70');
+    grad.addColorStop(1, '#D70015');
+  }
+
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Selection Glow / Border
+  if (isSelected) {
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = '#FFD60A';
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(x, y, radius + 5, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255, 214, 10, 0.5)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  } else {
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+/* ==========================================================================
+   INTERACTION & MOVE EXECUTION
+   ========================================================================== */
+function setupCanvasEvents() {
+  canvas.addEventListener('click', (e) => {
+    if (isAnimating) return;
+    if (gameMode === 'ai' && turn === P2) return; // Block human during AI turn
+
+    const rect = canvas.getBoundingClientRect();
+    const clickX = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const clickY = (e.clientY - rect.top) * (canvas.height / rect.width);
+
+    // Find clicked node
+    let clickedNodeId = null;
+    nodes.forEach(node => {
+      const dist = Math.hypot(node.x - clickX, node.y - clickY);
+      if (dist < 30) clickedNodeId = node.id;
+    });
+
+    if (clickedNodeId === null) return;
+
+    handleNodeClick(clickedNodeId);
+  });
+}
+
+function handleNodeClick(nodeId) {
+  if (phase === 'PLACE') {
+    if (boardState[nodeId] === EMPTY) {
+      executePlace(nodeId);
+    }
+    return;
+  }
+
+  // MOVE Phase
+  if (selectedPos === null) {
+    // Select Piece
+    if (boardState[nodeId] === turn) {
+      selectedPos = nodeId;
+      validMoves = getValidMovesForNode(nodeId, boardState, turn);
+      sound.playSelect();
+      render();
+    }
+  } else {
+    if (nodeId === selectedPos) {
+      // Unselect
+      selectedPos = null;
+      validMoves = [];
+      render();
+    } else if (validMoves.includes(nodeId)) {
+      // Execute Move
+      const fromPos = selectedPos;
+      selectedPos = null;
+      validMoves = [];
+      animateAndExecuteMove(fromPos, nodeId);
+    } else if (boardState[nodeId] === turn) {
+      // Switch selection to another own piece
+      selectedPos = nodeId;
+      validMoves = getValidMovesForNode(nodeId, boardState, turn);
+      sound.playSelect();
+      render();
+    }
+  }
+}
+
+function getValidMovesForNode(nodeId, state, player) {
+  const neighbors = adj[nodeId];
+  return neighbors.filter(neighborId => state[neighborId] === EMPTY);
+}
+
+function animateAndExecuteMove(fromPos, toPos) {
+  isAnimating = true;
+  const p = boardState[fromPos];
+  animPiece = { fromPos, toPos, p, progress: 0 };
+
+  saveHistory();
+
+  const startTime = performance.now();
+  const duration = 220; // ms
+
+  function step(now) {
+    const elapsed = now - startTime;
+    animPiece.progress = Math.min(1, elapsed / duration);
+    render();
+
+    if (animPiece.progress < 1) {
+      requestAnimationFrame(step);
+    } else {
+      // Complete move logic
+      boardState[fromPos] = EMPTY;
+      boardState[toPos] = p;
+      animPiece = null;
+      isAnimating = false;
+
+      let captured = checkCaptures(toPos, p);
+      if (captured > 0) {
+        sound.playCapture();
+      } else {
+        sound.playMove();
+      }
+
+      moveCount++;
+      addLogRecord(p, `${fromPos} → ${toPos}` + (captured ? ` (${captured}개 따냄)` : ''));
+
+      // Check Victory Condition
+      if (checkVictory()) {
+        render();
+        updateUI();
+        return;
+      }
+
+      // Switch turn
+      turn = turn === P1 ? P2 : P1;
+      updateUI();
+      render();
+
+      // Trigger AI if applicable
+      if (gameMode === 'ai' && turn === P2) {
+        setTimeout(triggerAIMove, 450);
+      }
+    }
+  }
+
+  requestAnimationFrame(step);
+}
+
+function executePlace(nodeId) {
+  saveHistory();
+  boardState[nodeId] = turn;
+  sound.playMove();
+
+  if (turn === P1) p1Unplaced--;
+  else p2Unplaced--;
+
+  let captured = checkThreeGonu3InARow(nodeId, turn);
+
+  moveCount++;
+  addLogRecord(turn, `착점 ${nodeId}` + (captured ? ' (3목 완성/따냄)' : ''));
+
+  if (p1Unplaced === 0 && p2Unplaced === 0) {
+    phase = 'MOVE';
+  }
+
+  turn = turn === P1 ? P2 : P1;
+  updateUI();
+  render();
+
+  if (gameMode === 'ai' && turn === P2) {
+    setTimeout(triggerAIMove, 450);
+  }
+}
+
+/* ==========================================================================
+   GAME CAPTURE & RULES LOGIC
+   ========================================================================== */
+function checkCaptures(lastToPos, player) {
+  let capturedCount = 0;
+  const opp = player === P1 ? P2 : P1;
+
+  if (currentGame === 'line') {
+    // 줄고누: Sandwich / Pinch capture (양협)
+    // Check all 4 directions around lastToPos
+    const r = Math.floor(lastToPos / 4);
+    const c = lastToPos % 4;
+
+    const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+    dirs.forEach(([dr, dc]) => {
+      const nr1 = r + dr, nc1 = c + dc;
+      const nr2 = r + dr * 2, nc2 = c + dc * 2;
+
+      if (nr2 >= 0 && nr2 < 4 && nc2 >= 0 && nc2 < 4) {
+        const idx1 = nr1 * 4 + nc1;
+        const idx2 = nr2 * 4 + nc2;
+
+        if (boardState[idx1] === opp && boardState[idx2] === player) {
+          boardState[idx1] = EMPTY;
+          capturedCount++;
+        }
+      }
+    });
+  } else if (currentGame === 'three' && phase === 'MOVE') {
+    // 참고누 3목 형성 시 상대 말 따내기
+    capturedCount = checkThreeGonu3InARow(lastToPos, player);
+  }
+
+  return capturedCount;
+}
+
+function checkThreeGonu3InARow(pos, player) {
+  // Check horizontal / vertical lines containing pos
+  const opp = player === P1 ? P2 : P1;
+  const r = Math.floor(pos / 4);
+  const c = pos % 4;
+
+  let form3 = false;
+
+  // Check row
+  let rowCount = 0;
+  for (let col = 0; col < 4; col++) {
+    if (boardState[r * 4 + col] === player) rowCount++;
+  }
+  if (rowCount === 3) form3 = true;
+
+  // Check col
+  let colCount = 0;
+  for (let row = 0; row < 4; row++) {
+    if (boardState[row * 4 + c] === player) colCount++;
+  }
+  if (colCount === 3) form3 = true;
+
+  if (form3) {
+    // Auto capture 1 opponent piece
+    const oppIndices = boardState.map((val, idx) => val === opp ? idx : null).filter(val => val !== null);
+    if (oppIndices.length > 0) {
+      const target = oppIndices[Math.floor(Math.random() * oppIndices.length)];
+      boardState[target] = EMPTY;
+      return 1;
+    }
+  }
+  return 0;
+}
+
+function checkVictory() {
+  const p1Pieces = boardState.filter(v => v === P1).length;
+  const p2Pieces = boardState.filter(v => v === P2).length;
+
+  let winner = null;
+
+  if (currentGame === 'well') {
+    // Check blocked opponent
+    const nextTurn = turn === P1 ? P2 : P1;
+    const hasMove = boardState.some((val, idx) => {
+      if (val === nextTurn) {
+        return getValidMovesForNode(idx, boardState, nextTurn).length > 0;
+      }
+      return false;
+    });
+
+    if (!hasMove) winner = turn; // Current player wins if opponent blocked
+  } else if (currentGame === 'line') {
+    if (p2Pieces <= 1) winner = P1;
+    else if (p1Pieces <= 1) winner = P2;
+  } else if (currentGame === 'three') {
+    if (phase === 'MOVE') {
+      if (p2Pieces <= 2) winner = P1;
+      else if (p1Pieces <= 2) winner = P2;
+    }
+  }
+
+  if (winner) {
+    sound.playWin();
+    const title = document.getElementById('go-title');
+    const sub = document.getElementById('go-sub');
+    const iconBg = document.getElementById('go-icon-bg');
+    const icon = document.getElementById('go-icon');
+
+    if (winner === P1) {
+      title.innerText = '🎉 플레이어 1 (청) 승리!';
+      sub.innerText = '뛰어난 수읽기로 승리하셨습니다!';
+      iconBg.style.background = 'rgba(0,102,204,0.12)';
+      iconBg.style.color = '#0066CC';
+      icon.className = 'fa-solid fa-trophy';
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+    } else {
+      title.innerText = gameMode === 'ai' ? '🤖 컴퓨터 (홍) 승리' : '🎉 플레이어 2 (홍) 승리!';
+      sub.innerText = '다음 대국에서 다시 도전해보세요!';
+      iconBg.style.background = 'rgba(255,59,48,0.12)';
+      iconBg.style.color = '#FF3B30';
+      icon.className = gameMode === 'ai' ? 'fa-solid fa-robot' : 'fa-solid fa-trophy';
+    }
+
+    toggleGameOverModal(true);
+    return true;
+  }
+  return false;
+}
+
+/* ==========================================================================
+   AI ENGINE
+   ========================================================================== */
+function triggerAIMove() {
+  if (turn !== P2 || isAnimating) return;
+
+  if (phase === 'PLACE') {
+    const emptyPos = boardState.map((v, i) => v === EMPTY ? i : null).filter(v => v !== null);
+    if (emptyPos.length > 0) {
+      const choice = emptyPos[Math.floor(Math.random() * emptyPos.length)];
+      executePlace(choice);
+    }
+    return;
+  }
+
+  // MOVE Phase AI
+  const myPieces = boardState.map((v, i) => v === P2 ? i : null).filter(v => v !== null);
+  let possibleMoves = [];
+
+  myPieces.forEach(from => {
+    const moves = getValidMovesForNode(from, boardState, P2);
+    moves.forEach(to => possibleMoves.push({ from, to }));
+  });
+
+  if (possibleMoves.length === 0) return;
+
+  let chosen = possibleMoves[0];
+
+  if (aiDiff === 'easy') {
+    chosen = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+  } else {
+    // Medium / Hard: Evaluate captures
+    let bestScore = -999;
+    possibleMoves.forEach(m => {
+      let score = 0;
+      let tempBoard = [...boardState];
+      tempBoard[m.from] = EMPTY;
+      tempBoard[m.to] = P2;
+
+      // Check capture potential
+      if (currentGame === 'line') {
+        const r = Math.floor(m.to / 4), c = m.to % 4;
+        const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+        dirs.forEach(([dr, dc]) => {
+          const nr1 = r + dr, nc1 = c + dc;
+          const nr2 = r + dr * 2, nc2 = c + dc * 2;
+          if (nr2 >= 0 && nr2 < 4 && nc2 >= 0 && nc2 < 4) {
+            if (tempBoard[nr1 * 4 + nc1] === P1 && tempBoard[nr2 * 4 + nc2] === P2) {
+              score += 10;
+            }
+          }
+        });
+      }
+
+      if (score > bestScore) {
+        bestScore = score;
+        chosen = m;
+      }
+    });
+
+    if (bestScore === 0) {
+      chosen = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+    }
+  }
+
+  animateAndExecuteMove(chosen.from, chosen.to);
+}
+
+/* ==========================================================================
+   STATE HISTORY & UI SYNC
+   ========================================================================== */
+function saveHistory() {
+  historyStack.push({
+    boardState: [...boardState],
+    turn,
+    phase,
+    p1Unplaced,
+    p2Unplaced,
+    moveCount
+  });
+}
+
+function undoMove() {
+  if (historyStack.length === 0 || isAnimating) return;
+  const last = historyStack.pop();
+  boardState = [...last.boardState];
+  turn = last.turn;
+  phase = last.phase;
+  p1Unplaced = last.p1Unplaced;
+  p2Unplaced = last.p2Unplaced;
+  moveCount = last.moveCount;
+
+  selectedPos = null;
+  validMoves = [];
+  updateUI();
+  render();
+}
+
+function updateUI() {
+  const p1Count = boardState.filter(v => v === P1).length + (phase === 'PLACE' ? p1Unplaced : 0);
+  const p2Count = boardState.filter(v => v === P2).length + (phase === 'PLACE' ? p2Unplaced : 0);
+
+  document.getElementById('score-p1').innerText = `${p1Count}개`;
+  document.getElementById('score-p2').innerText = `${p2Count}개`;
+
+  const cardP1 = document.getElementById('card-p1');
+  const cardP2 = document.getElementById('card-p2');
+  const badgeP1 = document.getElementById('badge-p1');
+  const badgeP2 = document.getElementById('badge-p2');
+  const statusText = document.getElementById('status-text');
+
+  if (turn === P1) {
+    cardP1.className = 'card active-p1';
+    cardP2.className = 'card';
+    badgeP1.className = 'badge badge-p1';
+    badgeP1.innerText = '내 차례';
+    badgeP2.className = 'badge badge-waiting';
+    badgeP2.innerText = '대기중';
+
+    statusText.innerText = phase === 'PLACE' 
+      ? '청색 말을 빈 교차점에 놓으세요.'
+      : '청색 말을 선택해 이동시킬 위치를 클릭하세요.';
+  } else {
+    cardP2.className = 'card active-p2';
+    cardP1.className = 'card';
+    badgeP2.className = 'badge badge-p2';
+    badgeP2.innerText = gameMode === 'ai' ? '수 계산 중...' : '홍 차례';
+    badgeP1.className = 'badge badge-waiting';
+    badgeP1.innerText = '대기중';
+
+    statusText.innerText = gameMode === 'ai'
+      ? '컴퓨터(AI)가 수를 생각하는 중입니다...'
+      : '홍색 말을 선택해 이동시킬 위치를 클릭하세요.';
+  }
+}
+
+function addLogRecord(player, actionStr) {
+  document.getElementById('log-count').innerText = `${moveCount}수 진행`;
+
+  const body = document.getElementById('logBody');
+  const emptyRow = body.querySelector('.empty-row');
+  if (emptyRow) emptyRow.remove();
+
+  const tr = document.createElement('tr');
+  const pName = player === P1 ? '플레이어 1 (청)' : (gameMode === 'ai' ? '컴퓨터 (홍)' : '플레이어 2 (홍)');
+  const pColor = player === P1 ? '#0066CC' : '#FF3B30';
+
+  const p1Rem = boardState.filter(v => v === P1).length;
+  const p2Rem = boardState.filter(v => v === P2).length;
+
+  tr.innerHTML = `
+    <td><b>#${moveCount}</b></td>
+    <td style="color:${pColor}; font-weight:700;">${pName}</td>
+    <td>${actionStr}</td>
+    <td>${p1Rem} / ${p2Rem}</td>
+  `;
+
+  body.insertBefore(tr, body.firstChild);
+}
+</script>
+</body>
+</html>
