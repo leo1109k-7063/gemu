@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>반지름과 질량으로 두 집단 나누기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--font:"Noto Sans KR","Noto Sans CJK KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;--p:#0066CC;color-scheme:light}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#fff;font-family:var(--font);color:#1D1D1F;word-break:keep-all}
+body{display:flex;flex-direction:column;padding:10px;gap:8px;overflow:auto;user-select:none;-webkit-user-select:none}
+.tray{display:flex;flex-wrap:wrap;gap:6px;min-height:84px;padding:8px;border-radius:14px;background:#F5F5F7;align-content:flex-start}
+.tray:empty::before{content:"";flex:1}
+body.ok .tray{display:none}
+.bins{display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:1;min-height:0}
+.bin{border-radius:14px;border:2px dashed #636366;background:#ECECEE;padding:8px;display:flex;flex-direction:column;gap:6px;min-height:150px}
+.bin.a{border-color:var(--p);background:#E6F0FA}
+.bin.over{outline:3px solid #FFB020;outline-offset:2px}
+.bin h4{margin:0;font-size:18px;font-weight:700;color:#636366}
+.bin.a h4{color:var(--p)}
+.slot{display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start;min-height:64px}
+.card{display:flex;align-items:center;gap:6px;background:#fff;border:1.5px solid #D1D1D6;border-radius:12px;padding:4px 10px 4px 4px;cursor:grab;touch-action:none;min-height:52px;font-size:16px}
+.card.sel{border-color:#FFB020;box-shadow:0 0 0 3px rgba(255,176,32,.35)}
+.card.fixed{cursor:default;opacity:.85}
+.card.drag{position:fixed;z-index:9;pointer-events:none;box-shadow:0 8px 20px rgba(0,0,0,.18)}
+.card b{font-size:17px;font-weight:700;display:block}
+.card small{font-size:13px;color:#6E6E73;display:block;line-height:1.3}
+.card svg{width:44px;height:44px;flex:none}
+.facts{display:none;flex-direction:column;gap:4px;margin-top:auto;border-top:1px solid rgba(0,0,0,.12);padding-top:6px}
+.done .facts{display:flex;animation:in .5s}
+.facts div{display:flex;justify-content:space-between;font-size:17px}
+.facts span{color:#6E6E73;font-size:15px}
+.st{font-size:15px;font-weight:700;color:#6E6E73;min-height:22px}
+.st.bad{color:#C5221F}.st.good{color:#1E8E3E}
+.mc{display:flex;gap:6px;align-items:center}
+.sl-btn{font:700 16px var(--font);color:var(--p);background:#fff;border:1.5px solid var(--p);border-radius:999px;padding:6px 14px;cursor:pointer;min-height:44px}
+@keyframes in{from{opacity:0;transform:translateY(6px)}}
+@media (prefers-reduced-motion: reduce){.done .facts{animation:none}}
+</style>
+</head>
+<body>
+<div class="tray" id="tray"></div>
+<div class="bins">
+  <div class="bin a" data-g="가"><h4>(가) 집단</h4><div class="slot"></div><div class="facts" id="fa"></div></div>
+  <div class="bin b" data-g="나"><h4>(나) 집단</h4><div class="slot"></div><div class="facts" id="fb"></div></div>
+</div>
+<div class="mc"><span class="st" id="st"></span><span style="flex:1"></span><button class="sl-btn" id="reset">처음부터</button></div>
+<script>
+/* 반지름·질량을 보고 행성 카드를 (가)·(나)에 넣는다(끌어 놓기, 또는 카드를 누른 뒤 집단을 누르기).
+   지구는 (가), 목성은 (나)에 미리 놓았다. 바르게 나누면 두 집단의 위성 수·고리·표면이 나온다 */
+(function(){
+'use strict';
+const tell=d=>{if(window.parent!==window)window.parent.postMessage(d,'*');};
+const P=[['수성',.38,.06,0,'#A29D97'],['금성',.95,.82,0,'#DDBF86'],['지구',1,1,0,'#3B78C4'],['화성',.53,.11,0,'#C4603A'],
+  ['목성',11.2,318,1,'#D6B48E'],['토성',9.4,95,1,'#E1C894'],['천왕성',4,14.5,1,'#A6DCE0'],['해왕성',3.9,17,1,'#4E7FD0']];
+const FIX={2:'가',4:'나'};
+const tray=document.getElementById('tray'),st=document.getElementById('st');
+const bins=[...document.querySelectorAll('.bin')],slotOf=g=>bins.find(b=>b.dataset.g===g).querySelector('.slot');
+let where={},sel=null,done=false;
+/* 크기: 반지름에 비례(목성 = 22), 너무 작으면 4 */
+const dot=(r,c)=>`<svg viewBox="-23 -23 46 46"><circle r="${Math.max(4,r/11.2*22)}" fill="${c}"/></svg>`;
+const cards=P.map((q,i)=>{const c=document.createElement('div');c.className='card'+(FIX[i]?' fixed':'');c.dataset.i=i;
+  c.innerHTML=`${dot(q[1],q[4])}<div><b>${q[0]}</b><small>반지름 ${q[1]} · 질량 ${q[2]}</small></div>`;return c;});
+document.getElementById('fa').innerHTML='<div><span>위성 수</span>0, 0, 1, 2</div><div><span>고리</span>없다</div><div><span>표면</span>흙, 암석</div>';
+document.getElementById('fb').innerHTML='<div><span>위성 수</span>95, 146, 27, 14</div><div><span>고리</span>있다</div><div><span>표면</span>기체</div>';
+function place(i,g){where[i]=g;(g?slotOf(g):tray).appendChild(cards[i]);check();}
+function check(){
+  const placed=Object.values(where).filter(Boolean).length;
+  const ok=P.every((q,i)=>where[i]===(q[3]?'나':'가'));
+  bins.forEach(b=>b.classList.toggle('done',ok));document.body.classList.toggle('ok',ok);
+  st.className='st'+(ok?' good':placed===8?' bad':'');
+  st.textContent=ok?'바르게 나눴어요':placed===8?'섞여 있어요':`남은 행성 ${8-placed}개`;
+  if(ok&&!done){done=true;tell({type:'sim:progress',n:1,total:1});tell({type:'sim:done'});}}
+function reset(){where={};sel=null;done=false;cards.forEach(c=>c.classList.remove('sel'));
+  [0,1,3,5,6,7].forEach(i=>place(i,''));place(2,'가');place(4,'나');}
+/* 누르기: 카드 고르기 → 집단 누르기. 끌기: 6px 넘게 움직이면 카드를 들고 가서 놓은 칸에 */
+let drag=null;
+cards.forEach((c,i)=>{if(FIX[i])return;
+  c.addEventListener('pointerdown',e=>{e.preventDefault();try{c.setPointerCapture(e.pointerId);}catch(_){}const r=c.getBoundingClientRect();drag={i,x:e.clientX,y:e.clientY,dx:e.clientX-r.left,dy:e.clientY-r.top,on:false};});
+  c.addEventListener('pointermove',e=>{if(!drag||drag.i!==i)return;
+    if(!drag.on&&Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>6){drag.on=true;c.classList.add('drag');}
+    if(drag.on){c.style.left=(e.clientX-drag.dx)+'px';c.style.top=(e.clientY-drag.dy)+'px';
+      const t=document.elementFromPoint(e.clientX,e.clientY);bins.forEach(b=>b.classList.toggle('over',!!t&&b.contains(t)));}});
+  const up=e=>{if(!drag||drag.i!==i)return;const was=drag.on;drag=null;c.classList.remove('drag');c.style.left=c.style.top='';bins.forEach(b=>b.classList.remove('over'));
+    if(was){const t=document.elementFromPoint(e.clientX,e.clientY);const b=t&&t.closest('.bin');const tr=t&&t.closest('.tray');
+      if(b)place(i,b.dataset.g);else if(tr)place(i,'');}
+    else{sel=sel===i?null:i;cards.forEach((x,k)=>x.classList.toggle('sel',k===sel));}};
+  c.addEventListener('pointerup',up);c.addEventListener('pointercancel',up);});
+bins.forEach(b=>b.addEventListener('click',e=>{if(sel==null||e.target.closest('.card'))return;place(sel,b.dataset.g);cards[sel].classList.remove('sel');sel=null;}));
+tray.addEventListener('click',e=>{if(sel==null||e.target.closest('.card'))return;place(sel,'');cards[sel].classList.remove('sel');sel=null;});
+document.getElementById('reset').onclick=reset;
+/* 수업자료 안에서는 쪽 넘기기·답 보기 키를 수업자료로 넘긴다 */
+if(window.parent!==window)document.addEventListener('keydown',e=>{if(['PageUp','PageDown','Home','End','Escape','a','A','g','G','f','F','ArrowLeft','ArrowRight',' '].includes(e.key)){e.preventDefault();window.parent.postMessage({type:'simkey',key:e.key,shift:e.shiftKey},'*');}});
+tell({type:'sim:gate'});tell({type:'sim:progress',n:0,total:1});
+reset();
+})();
+</script>
+</body>
+</html>

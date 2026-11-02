@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>지구를 1로 두기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--font:"Noto Sans KR","Noto Sans CJK KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;color-scheme:light}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#fff;font-family:var(--font);color:#1D1D1F;word-break:keep-all}
+.wrap{height:100%;padding:10px;display:flex;flex-direction:column;gap:10px;min-height:0}
+.wrap svg{display:block;flex:1;width:100%;min-height:0;border-radius:16px;touch-action:none;user-select:none;-webkit-user-select:none}
+.mc{display:flex;flex-wrap:wrap;gap:6px;align-items:center;flex:none}
+.sl-btn{font:700 16px var(--font);color:#0066CC;background:#fff;border:1.5px solid #0066CC;border-radius:999px;padding:6px 14px;cursor:pointer;min-height:44px;touch-action:manipulation}
+.sl-btn:active{background:#E8F1FB}
+.sl-btn.on{background:#0066CC;color:#fff}
+.sl-btn.ok::after{content:" ✓"}
+.mc .st{margin-left:auto;font-size:15px;font-weight:700;color:#6E6E73}
+svg text{font-family:var(--font)}
+#hd{cursor:ew-resize}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="mc" id="plist"></div>
+  <svg id="s" viewBox="0 0 600 330" role="img" aria-label="지구 반지름 자로 행성 반지름 재기"></svg>
+  <div class="mc"><button class="sl-btn" id="minus" aria-label="자 줄이기">−</button><button class="sl-btn" id="plus" aria-label="자 늘이기">+</button><span class="st" id="st"></span></div>
+</div>
+<script>
+/* 지구 반지름(=1) 자를 끌어 늘여 행성 반지름 막대 끝에 맞추면 지구의 몇 배인지 나온다 */
+(function(){
+'use strict';
+const NS='http://www.w3.org/2000/svg';
+const el=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e;};
+function T(p,x,y,str,a){const e=el('text',Object.assign({x,y,'font-size':18,fill:'#1D1D1F','font-weight':700},a||{}),p);e.textContent=str;return e;}
+/* 포털 학습지 칸 잠금: 행성 2개를 재면 끝(sim:done) */
+const tell=d=>{if(window.parent!==window)window.parent.postMessage(d,'*');};
+/* [이름, 반지름 km, 지구의 배, 화면에서 지구 1의 길이, 자 한 칸] */
+const P=[['수성',2400,.38,440,.01],['화성',3390,.53,440,.01],['목성',71500,11.2,46,.1]];
+const x0=30,Ye=62,Yp=150,Yr=220,H=26;
+const svg=document.getElementById('s'),plist=document.getElementById('plist'),st=document.getElementById('st');
+const got={};let cur=0,v=1,done=false;
+P.forEach((q,i)=>{const b=document.createElement('button');b.className='sl-btn';b.textContent=q[0];b.onclick=()=>pick(i);plist.appendChild(b);});
+el('rect',{x:0,y:0,width:600,height:330,rx:14,fill:'#F5F5F7'},svg);
+T(svg,x0,Ye-10,'지구 반지름 6371 km = 1 (기준)',{'font-size':17,'font-weight':600,fill:'#0066CC'});
+const be=el('rect',{x:x0,y:Ye,height:H,fill:'#0066CC'},svg);
+const pn=T(svg,x0,Yp-10,'',{'font-size':17,'font-weight':600});
+const bp=el('rect',{x:x0,y:Yp,height:H,fill:'#8E8E93'},svg);
+const pend=el('line',{y1:Yp-6,y2:Yr+H+6,stroke:'#8E8E93','stroke-width':1.5,'stroke-dasharray':'4 4'},svg);
+T(svg,x0,Yr-10,'지구 반지름 자',{'font-size':17,'font-weight':600,fill:'#0066CC'});
+const ruler=el('g',{},svg);
+const hd=el('g',{id:'hd'},svg);el('rect',{x:-14,y:Yr-14,width:28,height:H+28,rx:10,fill:'#0066CC'},hd);
+el('path',{d:`M-4,${Yr+6} l-5,7 l5,7 M4,${Yr+6} l5,7 l-5,7`,stroke:'#fff','stroke-width':2.5,fill:'none'},hd);
+el('rect',{x:-30,y:Yr-24,width:60,height:H+48,fill:'transparent'},hd);
+const rv=T(svg,x0,Yr+H+36,'',{'font-size':20,'font-weight':600,fill:'#0066CC'});
+const res=T(svg,x0,Yr+H+66,'',{'font-size':19,'font-weight':600,fill:'#1E8E3E'});
+function U(){return P[cur][3];}
+function pick(i){cur=i;const q=P[i];plist.querySelectorAll('button').forEach((b,k)=>b.classList.toggle('on',k===i));
+  be.setAttribute('width',U());pn.textContent=`${q[0]} 반지름 ${q[1].toLocaleString('ko-KR')} km`;
+  bp.setAttribute('width',q[2]*U());pend.setAttribute('x1',x0+q[2]*U());pend.setAttribute('x2',x0+q[2]*U());
+  v=got[i]?q[2]:(q[2]<1?.2:3);draw();}
+const r2=x=>Math.round(x*100)/100;
+function draw(){const q=P[cur],u=U(),ok=Math.abs(v-q[2])<1e-9;
+  ruler.innerHTML='';const n=Math.floor(v+1e-9);
+  for(let k=0;k<=n;k++){const w=Math.min(1,v-k)*u;if(w<=0)break;
+    el('rect',{x:x0+k*u,y:Yr,width:w,height:H,fill:k%2?'#5B9BE0':'#0066CC'},ruler);
+    if(w>=u-1e-6&&u>=30)T(ruler,x0+k*u+u/2,Yr+19,String(k+1),{'text-anchor':'middle','font-size':14,fill:'#fff'});}
+  if(u>200)for(let t=1;t<10;t++){const tx=x0+t*u/10;if(tx<x0+v*u)el('line',{x1:tx,x2:tx,y1:Yr+H-7,y2:Yr+H,stroke:'#fff','stroke-width':1.2},ruler);}
+  hd.setAttribute('transform',`translate(${x0+v*u},0)`);
+  const vs=q[4]<.1?v.toFixed(2):v.toFixed(1);
+  rv.textContent=`지구의 ${vs}배 → ${vs} × 6371 ≈ ${Math.round(v*6371).toLocaleString('ko-KR')} km`;
+  res.textContent=ok?`${q[1].toLocaleString('ko-KR')} ÷ 6371 ≈ ${q[2]}배 — ${q[2]<1?'지구보다 작다':'지구보다 크다'}`:'';
+  if(ok&&!got[cur]){got[cur]=1;plist.children[cur].classList.add('ok');const n2=Object.keys(got).length;tell({type:'sim:progress',n:Math.min(n2,2),total:2});
+    if(n2>=2&&!done){done=true;tell({type:'sim:done'});}}
+  st.textContent=`잰 행성 ${Object.keys(got).length} / ${P.length}`;}
+/* 자 길이: 칸 단위로 맞추고, 정답 가까이(지구 1의 3%) 오면 행성 반지름에 붙는다 */
+function setV(nv){const q=P[cur];const max=q[2]<1?1.2:12.5;nv=Math.max(q[4],Math.min(max,Math.round(nv/q[4])*q[4]));
+  if(Math.abs(nv-q[2])<=Math.max(q[4],.03*q[2]))nv=q[2];v=r2(nv);draw();}
+let drag=false;
+function svgX(e){const r=svg.getBoundingClientRect();const s=Math.min(r.width/600,r.height/330);return (e.clientX-r.left-(r.width-600*s)/2)/s;}
+hd.addEventListener('pointerdown',e=>{e.preventDefault();try{hd.setPointerCapture(e.pointerId);}catch(_){}drag=true;});
+hd.addEventListener('pointermove',e=>{if(drag)setV((svgX(e)-x0)/U());});
+const up=()=>{drag=false;};hd.addEventListener('pointerup',up);hd.addEventListener('pointercancel',up);
+svg.addEventListener('pointerdown',e=>{if(e.target.closest('#hd'))return;setV((svgX(e)-x0)/U());});
+document.getElementById('minus').onclick=()=>setV(v-P[cur][4]);
+document.getElementById('plus').onclick=()=>setV(v+P[cur][4]);
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'){e.preventDefault();setV(v+P[cur][4]);}else if(e.key==='ArrowLeft'){e.preventDefault();setV(v-P[cur][4]);}});
+/* 수업자료 안에서는 쪽 넘기기·답 보기 키를 수업자료로 넘긴다 */
+if(window.parent!==window)document.addEventListener('keydown',e=>{if(['PageUp','PageDown','Home','End','Escape','a','A','g','G','f','F'].includes(e.key)){e.preventDefault();window.parent.postMessage({type:'simkey',key:e.key,shift:e.shiftKey},'*');}});
+tell({type:'sim:gate'});tell({type:'sim:progress',n:0,total:2});
+pick(0);
+})();
+</script>
+</body>
+</html>
