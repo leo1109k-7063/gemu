@@ -1,8 +1,3 @@
-/**
- * game-api.js
- * Supabase RPC 통신 및 닉네임 기반 세션, 게임 보상 관리 API
- */
-
 import {
   SUPABASE_URL,
   SUPABASE_ANON_KEY
@@ -55,52 +50,71 @@ async function rpc(name, body = {}) {
   return data;
 }
 
-/* =========================================================
-   1. 간소화된 닉네임 로그인 및 계정 관련 API
-   ========================================================= */
-
-/**
- * 일회용 닉네임 등록/로그인 (필요시 백엔드 RPC 연동)
- */
-export const loginAccount = (nickname) =>
-  rpc('login_game_account', {
-    p_nickname: nickname
+export const registerAccount = (nickname, password) =>
+  rpc('register_game_account', {
+    p_nickname: nickname,
+    p_password: password
   });
 
-/**
- * 전역 설정을 가져옵니다 (게임 허용 여부 등)
- */
+export const loginAccount = (nickname, password) =>
+  rpc('login_game_account', {
+    p_nickname: nickname,
+    p_password: password
+  });
+
 export const getSettings = () =>
   rpc('get_game_settings');
 
-/**
- * 공지사항 가져오기
- */
 export const getAnnouncement = () =>
   rpc('get_game_announcement');
 
-
-/* =========================================================
-   2. 교사 전용 관리 API (코드: 131109)
-   ========================================================= */
-
-/**
- * 교사: 게임 허용/차단 설정 변경
- */
-export const teacherSaveSettings = (
+export const teacherSaveAnnouncement = (
   code,
-  omok,
-  rummikub
+  enabled,
+  message
 ) =>
-  rpc('teacher_update_settings', {
+  rpc('teacher_update_announcement', {
     p_code: code,
-    p_omok: omok,
-    p_rummikub: rummikub
+    p_enabled: enabled,
+    p_message: message
   });
 
-/**
- * 교사: 특정 학생에게 코인 수동 지급
- */
+/* 건의사항 관련 API */
+
+export const submitSuggestion = (
+  nickname,
+  category,
+  message
+) =>
+  rpc('submit_game_suggestion', {
+    p_nickname: nickname,
+    p_category: category,
+    p_message: message
+  });
+
+export const teacherGetSuggestions = code =>
+  rpc('teacher_get_suggestions', {
+    p_code: code
+  });
+
+export const teacherSetSuggestionResolved = (
+  code,
+  suggestionId,
+  resolved
+) =>
+  rpc('teacher_set_suggestion_resolved', {
+    p_code: code,
+    p_suggestion_id: suggestionId,
+    p_resolved: resolved
+  });
+
+/* 교사 관리 API */
+
+export const teacherGetAccounts = code =>
+  rpc('teacher_get_accounts', {
+    p_code: code
+  });
+
 export const teacherGrantCoins = (
   code,
   nickname,
@@ -114,18 +128,77 @@ export const teacherGrantCoins = (
     p_reason: reason
   });
 
-/**
- * 교사: 전체 계정 목록 조회
- */
-export const teacherGetAccounts = code =>
-  rpc('teacher_get_accounts', {
-    p_code: code
+export const teacherSaveSettings = (
+  code,
+  omok,
+  rummikub
+) =>
+  rpc('teacher_update_settings', {
+    p_code: code,
+    p_omok: omok,
+    p_rummikub: rummikub
   });
 
+export const teacherSetShortcut = (code, enabled) =>
+  rpc('teacher_set_shortcut', {
+    p_code: code,
+    p_enabled: enabled
+  });
 
-/* =========================================================
-   3. 로컬 세션 관리 (localStorage 기반)
-   ========================================================= */
+export const teacherSetAccountRole = (
+  code,
+  nickname,
+  enabled
+) =>
+  rpc('teacher_set_account_role', {
+    p_code: code,
+    p_nickname: nickname,
+    p_enabled: enabled
+  });
+
+export const developerSetAccount = (
+  developerCode,
+  nickname,
+  enabled
+) =>
+  rpc('developer_set_account', {
+    p_developer_code: developerCode,
+    p_nickname: nickname,
+    p_enabled: enabled
+  });
+
+export const teacherFlagNickname = (
+  code,
+  nickname
+) =>
+  rpc('teacher_flag_nickname', {
+    p_code: code,
+    p_nickname: nickname
+  });
+
+export const teacherCreateDeleteChallenge = (
+  code,
+  nickname
+) =>
+  rpc('teacher_create_delete_challenge', {
+    p_code: code,
+    p_nickname: nickname
+  });
+
+export const teacherDeleteAccount = (
+  code,
+  developerCode,
+  nickname,
+  challenge
+) =>
+  rpc('teacher_delete_account', {
+    p_code: code,
+    p_developer_code: developerCode,
+    p_nickname: nickname,
+    p_challenge: challenge
+  });
+
+/* 로그인 세션 */
 
 export function getSession() {
   try {
@@ -148,14 +221,13 @@ export function clearSession() {
   localStorage.removeItem('arcade-profile');
 }
 
-export function requireNickname(nickname) {
-  return nickname.trim().length >= 1 && nickname.trim().length <= 16;
+export function requirePassword(password) {
+  return /^[A-Za-z0-9]{4,8}$/.test(password);
 }
 
-
-/* =========================================================
-   4. 미니게임 승리 보상 API (오목 / 루미큐브)
-   ========================================================= */
+export function requireNickname(nickname) {
+  return nickname.length >= 1 && nickname.length <= 16;
+}
 
 /**
  * 오목 / 루미큐브 승리 보상 요청
