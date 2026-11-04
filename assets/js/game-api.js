@@ -1,267 +1,155 @@
-import {
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY
-} from './config.js';
-
-const base = `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/rpc/`;
-
-async function rpc(name, body = {}) {
-  if (
-    !SUPABASE_URL ||
-    !SUPABASE_ANON_KEY ||
-    SUPABASE_URL.includes('YOUR_')
-  ) {
-    throw new Error(
-      'assets/js/config.js의 Supabase 설정을 확인해 주세요.'
-    );
-  }
-
-  let response;
-
-  try {
-    response = await fetch(base + name, {
-      method: 'POST',
-      headers: {
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(body)
-    });
-  } catch {
-    throw new Error('서버에 연결하지 못했어요.');
-  }
-
-  const data = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    throw new Error(
-      data?.message ||
-      data?.details ||
-      data?.hint ||
-      '요청에 실패했어요.'
-    );
-  }
-
-  if (data?.ok === false) {
-    throw new Error(data.message || '요청에 실패했어요.');
-  }
-
-  return data;
-}
-
-export const registerAccount = (nickname, password) =>
-  rpc('register_game_account', {
-    p_nickname: nickname,
-    p_password: password
-  });
-
-export const loginAccount = (nickname, password) =>
-  rpc('login_game_account', {
-    p_nickname: nickname,
-    p_password: password
-  });
-
-export const getSettings = () =>
-  rpc('get_game_settings');
-
-export const getAnnouncement = () =>
-  rpc('get_game_announcement');
-
-export const teacherSaveAnnouncement = (
-  code,
-  enabled,
-  message
-) =>
-  rpc('teacher_update_announcement', {
-    p_code: code,
-    p_enabled: enabled,
-    p_message: message
-  });
-
-/* 건의사항 관련 API */
-
-export const submitSuggestion = (
-  nickname,
-  category,
-  message
-) =>
-  rpc('submit_game_suggestion', {
-    p_nickname: nickname,
-    p_category: category,
-    p_message: message
-  });
-
-export const teacherGetSuggestions = code =>
-  rpc('teacher_get_suggestions', {
-    p_code: code
-  });
-
-export const teacherSetSuggestionResolved = (
-  code,
-  suggestionId,
-  resolved
-) =>
-  rpc('teacher_set_suggestion_resolved', {
-    p_code: code,
-    p_suggestion_id: suggestionId,
-    p_resolved: resolved
-  });
-
-/* 교사 관리 API */
-
-export const teacherGetAccounts = code =>
-  rpc('teacher_get_accounts', {
-    p_code: code
-  });
-
-export const teacherGrantCoins = (
-  code,
-  nickname,
-  amount,
-  reason
-) =>
-  rpc('teacher_grant_coins', {
-    p_code: code,
-    p_nickname: nickname,
-    p_amount: amount,
-    p_reason: reason
-  });
-
-export const teacherSaveSettings = (
-  code,
-  omok,
-  rummikub
-) =>
-  rpc('teacher_update_settings', {
-    p_code: code,
-    p_omok: omok,
-    p_rummikub: rummikub
-  });
-
-export const teacherSetShortcut = (code, enabled) =>
-  rpc('teacher_set_shortcut', {
-    p_code: code,
-    p_enabled: enabled
-  });
-
-export const teacherSetAccountRole = (
-  code,
-  nickname,
-  enabled
-) =>
-  rpc('teacher_set_account_role', {
-    p_code: code,
-    p_nickname: nickname,
-    p_enabled: enabled
-  });
-
-export const developerSetAccount = (
-  developerCode,
-  nickname,
-  enabled
-) =>
-  rpc('developer_set_account', {
-    p_developer_code: developerCode,
-    p_nickname: nickname,
-    p_enabled: enabled
-  });
-
-export const teacherFlagNickname = (
-  code,
-  nickname
-) =>
-  rpc('teacher_flag_nickname', {
-    p_code: code,
-    p_nickname: nickname
-  });
-
-export const teacherCreateDeleteChallenge = (
-  code,
-  nickname
-) =>
-  rpc('teacher_create_delete_challenge', {
-    p_code: code,
-    p_nickname: nickname
-  });
-
-export const teacherDeleteAccount = (
-  code,
-  developerCode,
-  nickname,
-  challenge
-) =>
-  rpc('teacher_delete_account', {
-    p_code: code,
-    p_developer_code: developerCode,
-    p_nickname: nickname,
-    p_challenge: challenge
-  });
-
-/* 로그인 세션 */
-
-export function getSession() {
-  try {
-    return JSON.parse(
-      localStorage.getItem('arcade-profile') || 'null'
-    );
-  } catch {
-    return null;
-  }
-}
-
-export function saveSession(profile) {
-  localStorage.setItem(
-    'arcade-profile',
-    JSON.stringify(profile)
-  );
-}
-
-export function clearSession() {
-  localStorage.removeItem('arcade-profile');
-}
-
-export function requirePassword(password) {
-  return /^[A-Za-z0-9]{4,8}$/.test(password);
-}
-
-export function requireNickname(nickname) {
-  return nickname.length >= 1 && nickname.length <= 16;
-}
-
 /**
- * 오목 / 루미큐브 승리 보상 요청
- * 서버에서 코인과 XP를 지급하도록 요청합니다.
+ * game-api.js
+ * Supabase 연동 및 게임 데이터(학습 기록, 퀴즈, 코인) 관리 API
  */
-export async function awardGameWin(gameName, matchId) {
-  if (!['omok', 'rummikub'].includes(gameName)) {
-    throw new Error('지원하지 않는 게임입니다.');
+
+// Supabase 클라이언트가 이미 전역에 선언되어 있다고 가정합니다.
+// (예: const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);)
+
+const GameAPI = {
+  /**
+   * 현재 로그인된 사용자의 프로필 정보(코인 잔액 포함)를 가져옵니다.
+   * @returns {Promise<Object|null>} 프로필 데이터 또는 null
+   */
+  async getProfile() {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        console.warn('로그인된 사용자가 없습니다.');
+        return null;
+      }
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        console.error('프로필 조회 실패:', error.message);
+        return null;
+      }
+
+      return data;
+    } catch (err) {
+      console.error('getProfile 예외 발생:', err);
+      return null;
+    }
+  },
+
+  /**
+   * 학습 완료 기록을 저장합니다.
+   * @param {string} contentId - 학습 콘텐츠 고유 ID
+   */
+  async recordLearning(contentId) {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error('로그인이 필요합니다.');
+      }
+
+      const { data, error } = await supabase
+        .from('learning_records')
+        .insert([
+          { user_id: user.id, content_id: contentId, status: 'completed' }
+        ]);
+
+      if (error) {
+        throw error;
+      }
+
+      console.log('학습 기록 저장 성공:', contentId);
+      return { success: true, data };
+    } catch (err) {
+      console.error('학습 기록 저장 실패:', err.message);
+      return { success: false, error: err.message };
+    }
+  },
+
+  /**
+   * 퀴즈 결과를 제출합니다. 
+   * 정답(isCorrect = true)인 경우 자동으로 서버 측에서 3코인이 지급됩니다.
+   * @param {string} quizId - 퀴즈 고유 ID
+   * @param {boolean} isCorrect - 정답 여부 (true / false)
+   */
+  async submitQuiz(quizId, isCorrect) {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error('로그인이 필요합니다.');
+      }
+
+      // Supabase RPC 함수 호출 (서버 단에서 안전하게 코인 지급 및 기록 처리)
+      const { data, error } = await supabase.rpc('submit_quiz_result', {
+        p_quiz_id: quizId,
+        p_is_correct: isCorrect
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      console.log(`퀴즈 제출 완료 (정답 여부: ${isCorrect})`);
+      
+      // 최신 프로필 정보(갱신된 코인 잔액 등)를 다시 조회하여 반환
+      const updatedProfile = await this.getProfile();
+
+      return { 
+        success: true, 
+        isCorrect, 
+        rewardEarned: isCorrect ? 3 : 0,
+        profile: updatedProfile 
+      };
+    } catch (err) {
+      console.error('퀴즈 제출 실패:', err.message);
+      return { success: false, error: err.message };
+    }
+  },
+
+  /**
+   * 사용자의 퀴즈 풀이 기록 목록을 가져옵니다.
+   */
+  async getQuizRecords() {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) return [];
+
+      const { data, error } = await supabase
+        .from('quiz_records')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data;
+    } catch (err) {
+      console.error('퀴즈 기록 조회 실패:', err.message);
+      return [];
+    }
+  },
+
+  /**
+   * 사용자의 학습 기록 목록을 가져옵니다.
+   */
+  async getLearningRecords() {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) return [];
+
+      const { data, error } = await supabase
+        .from('learning_records')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data;
+    } catch (err) {
+      console.error('학습 기록 조회 실패:', err.message);
+      return [];
+    }
   }
+};
 
-  if (!matchId) {
-    throw new Error('게임 판 ID가 없습니다.');
-  }
-
-  const profile = getSession();
-
-  if (!profile?.nickname) {
-    throw new Error('먼저 게임 계정에 로그인해 주세요.');
-  }
-
-  const result = await rpc('award_game_win', {
-    p_nickname: profile.nickname,
-    p_game_name: gameName,
-    p_match_id: matchId
-  });
-
-  // 서버가 성공을 반환했을 때만 세션에 최신 잔액을 반영합니다.
-  if (result.ok) {
-    saveSession({
-      ...profile,
-      coins: result.coins,
-      xp: result.xp
-    });
-  }
-
-  return result;
-}
+// 전역 객체로 등록 (필요시 사용)
+window.GameAPI = GameAPI;
