@@ -254,7 +254,6 @@ export async function awardGameWin(gameName, matchId) {
     p_match_id: matchId
   });
 
-  // 서버가 성공을 반환했을 때만 세션에 최신 잔액을 반영합니다.
   if (result.ok) {
     saveSession({
       ...profile,
@@ -266,33 +265,42 @@ export async function awardGameWin(gameName, matchId) {
   return result;
 }
 
+/* =========================================================
+   추가된 점자 퀴즈 및 학습 기록 연동 API
+   ========================================================= */
+
 /**
- * 점자 퀴즈 정답 보상 요청 (3코인 지급)
- * 서버에 'award_braille_quiz' RPC 함수가 구현되어 있다고 가정합니다.
+ * 점자 퀴즈 정답 제출 및 3코인 지급 요청
+ * @param {string} quizId - 퀴즈 고유 ID
+ * @param {boolean} isCorrect - 정답 여부 (true / false)
  */
-export async function awardBrailleQuizWin(quizId) {
+export async function submitQuizResult(quizId, isCorrect) {
   if (!quizId) {
     throw new Error('퀴즈 ID가 없습니다.');
   }
 
-  const profile = getSession();
-
-  if (!profile?.nickname) {
-    throw new Error('먼저 게임 계정에 로그인해 주세요.');
-  }
-
-  const result = await rpc('award_braille_quiz', {
-    p_nickname: profile.nickname,
-    p_quiz_id: quizId
+  // Supabase 내장 인증을 쓸 경우 supabase.rpc를 사용하지만,
+  // 현재 구조가 커스텀 rpc 함수(fetch 방식)를 사용하므로 백엔드 RPC에 맞추어 호출합니다.
+  const result = await rpc('submit_quiz_result', {
+    p_quiz_id: quizId,
+    p_is_correct: isCorrect
   });
 
-  // 서버가 성공을 반환했을 때만 세션에 최신 코인 잔액을 반영합니다.
-  if (result.ok) {
-    saveSession({
-      ...profile,
-      coins: result.coins
-    });
+  return result;
+}
+
+/**
+ * 학습 완료 기록 저장
+ * @param {string} contentId - 학습 콘텐츠 ID
+ */
+export async function recordLearning(contentId) {
+  if (!contentId) {
+    throw new Error('콘텐츠 ID가 없습니다.');
   }
+
+  const result = await rpc('record_learning_content', {
+    p_content_id: contentId
+  });
 
   return result;
 }
