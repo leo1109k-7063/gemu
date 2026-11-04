@@ -265,3 +265,34 @@ export async function awardGameWin(gameName, matchId) {
 
   return result;
 }
+
+/**
+ * 점자 퀴즈 정답 보상 요청 (3코인 지급)
+ * 서버에 'award_braille_quiz' RPC 함수가 구현되어 있다고 가정합니다.
+ */
+export async function awardBrailleQuizWin(quizId) {
+  if (!quizId) {
+    throw new Error('퀴즈 ID가 없습니다.');
+  }
+
+  const profile = getSession();
+
+  if (!profile?.nickname) {
+    throw new Error('먼저 게임 계정에 로그인해 주세요.');
+  }
+
+  const result = await rpc('award_braille_quiz', {
+    p_nickname: profile.nickname,
+    p_quiz_id: quizId
+  });
+
+  // 서버가 성공을 반환했을 때만 세션에 최신 코인 잔액을 반영합니다.
+  if (result.ok) {
+    saveSession({
+      ...profile,
+      coins: result.coins
+    });
+  }
+
+  return result;
+}
