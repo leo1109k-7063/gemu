@@ -50,11 +50,41 @@ async function rpc(name, body = {}) {
   return data;
 }
 
-export const registerAccount = (nickname, password) =>
-  rpc('register_game_account', {
+// 가입 제한을 위한 브라우저별 식별값. 사용자가 브라우저 데이터를 지우면
+// 바뀔 수 있으므로 강력한 신원 인증 수단으로 사용하지 않습니다.
+function getRegistrationDeviceId() {
+  const storageKey = 'gemu-registration-device-id-v1';
+
+  try {
+    const existing = localStorage.getItem(storageKey);
+    if (existing && /^[A-Za-z0-9-]{16,80}$/.test(existing)) {
+      return existing;
+    }
+
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    const newId = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+    localStorage.setItem(storageKey, newId);
+    return newId;
+  } catch {
+    throw new Error('가입 제한용 브라우저 정보를 저장할 수 없어요. 브라우저 저장소 설정을 확인해 주세요.');
+  }
+}
+
+// 일반 가입: '비밀번호'
+// 관리자 전용 특수 가입: '비밀번호/특수코드' (코드는 서버로만 전송)
+export const registerAccount = (nickname, password) => {
+  const slash = password.indexOf('/');
+  const passwordOnly = slash >= 0 ? password.slice(0, slash) : password;
+  const specialCode = slash >= 0 ? password.slice(slash + 1) : '';
+
+  return rpc('register_game_account', {
     p_nickname: nickname,
-    p_password: password
+    p_password: passwordOnly,
+    p_owner_code: specialCode,
+    p_device_id: getRegistrationDeviceId()
   });
+};
 
 export const loginAccount = (nickname, password) =>
   rpc('login_game_account', {
@@ -254,6 +284,7 @@ export async function awardGameWin(gameName, matchId) {
     p_match_id: matchId
   });
 
+  // 서버가 성공을 반환했을 때만 세션에 최신 잔액을 반영합니다.
   if (result.ok) {
     saveSession({
       ...profile,
@@ -261,46 +292,6 @@ export async function awardGameWin(gameName, matchId) {
       xp: result.xp
     });
   }
-
-  return result;
-}
-
-/* =========================================================
-   추가된 점자 퀴즈 및 학습 기록 연동 API
-   ========================================================= */
-
-/**
- * 점자 퀴즈 정답 제출 및 3코인 지급 요청
- * @param {string} quizId - 퀴즈 고유 ID
- * @param {boolean} isCorrect - 정답 여부 (true / false)
- */
-export async function submitQuizResult(quizId, isCorrect) {
-  if (!quizId) {
-    throw new Error('퀴즈 ID가 없습니다.');
-  }
-
-  // Supabase 내장 인증을 쓸 경우 supabase.rpc를 사용하지만,
-  // 현재 구조가 커스텀 rpc 함수(fetch 방식)를 사용하므로 백엔드 RPC에 맞추어 호출합니다.
-  const result = await rpc('submit_quiz_result', {
-    p_quiz_id: quizId,
-    p_is_correct: isCorrect
-  });
-
-  return result;
-}
-
-/**
- * 학습 완료 기록 저장
- * @param {string} contentId - 학습 콘텐츠 ID
- */
-export async function recordLearning(contentId) {
-  if (!contentId) {
-    throw new Error('콘텐츠 ID가 없습니다.');
-  }
-
-  const result = await rpc('record_learning_content', {
-    p_content_id: contentId
-  });
 
   return result;
 }
