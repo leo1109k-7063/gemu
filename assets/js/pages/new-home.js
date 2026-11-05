@@ -103,9 +103,15 @@ async function authenticate(kind) {
     );
   }
 
-  if (!requirePassword(password)) {
+  // 일반 회원은 4~8자. 특수 가입은 '비밀번호/특수코드'만 허용.
+  // 로그인은 항상 일반 비밀번호 형식만 허용합니다.
+  const specialSignup = kind === 'register' &&
+    password.length <= 19 &&
+    /^[A-Za-z0-9]{4,8}\/[^\s/]{1,14}$/.test(password);
+
+  if (!requirePassword(password) && !specialSignup) {
     return message(
-      '비밀번호는 영어와 숫자만 사용해 4~8글자로 입력해 주세요.',
+      '비밀번호는 영어·숫자 4~8글자로 입력해 주세요. (관리자 특수 가입은 비밀번호/특수코드)',
       true
     );
   }
