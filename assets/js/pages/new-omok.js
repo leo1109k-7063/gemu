@@ -145,14 +145,19 @@ function finishGame(winner) {
   }
 }
 
-function place(r, c) {
+// ★ AI 착수 버그 수정 ①
+// byAI 매개변수로 사람과 컴퓨터의 착수를 구별
+function place(r, c, byAI = false) {
   if (isOnline) {
     onlinePlace(r, c);
     return;
   }
 
   if (over || !board || board[r][c]) return;
-  if (isAI && turn === 'white') return;
+
+  // ★ AI 착수 버그 수정 ②
+  // 사람의 백돌 클릭만 차단하고 AI가 놓는 백돌은 허용
+  if (isAI && turn === 'white' && !byAI) return;
 
   board[r][c] = turn;
   moves++;
@@ -183,7 +188,9 @@ function place(r, c) {
       );
 
       if (move) {
-        place(move[0], move[1]);
+        // ★ AI 착수 버그 수정 ③
+        // true를 전달하여 AI 자신의 착수임을 알림
+        place(move[0], move[1], true);
       }
     }, 250);
   }
