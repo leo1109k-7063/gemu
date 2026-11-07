@@ -29,6 +29,12 @@ let winsB = 0;
 let winsW = 0;
 let seed = Date.now() % 2147483647;
 let moves = 0;
+let omokUndoHistory=[];
+let omokUndoBusy=false;
+let omokTurnToken=0;
+const refreshOmokUndo=()=>window.UndoTool.balance().then(n=>{
+  if($('omok-undo-count')) $('omok-undo-count').textContent='('+n+')';
+}).catch(()=>{if($('omok-undo-count')) $('omok-undo-count').textContent='(로그인 필요)';});
 
 // 온라인 대전 상태
 let onlineGameId = null;
@@ -73,6 +79,7 @@ function start() {
     return;
   }
 
+  omokTurnToken++;omokUndoHistory=[];
   board = emptyBoard();
   turn = 'black';
   over = false;
@@ -159,6 +166,9 @@ function place(r, c, byAI = false) {
   // 사람의 백돌 클릭만 차단하고 AI가 놓는 백돌은 허용
   if (isAI && turn === 'white' && !byAI) return;
 
+  if (isAI && !byAI && turn==='black') {
+    omokUndoHistory.push({board:board.map(row=>row.slice()),turn,moves,seed});
+  }
   board[r][c] = turn;
   moves++;
 
@@ -178,8 +188,9 @@ function place(r, c, byAI = false) {
   setStatus(`${turn === 'black' ? '흑' : '백'} 차례`);
 
   if (isAI && turn === 'white') {
+    const token=++omokTurnToken;
     setTimeout(() => {
-      if (over) return;
+      if (over || token!==omokTurnToken) return;
 
       const move = aiMove(
         board,
@@ -196,6 +207,19 @@ function place(r, c, byAI = false) {
   }
 }
 
+async function undoOmokMove(){
+  if (!isAI || omokUndoBusy || over || turn!=='black' || !omokUndoHistory.length) return;
+  omokUndoBusy=true;
+  $('omok-undo').disabled=true;
+  try {
+    const result=await window.UndoTool.use('omok');
+    $('omok-undo-count').textContent='('+result.quantity+')';
+    const s=omokUndoHistory.pop();omokTurnToken++;
+    board=s.board;turn=s.turn;moves=s.moves;seed=s.seed;
+    render();setStatus('무르기 완료 — 흑 차례');
+  } catch(error) {setStatus('무르기 실패: '+error.message);}
+  finally {omokUndoBusy=false;$('omok-undo').disabled=false;}
+}
 function getAccessToken() {
   const session = getSession?.();
 
@@ -597,6 +621,9 @@ async function onlinePlace(r, c) {
 }
 
 function bindEvents() {
+  $('omok-undo')?.addEventListener('click',undoOmokMove);
+  if(isAI) refreshOmokUndo();
+  else if($('omok-undo')) $('omok-undo').hidden=true;
   const boardElement = $('board');
 
   if (boardElement) {
