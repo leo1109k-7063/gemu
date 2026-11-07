@@ -1,15 +1,24 @@
+
 <!doctype html>
 <html lang="ko">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>캐릭터 상점 - 게임 놀이터</title>
+<title>상점 - 게임 놀이터</title>
 
 <link rel="stylesheet" href="assets/css/design.css">
 <link rel="stylesheet" href="assets/css/site.css">
 <link rel="stylesheet" href="assets/css/game-new.css">
 
 <style>
+.shop-main-tabs{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 16px}
+.shop-main-tabs button[aria-selected="true"]{background:var(--accent);color:#fff}
+.game-shop-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}
+.game-shop-tabs button[aria-selected="true"]{background:var(--accent);color:#fff}
+.chess-skin-mini{display:grid;grid-template-columns:repeat(4,1fr);width:98px;height:98px;border:2px solid #cbd5e1;border-radius:5px;overflow:hidden}
+.chess-skin-mini span{display:grid;place-items:center;font-size:25px;line-height:1}
+.chess-skin-card{min-height:158px}
+.chess-skin-card[aria-pressed="true"]{outline:3px solid var(--accent)}
 .shop-top{
   display:grid;
   grid-template-columns:160px 1fr;
@@ -83,82 +92,67 @@
 
   <header class="new-head">
     <a href="index.html">← 홈</a>
-    <h1>캐릭터 상점</h1>
+    <h1>상점</h1>
     <a href="me.html">마이페이지</a>
   </header>
 
-  <section id="shop" class="new-card hidden">
-    <div class="shop-top">
-      <div
-        id="preview"
-        class="shop-preview"
-        aria-label="캐릭터 미리보기">
-      </div>
+  <nav class="shop-main-tabs" aria-label="상점 분류">
+    <button type="button" class="btn btn-line" id="category-decoration" aria-selected="true">꾸미기 아이템</button>
+    <button type="button" class="btn btn-line" id="category-game" aria-selected="false">게임 아이템</button>
+  </nav>
 
-      <div>
-        <h2 id="hello">내 캐릭터</h2>
-
-        <p>
-          보유 코인
-          <strong>🪙 <span id="coins">0</span></strong>
-        </p>
-
-        <p>
-          레벨 <strong id="level">1</strong>
-        </p>
-
-        <p id="selected-name">
-          아이템을 골라 보세요.
-        </p>
-
-        <div class="shop-actions">
-          <button
-            id="action"
-            class="btn btn-primary"
-            type="button"
-            disabled>
-            아이템 선택
-          </button>
-
-          <button
-            id="cancel"
-            class="btn btn-line"
-            type="button">
-            미리보기 취소
-          </button>
+  <div id="decoration-section">
+    <section id="shop" class="new-card hidden">
+      <div class="shop-top">
+        <div id="preview" class="shop-preview" aria-label="캐릭터 미리보기"></div>
+        <div>
+          <h2 id="hello">내 캐릭터</h2>
+          <p>보유 코인 <strong>🪙 <span id="coins">0</span></strong></p>
+          <p>레벨 <strong id="level">1</strong></p>
+          <p id="selected-name">아이템을 골라 보세요.</p>
+          <div class="shop-actions">
+            <button id="action" class="btn btn-primary" type="button" disabled>아이템 선택</button>
+            <button id="cancel" class="btn btn-line" type="button">미리보기 취소</button>
+          </div>
+          <p id="status" class="shop-message" role="status"></p>
         </div>
-
-        <p
-          id="status"
-          class="shop-message"
-          role="status">
-        </p>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <section class="new-card">
-    <h2>꾸미기 아이템</h2>
+    <section class="new-card">
+      <h2>꾸미기 아이템</h2>
+      <p>아이템을 눌러 미리 본 다음 구매하거나 착용할 수 있어요.
+      구매 시 코인과 소유 여부를 서버에서 확인합니다.</p>
+      <div id="tabs" class="shop-tabs" role="tablist"></div>
+      <div id="items" class="shop-grid"></div>
+    </section>
+  </div>
 
-    <p>
-      아이템을 눌러 미리 본 다음 구매하거나 착용할 수 있어요.
-      구매 시 코인과 소유 여부를 서버에서 확인합니다.
-    </p>
+  <div id="game-section" hidden>
+    <section class="new-card">
+      <h2>게임 아이템</h2>
+      <p>게임에서 사용할 아이템을 코인으로 구매할 수 있어요.</p>
 
-    <div
-      id="tabs"
-      class="shop-tabs"
-      role="tablist">
-    </div>
+      <div class="game-shop-tabs" role="tablist" aria-label="게임 아이템 종류">
+        <button type="button" class="btn btn-line" id="game-tab-skins" aria-selected="true">체스 스킨</button>
+        <button type="button" class="btn btn-line" id="game-tab-tools" aria-selected="false">게임 도구</button>
+      </div>
 
-    <div id="items" class="shop-grid"></div>
-  </section>
+      <div id="chess-shop-view">
+        <p>모노 잉크는 기본 지급 · 다른 스킨은 각각 <strong>10코인</strong></p>
+        <p>보유 코인 🪙 <strong id="chess-shop-coins">-</strong></p>
+        <div id="chess-shop-items" class="shop-grid"></div>
+        <p id="chess-shop-status" class="shop-message" role="status"></p>
+      </div>
+
+      <div id="game-tools-view" hidden>
+        <p>아직 등록된 게임 도구가 없어요.</p>
+      </div>
+    </section>
+  </div>
 
 </main>
 
-<script
-  type="module"
-  src="assets/js/pages/account-shop.js">
-</script>
+<script type="module" src="assets/js/pages/account-shop.js"></script>
 </body>
 </html>
