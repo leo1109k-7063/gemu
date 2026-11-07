@@ -488,11 +488,40 @@
     </div>
     <h2 class="modal-title" id="go-title">대국 종료</h2>
     <div class="modal-sub" id="go-sub">승자가 결정되었습니다!</div>
+    <p id="gonu-reward-status" aria-live="polite" style="font-size:14px;font-weight:700;color:#0066CC;min-height:1.4em"></p>
 
     <button class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="initGame(); toggleGameOverModal(false);">새 대국 시작</button>
   </div>
 </div>
 
+<script type="module">
+// 고누 승리 보상: 기존 게임 엔진과 별도로 Supabase RPC 호출
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './assets/js/config.js';
+window.claimGonuReward = async (gameType, difficulty, matchId) => {
+  const status = document.getElementById('gonu-reward-status');
+  const notify = message => { if (status && status.isConnected) status.textContent = message; };
+  let profile;
+  try { profile = JSON.parse(localStorage.getItem('arcade-profile') || 'null'); }
+  catch { profile = null; }
+  if (!profile?.nickname) { notify('로그인 후 AI를 이기면 코인을 받을 수 있어요.'); return; }
+  try {
+    const response = await fetch(`${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/rpc/claim_gonu_reward`, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_nickname: profile.nickname, p_game_type: gameType, p_difficulty: difficulty, p_match_id: matchId })
+    });
+    const result = await response.json().catch(() => null);
+    if (!response.ok || result?.ok !== true) throw new Error(result?.message || '코인 지급 서버 설정을 확인해 주세요.');
+    if (result.duplicate) { notify('이미 보상을 받은 대국입니다.'); return; }
+    profile.coins = Number(result.coins);
+    localStorage.setItem('arcade-profile', JSON.stringify(profile));
+    notify(`🪙 승리 보상 ${result.granted_coins}코인이 지급되었어요!`);
+  } catch (error) {
+    console.error('고누 보상 오류:', error);
+    notify(`코인 지급 실패: ${error.message}`);
+  }
+};
+</script>
 <script>
 /* ==========================================================================
    WEB AUDIO API (Sound Effects)
@@ -580,6 +609,8 @@ const EMPTY = 0;
 let currentGame = 'line'; // 'well', 'line', 'three'
 let gameMode = 'ai';      // 'ai', 'pvp'
 let aiDiff = 'medium';    // 'easy', 'medium', 'hard'
+let gonuMatchId = null;
+let gonuRewardRequested = false;
 let turn = P1;
 let selectedPos = null;
 let validMoves = [];
@@ -642,6 +673,7 @@ function changeGameMode() {
 
 function changeDifficulty() {
   aiDiff = document.getElementById('aiDifficulty').value;
+  initGame(); // 난이도를 변경하면 새로운 대국으로 시작
 }
 
 function toggleRulesModal(show) {
@@ -657,6 +689,9 @@ function toggleGameOverModal(show) {
    BOARD INITIALIZATION LOGIC
    ========================================================================== */
 function initGame() {
+  gonuMatchId = (crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`);
+  gonuRewardRequested = false;
+  document.getElementById('gonu-reward-status').textContent = '';
   turn = P1;
   selectedPos = null;
   validMoves = [];
@@ -1176,6 +1211,14 @@ function checkVictory() {
     if (winner === P1) {
       title.innerText = '🎉 플레이어 1 (청) 승리!';
       sub.innerText = '뛰어난 수읽기로 승리하셨습니다!';
+      if (gameMode === 'ai' && !gonuRewardRequested) {
+        gonuRewardRequested = true;
+        const rewardCoins = { easy: 3, medium: 5, hard: 7 }[aiDiff];
+        document.getElementById('gonu-reward-status').textContent = `🪙 ${rewardCoins}코인 지급 확인 중…`;
+        window.claimGonuReward?.(currentGame, aiDiff, gonuMatchId);
+      } else if (gameMode !== 'ai') {
+        document.getElementById('gonu-reward-status').textContent = '2인용 대전은 코인 보상 대상이 아닙니다.';
+      }
       iconBg.style.background = 'rgba(0,102,204,0.12)';
       iconBg.style.color = '#0066CC';
       icon.className = 'fa-solid fa-trophy';
