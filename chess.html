@@ -15,7 +15,7 @@
   ╔══════════════════════════════════════════════════════════════════╗
   ║ 체스 (chess.html)  — 파일 하나로 동작합니다.                       ║
   ║                                                                  ║
-  ║ · 컴퓨터 대결 : 엘로 500 / 1000 / 1500 / 2000 / 2500 (브라우저 안   ║
+  ║ · 컴퓨터 대결 : HElo 100~1000 (10단계, 계정 저장   ║
   ║                 자체 AI. Web Worker 로 돌아서 화면이 멈추지 않음)   ║
   ║ · 온라인 대전 : Supabase Realtime(Broadcast + Presence).           ║
   ║                 DB 테이블/SQL 추가 없이 assets/js/config.js 의     ║
@@ -185,6 +185,12 @@
     .cx-promo .cx-piece { font-size: 3rem; }
     .cx-promo.dk button { background: var(--cx-dark); }
 
+    .cx-helo-report { margin: 12px 0; padding: 12px; background: #f3f7ff; border: 1px solid #dbe7ff; border-radius: 12px; text-align: left; font-size: .87rem; line-height: 1.55; max-height: min(42vh,330px); overflow-y: auto; }
+    .cx-helo-report strong { color: #1d4ed8; }
+    .cx-helo-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 9px 0; }
+    .cx-helo-metrics > div { background: white; padding: 8px; border-radius: 8px; }
+    .cx-helo-report .note { color: #64748b; font-size: .78rem; margin-top: 8px; }
+
     /* 스킨 선택 */
     .cx-backdrop { position: fixed; inset: 0; z-index: 9998; background: rgba(0,0,0,.5); display: grid; place-items: center; padding: 16px; }
     .cx-dialog { width: min(100%, 640px); max-height: calc(100vh - 32px); overflow: auto; padding: 22px; border-radius: 20px; background: #fff; color: var(--ink, #172033);
@@ -239,7 +245,7 @@
       <button id="go-ai" class="new-card game-link cx-mode" type="button">
         <span aria-hidden="true">🤖</span>
         <h2>컴퓨터와 대결</h2>
-        <p>엘로 500부터 2500까지 실력을 골라 AI와 두기</p>
+        <p>1~10단계 AI에 도전하고 나만의 HElo 쌓기</p>
         <span class="classic-card-action">게임 시작 →</span>
       </button>
       <button id="go-online" class="new-card game-link cx-mode" type="button">
@@ -255,8 +261,9 @@
   <div id="view-ai" hidden>
     <section class="new-card">
       <h2 class="cx-title">🤖 AI 실력 고르기</h2>
-      <p class="cx-sub">엘로는 이 AI의 대략적인 체감 난이도예요. (공식 레이팅이 아니라 브라우저 안 자체 엔진의 단계입니다)</p>
-      <div id="levels" class="cx-levels" role="group" aria-label="AI 엘로 선택"></div>
+      <p class="cx-sub">AI 난이도는 1~10단계(100~1000 HElo)입니다. 내 HElo는 1~1100 범위에서 대국 결과와 착수 분석에 따라 바뀝니다. 공식 Elo가 아닙니다.</p>
+      <div id="levels" class="cx-levels" role="group" aria-label="AI 난이도 선택"></div>
+      <p class="cx-note" id="helo-current" aria-live="polite"></p>
     </section>
     <section class="new-card">
       <h2 class="cx-title">내 색깔</h2>
@@ -348,6 +355,7 @@
           <div class="cx-modalcard" role="dialog" aria-live="polite">
             <h3 id="result-h">결과</h3>
             <p id="result-s"></p>
+            <div id="helo-report" class="cx-helo-report" hidden aria-live="polite"></div>
             <div class="cx-row">
               <button id="result-again" class="btn btn-primary" type="button">다시 하기</button>
               <button id="result-view" class="btn btn-line" type="button">판 보기</button>
@@ -1001,13 +1009,18 @@ function scoreRoot(pos, depth, ms) {
   return out;
 }
 
-/* 엘로별 설정: depth(깊이), time(최대 ms), rand(무작위 수 확률), temp(점수 흔들기 cp), book(오프닝북 확률) */
+/* HElo 단계 1~10: 표시 점수는 실제 Elo가 아닌 게임 내부 난이도 지표 */
 var LEVELS = {
-  500:  { depth: 1, time: 300,  rand: 0.35, temp: 260, book: 0.0 },
-  1000: { depth: 2, time: 500,  rand: 0.12, temp: 130, book: 0.4 },
-  1500: { depth: 3, time: 900,  rand: 0.03, temp: 55,  book: 0.8 },
-  2000: { depth: 5, time: 1500, rand: 0,    temp: 14,  book: 1.0 },
-  2500: { depth: 8, time: 2600, rand: 0,    temp: 0,   book: 1.0 }
+  100:  {depth:1,time:250,rand:.48,temp:330,book:0},
+  200:  {depth:1,time:300,rand:.36,temp:260,book:0},
+  300:  {depth:1,time:350,rand:.25,temp:210,book:.15},
+  400:  {depth:2,time:450,rand:.18,temp:170,book:.25},
+  500:  {depth:2,time:500,rand:.12,temp:130,book:.4},
+  600:  {depth:2,time:650,rand:.08,temp:95,book:.5},
+  700:  {depth:3,time:900,rand:.04,temp:55,book:.7},
+  800:  {depth:4,time:1200,rand:.02,temp:25,book:.85},
+  900:  {depth:5,time:1500,rand:0,temp:14,book:1},
+  1000: {depth:8,time:2600,rand:0,temp:0,book:1}
 };
 var BOOK = {
   '': ['e2e4', 'd2d4', 'g1f3', 'c2c4'],
@@ -1029,7 +1042,7 @@ var BOOK = {
 
 /* 최선의 수 찾기. fen: 현재 국면, hist: 시작부터의 UCI 수 목록 */
 function chooseMove(fen, hist, level) {
-  var cfg = LEVELS[level] || LEVELS[1500];
+  var cfg = LEVELS[level] || LEVELS[500];
   var pos = new Position(); pos.setFen(fen);
   var ms = pos.legalMoves();
   if (!ms.length) return { uci: null };
@@ -1096,11 +1109,56 @@ function chooseMove(fen, hist, level) {
     if (Math.abs(curScore) > MATE - 100) break;
     if (Date.now() > stopAt) break;
   }
-  /* 2000대: 가장 좋은 수와 거의 차이 없는 수 중에서 고르는 약간의 변화 */
+  /* 고난이도: 반복 심화 결과를 사용 */
   return { uci: bestUci, score: bestScore, depth: doneDepth, nodes: nodes };
 }
 
-return { Position: Position, moveUci: moveUci, START_FEN: START_FEN, sqName: sqName, chooseMove: chooseMove, LEVELS: LEVELS };
+/* 한 대국의 착수를 동일한 깊이(2 ply)로 사후 재평가한다.
+   평가 수치는 엔진 자체 기준이며 Stockfish 정확도나 공인 기력이 아니다. */
+function analyzeGame(ucis) {
+  var pos = new Position(); pos.setFen(START_FEN);
+  var sides = [{n:0,sum:0,near:0,miss:0,bad:0,top:[]},{n:0,sum:0,near:0,miss:0,bad:0,top:[]}];
+  var total = Math.min(ucis.length, 240);
+  for (var i=0;i<total;i++) {
+    var m = pos.moveFromUci(ucis[i]);
+    if (!m) break;
+    var side = pos.turn, stat=sides[side], legal = pos.legalMoves();
+    var scores = [], best = -30000, chosen = -30000, bestUci='';
+    resetSearch(); nodes=0; stopped=false; stopAt=Date.now()+400;
+    /* 깊이 2 탐색. 오래 걸리는 국면에서는 정적 평가로 전 수를 비교한다. */
+    var measured = scoreRoot(pos,2,legal);
+    if (stopped || measured.length !== legal.length) {
+      measured = [];
+      for (var j=0;j<legal.length;j++) {
+        pos.make(legal[j]);
+        measured.push({m:legal[j],s:-pos.evaluate()});
+        pos.unmake();
+      }
+    }
+    for (var j=0;j<measured.length;j++) {
+      var x=measured[j], val=Math.max(-2000,Math.min(2000,x.s));
+      if (val>best) {best=val;bestUci=moveUci(x.m);}
+      if (x.m===m) chosen=val;
+    }
+    if (chosen===-30000) {
+      pos.make(m); chosen=-pos.evaluate(); pos.unmake();
+    }
+    var loss=Math.max(0,Math.min(700,best-chosen));
+    stat.n++; stat.sum+=loss;
+    if(loss<=35)stat.near++;
+    if(loss>=100 && bestUci!==ucis[i])stat.miss++;
+    if(loss>=250)stat.bad++;
+    if(loss>=100 && stat.top.length<5)stat.top.push({turn:Math.floor(i/2)+1,played:ucis[i],better:bestUci,loss:Math.round(loss)});
+    pos.make(m);
+  }
+  return sides.map(function(st){
+    var avg=st.n?st.sum/st.n:0;
+    return {moves:st.n,accuracy:st.n?Math.round(100*Math.exp(-avg/180)):null,
+      near:st.near,miss:st.miss,blunders:st.bad,avgLoss:Math.round(avg),examples:st.top};
+  });
+}
+
+return { Position: Position, moveUci: moveUci, START_FEN: START_FEN, sqName: sqName, chooseMove: chooseMove, LEVELS: LEVELS, analyzeGame: analyzeGame };
 })();
 </script>
 
@@ -1280,7 +1338,7 @@ function getWorker() {
   if (worker) return worker;
   try {
     const src = $('engine-src').textContent +
-      '\nonmessage=function(e){var d=e.data;var r=ChessEngine.chooseMove(d.fen,d.hist,d.level);postMessage({id:d.id,r:r});};';
+      '\nonmessage=function(e){var d=e.data;var r=d.kind==="analyze"?ChessEngine.analyzeGame(d.hist):ChessEngine.chooseMove(d.fen,d.hist,d.level);postMessage({id:d.id,r:r});};';
     workerUrl = URL.createObjectURL(new Blob([src], { type: 'text/javascript' }));
     worker = new Worker(workerUrl);
   } catch (err) { worker = null; }
@@ -1304,11 +1362,16 @@ function askEngine(fen, hist, level) {
    게임 상태
    ============================================================ */
 const LEVEL_INFO = [
-  { elo: 500,  icon: '🐣', name: '입문', desc: '규칙을 막 배운 정도. 실수를 자주 해요.' },
-  { elo: 1000, icon: '🌱', name: '초보', desc: '기본은 알지만 허점이 많아요.' },
-  { elo: 1500, icon: '⚔️',  name: '중급', desc: '2~3수 앞은 내다보고 둬요.' },
-  { elo: 2000, icon: '🔥', name: '상급', desc: '전술에 강하고 실수가 적어요.' },
-  { elo: 2500, icon: '👑', name: '마스터', desc: '깊게 읽는 가장 강한 단계예요.' }
+  {elo:100,icon:'🐣',name:'1단계',desc:'입문'},
+  {elo:200,icon:'🌱',name:'2단계',desc:'기초'},
+  {elo:300,icon:'🍀',name:'3단계',desc:'초급'},
+  {elo:400,icon:'🎯',name:'4단계',desc:'연습'},
+  {elo:500,icon:'♟️',name:'5단계',desc:'보통'},
+  {elo:600,icon:'🛡️',name:'6단계',desc:'중급'},
+  {elo:700,icon:'⚔️',name:'7단계',desc:'도전'},
+  {elo:800,icon:'🔥',name:'8단계',desc:'상급'},
+  {elo:900,icon:'🏆',name:'9단계',desc:'고급'},
+  {elo:1000,icon:'👑',name:'10단계',desc:'최상급'}
 ];
 const PNAME = ['', 'P', 'N', 'B', 'R', 'Q', 'K'];
 
@@ -1316,7 +1379,7 @@ const G = {
   pos: new E.Position(),
   mode: null,            // 'ai' | 'online'
   myColor: 0,
-  level: 1000,
+  level: 500,
   hist: [], sans: [],
   over: false, result: null,
   selected: null, legal: [],   // legal: 선택한 말의 합법 수
@@ -1324,17 +1387,124 @@ const G = {
   last: null, flipped: false,
   thinking: false, token: 0,
   animSq: null,
-  online: null
+  online: null, rated: false
 };
-let settings = { level: +store.get('chess-level', 1000), color: store.get('chess-color', 'w') };
+let settings = { level: +store.get('chess-helo-level', 500), color: store.get('chess-color', 'w') };
+if (!E.LEVELS[settings.level]) settings.level = 500;
+// HElo는 계정의 서버 기록이 원본입니다. AI 난이도는 HElo와 관계없이 직접 선택합니다.
+const heloClamp = n => Math.min(1100, Math.max(1, Math.round(n)));
+let heloScore = 500;
+let heloReady = false;
+let heloError = '';
+let heloAccountName = '';
+let heloConfigPromise = null;
+let analysisWorker = null;
+function profileNickname() {
+  try { return String(JSON.parse(localStorage.getItem('arcade-profile') || 'null')?.nickname || '').trim(); }
+  catch { return ''; }
+}
+async function heloRpc(name, payload) {
+  if (!heloConfigPromise) heloConfigPromise = import('./assets/js/config.js');
+  const { SUPABASE_URL, SUPABASE_ANON_KEY } = await heloConfigPromise;
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) throw new Error('Supabase 설정이 없습니다.');
+  const response = await fetch(`${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/rpc/${name}`, {
+    method:'POST', headers:{'Content-Type':'application/json',apikey:SUPABASE_ANON_KEY,
+      Authorization:`Bearer ${SUPABASE_ANON_KEY}`}, body:JSON.stringify(payload)
+  });
+  const result = await response.json().catch(()=>null);
+  if (!response.ok || !result?.ok) throw new Error(result?.message || `HElo 서버 오류 (${response.status})`);
+  return result;
+}
+function refreshHeloBadge() {
+  const label = heloReady ? `계정에 저장됨 · ${heloAccountName}` : (heloError || '계정 점수 불러오는 중…');
+  $('helo-current').textContent = `내 HElo: ${heloScore}점 / 1100 · ${label} · AI 난이도는 직접 선택`;
+}
+const heloLoad = (async () => {
+  heloAccountName = profileNickname();
+  if (!heloAccountName) { heloError = '로그인 후 계정 HElo가 저장됩니다'; refreshHeloBadge(); return; }
+  try {
+    const result = await heloRpc('get_chess_helo', {p_nickname:heloAccountName});
+    heloScore = heloClamp(result.helo);
+    heloReady = true;
+  } catch (error) { heloError = `불러오기 실패: ${error.message}`; }
+  refreshHeloBadge();
+})();
+function newHeloMatchId() {
+  if (crypto?.randomUUID) return crypto.randomUUID();
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+}
+function estimateHelo(quality, level) {
+  if (!quality || !quality.moves) return null;
+  // 참고치: 자체 엔진의 2-ply 정확도에 기반한 제한적인 추정치
+  return heloClamp(Math.round(.45 * level + .55 * (quality.accuracy * 11)));
+}
+function calculateHeloChange(winner, my, ai) {
+  // 대국 결과 70%, 착수 품질 30% / 한 판 최대 ±40
+  const actual = winner === -1 ? .5 : winner === G.myColor ? 1 : 0;
+  const expected = 1 / (1 + Math.pow(10,(G.level-heloScore)/400));
+  const quality = my && my.moves >= 3 && ai && ai.moves >= 3
+    ? Math.max(-1,Math.min(1,(my.accuracy-ai.accuracy)/50)) : 0;
+  return Math.max(-40, Math.min(40, Math.round(36*(actual-expected) + 8*quality)));
+}
+async function applyHeloChange(winner, my, ai) {
+  await heloLoad;
+  if (!heloReady || !heloAccountName) throw new Error(heloError || '로그인이 필요합니다.');
+  const change = calculateHeloChange(winner, my, ai);
+  const result = await heloRpc('record_chess_helo', {
+    p_nickname:heloAccountName, p_match_id:G.heloMatchId, p_change:change,
+    p_ai_level:G.level, p_result:winner===-1?'draw':winner===G.myColor?'win':'loss',
+    p_accuracy:my?.accuracy ?? null
+  });
+  heloScore = heloClamp(result.helo);
+  refreshHeloBadge();
+  return {prev:result.previous_helo,change:result.applied_change,now:result.helo};
+}
+function requestGameAnalysis(hist) {
+  if (analysisWorker) { analysisWorker.terminate(); analysisWorker=null; }
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(new Blob([$('engine-src').textContent + '\nonmessage=function(e){postMessage(ChessEngine.analyzeGame(e.data));};'], {type:'text/javascript'}));
+    const w = new Worker(url); URL.revokeObjectURL(url);
+    analysisWorker=w;
+    w.onmessage = e => { if(analysisWorker===w)analysisWorker=null; w.terminate(); resolve(e.data); };
+    w.onerror = e => { if(analysisWorker===w)analysisWorker=null; w.terminate(); reject(new Error('분석 엔진 오류')); };
+    w.postMessage(hist);
+  });
+}
+async function finishHeloReport(out, token, hist) {
+  const el=$('helo-report');
+  el.hidden=false; el.textContent='🔎 착수 분석 중… 결과는 대국 기록을 기준으로 계산합니다.';
+  try {
+    const stats = await requestGameAnalysis(hist);
+    if (G.token !== token || !G.over || G.mode !== 'ai') return;
+    const mine=stats[G.myColor], bot=stats[G.myColor^1];
+    if (G.rated) return;
+    G.rated = true;
+    const delta=await applyHeloChange(out.winner,mine,bot);
+    if (G.token !== token || !G.over || G.mode !== 'ai') return;
+    const botEstimate=estimateHelo(bot,G.level);
+    const mineEstimate=estimateHelo(mine,G.level);
+    const fmt=(x)=>x && x.moves?`${x.accuracy}%`:'분석 불가';
+    const examples = mine?.examples?.length ? `<p class="note">더 나았던 수 예: ${mine.examples.map(x=>`${x.turn}수 ${esc(x.played)} → ${esc(x.better)} (약 ${x.loss}cp)`).join(' · ')}</p>` : '';
+    el.innerHTML=`<strong>내 HElo ${delta.prev} → ${delta.now} (${delta.change>=0?'+':''}${delta.change})</strong>
+      <div class="cx-helo-metrics"><div><b>나</b><br>착수 정확도 ${fmt(mine)}<br>최선에 근접한 수 ${mine.near}/${mine.moves}<br>놓친 수 ${mine.miss}회 · 큰 실수 ${mine.blunders}회<br>평균 손실 ${mine.avgLoss}cp</div>
+      <div><b>AI · ${G.level/100}단계</b><br>착수 정확도 ${fmt(bot)}<br>최선에 근접한 수 ${bot.near}/${bot.moves}<br>놓친 수 ${bot.miss}회 · 큰 실수 ${bot.blunders}회<br>평균 손실 ${bot.avgLoss}cp</div></div>
+      <p>이번 대국 추정: 나 <b>${mineEstimate??'—'} HElo</b> · AI <b>${botEstimate??'—'} HElo</b></p>${examples}
+      <p class="note">정확도와 추정 HElo는 자체 엔진의 2플라이 간이 분석값입니다. 공인 Elo나 Chess.com 분석 점수와 다르며, 강제 수·짧은 대국에서는 정확성이 낮습니다. 개인 HElo는 승패 중심으로 변동하며 게임놀이터 계정에 저장됩니다. AI 난이도는 자동으로 변경되지 않습니다.</p>`;
+  } catch (e) {
+    if(G.token!==token || !G.over)return;
+    el.textContent='HElo 분석 또는 계정 저장에 실패했습니다: '+(e?.message||'알 수 없는 오류')+' · 이번 대국의 HElo는 저장되지 않았습니다.';
+  }
+}
+
 
 function newPosition() {
   G.pos = new E.Position();
   G.pos.setFen(E.START_FEN);
-  G.hist = []; G.sans = []; G.over = false; G.result = null;
+  G.hist = []; G.sans = []; G.over = false; G.result = null; G.rated = false; G.heloMatchId = newHeloMatchId();
   G.selected = null; G.legal = []; G.last = null; G.thinking = false; G.animSq = null;
   G.allLegal = G.pos.legalMoves();
   G.token++;
+  if (analysisWorker) { analysisWorker.terminate(); analysisWorker=null; }
 }
 
 /* ============================================================
@@ -1419,7 +1589,7 @@ function capsHTML(color, info) {   // color 가 잡은 상대 기물들
   return html;
 }
 function playerName(color) {
-  if (G.mode === 'ai') return color === G.myColor ? '나' : `AI 엘로 ${G.level}`;
+  if (G.mode === 'ai') return color === G.myColor ? '나' : `AI ${G.level/100}단계 · ${G.level} HElo`;
   if (color === G.myColor) return (G.online?.myName || '나') + ' (나)';
   return G.online?.oppName || '상대';
 }
@@ -1499,6 +1669,8 @@ function finishGame(out) {
   G.result = { head, text: `${head} — ${text}`, winner: win, reason: out.reason };
   $('result-h').textContent = head;
   $('result-s').textContent = text + (win === -1 ? '' : ` (${win ? '흑' : '백'} 승)`);
+  $('helo-report').hidden = true;
+  if (G.mode === 'ai') finishHeloReport(out,G.token,G.hist.slice());
   $('result-again').textContent = G.mode === 'online' ? '한 판 더' : '다시 하기';
   $('result-again').disabled = false;
   $('offer').hidden = true;
@@ -1606,7 +1778,7 @@ async function aiTurn() {
   G.thinking = true; renderAll();
   const token = G.token, started = performance.now();
   const res = await askEngine(G.pos.getFen(), G.hist.slice(), G.level);
-  const minWait = G.level <= 1000 ? 650 + Math.random() * 600 : 450 + Math.random() * 350;
+  const minWait = G.level <= 500 ? 650 + Math.random() * 600 : 450 + Math.random() * 350;
   const rest = minWait - (performance.now() - started);
   if (rest > 0) await new Promise((r) => setTimeout(r, rest));
   if (token !== G.token || G.over) return;      // 그 사이 새 게임 · 무르기 · 종료
@@ -1636,6 +1808,8 @@ function undoMove() {
   G.token++; killWorker(); G.thinking = false;
   const undoOne = () => { G.pos.unmake(); G.hist.pop(); G.sans.pop(); };
   if (G.over) { G.over = false; G.result = null; $('result').hidden = true; }
+  // 무르기로 변경된 대국의 중복 반영을 피하기 위해 신규 대국 식별값 사용
+  G.heloMatchId = newHeloMatchId(); G.rated = false;
   // 내 차례로 돌아가도록 되돌린다
   undoOne();
   while (G.pos.turn !== G.myColor && G.hist.length) undoOne();
@@ -1977,14 +2151,15 @@ const Net = (() => {
    버튼 연결
    ============================================================ */
 function renderLevels() {
+  refreshHeloBadge();
   $('levels').innerHTML = LEVEL_INFO.map((l) => `
     <button type="button" class="cx-level" data-elo="${l.elo}" aria-pressed="${l.elo === settings.level}">
-      <span aria-hidden="true">${l.icon}</span><b>${l.elo}</b><em>${l.name}</em><small>${l.desc}</small>
+      <span aria-hidden="true">${l.icon}</span><b>${l.name}</b><em>${l.elo} HElo</em><small>${l.desc}</small>
     </button>`).join('');
 }
 $('levels').addEventListener('click', (e) => {
   const b = e.target.closest('.cx-level'); if (!b) return;
-  settings.level = +b.dataset.elo; store.set('chess-level', settings.level); renderLevels();
+  settings.level = +b.dataset.elo; store.set('chess-helo-level', settings.level); renderLevels();
 });
 function renderColorSeg() { $('color-seg').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.c === settings.color))); }
 $('color-seg').addEventListener('click', (e) => {
