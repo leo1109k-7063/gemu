@@ -429,8 +429,8 @@
   <canvas id="gonuCanvas" width="480" height="480"></canvas>
   
   <div class="action-bar">
-    <button class="btn btn-secondary" onclick="undoMove()">
-      <i class="fa-solid fa-rotate-left"></i> 무르기
+    <button id="gonu-undo-btn" class="btn btn-secondary" onclick="undoMove()">
+      <i class="fa-solid fa-rotate-left"></i> 무르기 <span id="gonu-undo-count">(-)</span>
     </button>
     <button class="btn btn-primary" onclick="initGame()">
       <i class="fa-solid fa-arrows-rotate"></i> 다시 시작
@@ -522,6 +522,7 @@ window.claimGonuReward = async (gameType, difficulty, matchId) => {
   }
 };
 </script>
+<script src="assets/js/undo-tool.js"></script>
 <script>
 /* ==========================================================================
    WEB AUDIO API (Sound Effects)
@@ -615,6 +616,11 @@ let turn = P1;
 let selectedPos = null;
 let validMoves = [];
 let historyStack = [];
+let gonuUndoBusy = false;
+const refreshGonuUndo = () => window.UndoTool.balance().then(n => {
+  document.getElementById('gonu-undo-count').textContent='('+n+')';
+}).catch(()=>{document.getElementById('gonu-undo-count').textContent='(로그인 필요)';});
+refreshGonuUndo();
 let moveCount = 0;
 let isAnimating = false;
 let animPiece = null; // { fromPos, toPos, p, progress }
@@ -1315,24 +1321,31 @@ function saveHistory() {
     phase,
     p1Unplaced,
     p2Unplaced,
-    moveCount
+    moveCount,
+    logHTML: document.getElementById('logBody').innerHTML,
+    logCount: document.getElementById('log-count').innerText
   });
 }
 
-function undoMove() {
-  if (historyStack.length === 0 || isAnimating) return;
-  const last = historyStack.pop();
-  boardState = [...last.boardState];
-  turn = last.turn;
-  phase = last.phase;
-  p1Unplaced = last.p1Unplaced;
-  p2Unplaced = last.p2Unplaced;
-  moveCount = last.moveCount;
-
-  selectedPos = null;
-  validMoves = [];
-  updateUI();
-  render();
+async function undoMove() {
+  // AI 대전에서 플레이어 차례일 때만 한 묶음의 수를 되돌림.
+  if (gonuUndoBusy || gameMode !== 'ai' || turn !== P1 || isAnimating || !historyStack.length) return;
+  gonuUndoBusy=true;
+  document.getElementById('gonu-undo-btn').disabled=true;
+  let result;
+  try { result=await window.UndoTool.use('gonu'); }
+  catch(error){alert('무르기 실패: '+error.message);gonuUndoBusy=false;document.getElementById('gonu-undo-btn').disabled=false;return;}
+  document.getElementById('gonu-undo-count').textContent='('+result.quantity+')';
+  // 상대 AI와 내 착수까지 함께 되돌려서 다시 내 차례로 만든다.
+  let last=historyStack.pop();
+  if(last.turn===P2 && historyStack.length) last=historyStack.pop();
+  boardState=[...last.boardState];turn=last.turn;phase=last.phase;
+  p1Unplaced=last.p1Unplaced;p2Unplaced=last.p2Unplaced;moveCount=last.moveCount;
+  document.getElementById('logBody').innerHTML=last.logHTML;
+  document.getElementById('log-count').innerText=last.logCount;
+  selectedPos=null;validMoves=[];
+  gonuUndoBusy=false;document.getElementById('gonu-undo-btn').disabled=false;
+  updateUI();render();
 }
 
 function updateUI() {
