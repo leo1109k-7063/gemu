@@ -1221,7 +1221,7 @@ const ChessSkins = (() => {
     listeners.forEach((fn) => fn('register'));
   }
   function apply(id) {
-    const skin = skins.get(id) || skins.get('glass');
+    const skin = skins.get(id) || skins.get('ink');
     if (!skin) return;
     const root = document.documentElement;
     appliedKeys.forEach((k) => root.style.removeProperty(k));
@@ -1298,37 +1298,217 @@ ChessSkins.register({
   },
   piece: glyphPiece
 });
-ChessSkins.apply(store.get('chess-skin', 'glass'));
 
-/* 스킨 선택창 */
-function openSkinDialog() {
-  renderSkinList();
+ChessSkins.apply('ink');
+
+/* 체스 스킨 소유 여부는 계정의 서버 목록을 기준으로 확인합니다. */
+let ownedChessSkins = new Set(['ink']);
+let chessSkinsReady = false;
+let chessSkinProfile = null;
+let chessSkinRefreshPromise = null;
+
+async function refreshOwnedChessSkins() {
+  if (chessSkinRefreshPromise) return chessSkinRefreshPromise;
+
+  chessSkinRefreshPromise = (async () => {
+    let profile;
+
+    try {
+      profile = JSON.parse(
+        localStorage.getItem('arcade-profile') || 'null'
+      );
+    } catch {}
+
+    if (!profile?.id || profile.authVersion !== 2) {
+      ownedChessSkins = new Set(['ink']);
+      ChessSkins.apply('ink');
+      chessSkinsReady = true;
+      return;
+    }
+
+    chessSkinProfile = profile.id;
+
+    try {
+      const {
+        SUPABASE_URL,
+        SUPABASE_ANON_KEY
+      } = await import('./assets/js/config.js');
+
+      const response = await fetch(
+        `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/rpc/get_chess_skins`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify({
+            p_profile_id: profile.id
+          })
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data?.ok) {
+        throw new Error(
+          data?.message || '스킨 조회 실패'
+        );
+      }
+
+      ownedChessSkins = new Set([
+        'ink',
+        ...(data.skins || [])
+          .filter(x => x.owned)
+          .map(x => x.id)
+      ]);
+
+      const preferred = store.get(
+        `chess-skin-${profile.id}`,
+        'ink'
+      );
+
+      ChessSkins.apply(
+        ownedChessSkins.has(preferred)
+          ? preferred
+          : 'ink'
+      );
+
+      chessSkinsReady = true;
+
+    } catch (error) {
+      console.warn(
+        '체스 스킨 보유 목록 조회 실패:',
+        error
+      );
+
+      ownedChessSkins = new Set(['ink']);
+      ChessSkins.apply('ink');
+      chessSkinsReady = false;
+    }
+
+  })().finally(() => {
+    chessSkinRefreshPromise = null;
+  });
+
+  return chessSkinRefreshPromise;
+}
+
+async function openSkinDialog() {
   $('skin-dialog').hidden = false;
+
+  $('skin-list').innerHTML =
+    '<p>계정에 보유한 체스 스킨을 확인하는 중…</p>';
+
+  await refreshOwnedChessSkins();
+
+  if ($('skin-dialog').hidden) return;
+
+  renderSkinList();
   $('skin-close').focus();
 }
+
 function renderSkinList() {
-  $('skin-list').innerHTML = ChessSkins.list().map((s) => {
-    const v = s.vars;
-    const sq = (dark) => `background:${dark ? (v['--cx-dark'] || '#888') : (v['--cx-light'] || '#eee')}`;
-    const cells = [
-      [0, null], [1, ['K', 'b']], [0, ['N', 'w']], [1, null],
-      [1, ['P', 'w']], [0, null], [1, ['Q', 'w']], [0, ['R', 'b']]
-    ].map(([dark, pc]) => `<div style="${sq(dark)}">${pc ? previewPiece(s, pc[0], pc[1]) : ''}</div>`).join('');
-    return `<button type="button" class="cx-skin" data-skin="${esc(s.id)}" aria-pressed="${s.id === ChessSkins.current}">
-      <div class="cx-mini" style="${s.id === ChessSkins.current ? '' : ''}border:${v['--cx-border'] || 'none'};--cx-pw:${v['--cx-pw']};--cx-pw-line:${v['--cx-pw-line']};--cx-pb:${v['--cx-pb']};--cx-pb-line:${v['--cx-pb-line']}">${cells}</div>
-      <b>${esc(s.name)}</b><small>${esc(s.desc || '')}</small></button>`;
-  }).join('');
+  $('skin-list').innerHTML = ChessSkins.list()
+    .filter(s => ownedChessSkins.has(s.id))
+    .map(s => {
+      const v = s.vars;
+
+      const sq = dark =>
+        `background:${
+          dark
+            ? (v['--cx-dark'] || '#888')
+            : (v['--cx-light'] || '#eee')
+        }`;
+
+      const cells = [
+        [0, null],
+        [1, ['K', 'b']],
+        [0, ['N', 'w']],
+        [1, null],
+        [1, ['P', 'w']],
+        [0, null],
+        [1, ['Q', 'w']],
+        [0, ['R', 'b']]
+      ].map(([dark, pc]) =>
+        `<div style="${sq(dark)}">${
+          pc ? previewPiece(s, pc[0], pc[1]) : ''
+        }</div>`
+      ).join('');
+
+      return `<button
+        type="button"
+        class="cx-skin"
+        data-skin="${esc(s.id)}"
+        aria-pressed="${s.id === ChessSkins.current}"
+      >
+        <div class="cx-mini" style="
+          border:${v['--cx-border'] || 'none'};
+          --cx-pw:${v['--cx-pw']};
+          --cx-pw-line:${v['--cx-pw-line']};
+          --cx-pb:${v['--cx-pb']};
+          --cx-pb-line:${v['--cx-pb-line']}
+        ">${cells}</div>
+        <b>${esc(s.name)}</b>
+        <small>${esc(s.desc || '')}</small>
+      </button>`;
+    }).join('') +
+    '<p style="grid-column:1/-1"><a href="shop.html">상점에서 체스 스킨 구매하기 →</a></p>';
+
+  if (!chessSkinsReady) {
+    toast(
+      '서버 연결을 확인하지 못해 기본 스킨만 표시합니다.'
+    );
+  }
 }
-function previewPiece(skin, t, c) { return `<span class="cx-piece ${c}">${skin.piece(t, c)}</span>`; }
-$('btn-skin').addEventListener('click', openSkinDialog);
-$('skin-close').addEventListener('click', () => { $('skin-dialog').hidden = true; });
-$('skin-dialog').addEventListener('click', (e) => { if (e.target === $('skin-dialog')) $('skin-dialog').hidden = true; });
-$('skin-list').addEventListener('click', (e) => {
-  const b = e.target.closest('.cx-skin'); if (!b) return;
+
+function previewPiece(skin, t, c) {
+  return `<span class="cx-piece ${c}">${
+    skin.piece(t, c)
+  }</span>`;
+}
+
+$('btn-skin').addEventListener(
+  'click',
+  openSkinDialog
+);
+
+$('skin-close').addEventListener('click', () => {
+  $('skin-dialog').hidden = true;
+});
+
+$('skin-dialog').addEventListener('click', e => {
+  if (e.target === $('skin-dialog')) {
+    $('skin-dialog').hidden = true;
+  }
+});
+
+$('skin-list').addEventListener('click', e => {
+  const b = e.target.closest('.cx-skin');
+
+  if (!b) return;
+  if (!ownedChessSkins.has(b.dataset.skin)) return;
+
   ChessSkins.apply(b.dataset.skin);
+
+  if (chessSkinProfile) {
+    store.set(
+      `chess-skin-${chessSkinProfile}`,
+      b.dataset.skin
+    );
+  }
+
   renderSkinList();
 });
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $('skin-dialog').hidden = true; });
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    $('skin-dialog').hidden = true;
+  }
+});
+
+refreshOwnedChessSkins();
 
 /* ============================================================
    AI 엔진 호출 (Web Worker)
