@@ -14,11 +14,11 @@ export async function claimGameXP(game,mode,outcome,matchId,milestone=0) {
   if (!profile?.nickname) { notice('XP 지급은 게임놀이터 로그인 후 이용할 수 있어요.',true); return null; }
   try {
     const response = await fetch(`${SUPABASE_URL.replace(/\/$/,'')}/rest/v1/rpc/claim_game_xp_20261108`, {
-      method:'POST',headers:{apikey:SUPABASE_ANON_KEY,Authorization:`Bearer ${SUPABASE_ANON_KEY}`,'Content-Type':'application/json'},
+      method:'POST',headers:{apikey:SUPABASE_ANON_KEY,'Content-Type':'application/json'},
       body:JSON.stringify({p_nickname:profile.nickname,p_game:game,p_mode:mode,p_outcome:outcome,p_match_id:matchId,p_milestone:milestone})
     });
     const result=await response.json().catch(()=>null);
-    if (!response.ok || result?.ok!==true) throw Error(result?.message||result?.details||result?.hint||`HTTP ${response.status}`);
+    if (!response.ok || result?.ok!==true) throw Error(result?.message||result?.details||result?.hint||`HTTP ${response.status}: ${JSON.stringify(result ?? {}).slice(0,180)}`);
     // 이전 RPC와 동시 실행 시 로컬 캐시의 XP를 덮어쓰지 않도록 현재 저장값도 고려합니다.
     const current=getSession();
     if(current?.nickname===profile.nickname){current.xp=Math.max(Number(current.xp)||0,Number(result.xp)||0);saveSession(current);window.dispatchEvent(new CustomEvent('gemu-xp-updated',{detail:result}));}
