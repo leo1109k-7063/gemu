@@ -13,6 +13,7 @@ import {
 } from '../config.js';
 
 import { getSession } from '../game-api.js';
+import { claimGameXP, newXpMatchId } from '../xp-rewards.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -32,6 +33,7 @@ let moves = 0;
 let omokUndoHistory=[];
 let omokUndoBusy=false;
 let omokTurnToken=0;
+let omokXpMatchId=newXpMatchId();
 const refreshOmokUndo=()=>window.UndoTool.balance().then(n=>{
   if($('omok-undo-count')) $('omok-undo-count').textContent='('+n+')';
 }).catch(()=>{if($('omok-undo-count')) $('omok-undo-count').textContent='(로그인 필요)';});
@@ -79,7 +81,7 @@ function start() {
     return;
   }
 
-  omokTurnToken++;omokUndoHistory=[];
+  omokTurnToken++;omokUndoHistory=[];omokXpMatchId=newXpMatchId();
   board = emptyBoard();
   turn = 'black';
   over = false;
@@ -136,6 +138,7 @@ function render() {
 
 function finishGame(winner) {
   over = true;
+  if(isAI && winner) claimGameXP('omok','ai',winner==='black'?'win':'lose',omokXpMatchId);
 
   if (winner === 'black') {
     winsB++;
