@@ -754,6 +754,7 @@
                         score += pts;
                         ghostEatMultiplier *= 2;
                         ghostsEatenTotal++;
+                        if (ghostsEatenTotal % 4 === 0) window.gameXpClaim('pacman','solo','ghosts',pacmanMatchId,ghostsEatenTotal);
 
                         playAudioSound('eatGhost');
                         updateHUD();
@@ -888,6 +889,7 @@
         function gameOver(isVictory) {
             if (!isRunning) return;
             isRunning = false;
+            if (!isVictory && ghostsEatenTotal < 4) window.gameXpClaim('pacman','solo','lose',pacmanMatchId,0);
             if (isVictory && !pacmanWinRewarded) {
                 pacmanWinRewarded = true;
                 claimArcadeReward('pacman', 'win', pacmanMatchId);
@@ -956,5 +958,6 @@
             }, 300);
         });
     </script>
+<script src="assets/js/xp-loader.js?v=20261110"></script>
 </body>
 </html>
