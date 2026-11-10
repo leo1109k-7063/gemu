@@ -8,6 +8,7 @@ import {
 } from '../rummikub.js';
 
 import { awardGameWin, getSession } from '../game-api.js';
+import { claimGameXP } from '../xp-rewards.js';
 
 const $ = id => document.getElementById(id);
 
@@ -113,7 +114,8 @@ async function giveWinReward() {
   try {
     const result = await awardGameWin('rummikub', matchId);
 
-    if (result.ok) {
+    if (result.ok && !result.duplicate) {
+      await claimGameXP('rummikub','ai','win_bonus',matchId);
       $('status').textContent =
         `내가 먼저 끝냈어요! 코인 +${result.coins_awarded}, XP +${result.xp_awarded}`;
     } else if (result.duplicate) {
@@ -526,7 +528,8 @@ function cpuTurn() {
 
       render();
 
-      // 컴퓨터가 이겼을 때는 사람에게 보상을 주지 않습니다.
+      // AI에게 패배했을 때도 기본 XP 지급
+      claimGameXP('rummikub','ai','lose',matchId);
       return;
     }
   } else if (pool.length) {
