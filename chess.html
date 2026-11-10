@@ -2287,5 +2287,280 @@ ChessSkins.onChange((kind) => {
 $('my-name').value = '';
 showView('menu');
 </script>
+
+<!-- 체스 로컬플레이 추가 패치 -->
+<script>
+(() => {
+  // 기존 체스 함수 보관
+  const oldShowView = showView;
+  const oldPlayerName = playerName;
+  const oldRenderAll = renderAll;
+  const oldMyTurn = myTurn;
+  const oldCanSelect = canSelect;
+  const oldHumanMove = humanMove;
+  const oldPromotion = askPromotion;
+  const oldFinishGame = finishGame;
+
+  // 1. 모드 선택 버튼 추가
+  const localBtn = document.createElement('button');
+  localBtn.id = 'go-local';
+  localBtn.type = 'button';
+  localBtn.className = 'new-card game-link cx-mode';
+  localBtn.innerHTML = `
+    <span aria-hidden="true">👥</span>
+    <h2>로컬플레이 (2인)</h2>
+    <p>한 기기에서 백과 흑이 번갈아 대결해요.</p>
+    <p>XP · 코인 · HElo 지급 없음</p>
+    <span class="classic-card-action">게임 시작 →</span>
+  `;
+  document.getElementById('go-online').before(localBtn);
+
+  // 2. 로컬플레이 시작
+  function startLocal() {
+    G.token++;
+    killWorker();
+
+    G.mode = 'local';
+    G.online = null;
+    G.myColor = 0;
+    G.flipped = false;
+    G.thinking = false;
+    G.rated = false;
+
+    newPosition();
+    buildBoard();
+
+    $('result').hidden = true;
+    $('promo').hidden = true;
+    $('offer').hidden = true;
+
+    showView('game');
+    renderAll();
+  }
+
+  localBtn.addEventListener('click', startLocal);
+
+  // 3. 화면 제목
+  showView = function(name) {
+    oldShowView(name);
+    if (G.mode === 'local' && name === 'game') {
+      $('page-title').textContent = '♟️ 체스 · 로컬 2인';
+    }
+  };
+
+  // 4. 플레이어 이름
+  playerName = function(color) {
+    if (G.mode === 'local') {
+      return color === 0 ? '플레이어 1' : '플레이어 2';
+    }
+    return oldPlayerName(color);
+  };
+
+  // 5. 양쪽 플레이어 모두 자기 차례에 조작
+  myTurn = function() {
+    if (G.mode === 'local') {
+      return !G.over && !G.thinking;
+    }
+    return oldMyTurn();
+  };
+
+  canSelect = function(sq) {
+    if (G.mode === 'local') {
+      const piece = G.pos.b[sq];
+      return !!piece &&
+        (piece >> 3) === G.pos.turn &&
+        myTurn();
+    }
+    return oldCanSelect(sq);
+  };
+
+  // 6. 로컬에서는 AI를 호출하지 않음
+  humanMove = function(move) {
+    if (G.mode === 'local') {
+      if (G.over) return;
+      playMove(move);
+      renderAll();
+      return;
+    }
+    oldHumanMove(move);
+  };
+
+  // 7. 양쪽 폰 승급 지원
+  askPromotion = function(candidates) {
+    if (G.mode !== 'local') {
+      oldPromotion(candidates);
+      return;
+    }
+
+    const color = G.pos.turn ? 'b' : 'w';
+    const order = [5, 4, 3, 2];
+
+    $('promo-opts').innerHTML = order.map(t => `
+      <button type="button" data-t="${t}">
+        ${ChessSkins.pieceHTML(PNAME[t], color)}
+      </button>
+    `).join('');
+
+    $('promo-opts').onclick = e => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+
+      const t = Number(btn.dataset.t);
+      const move = candidates.find(
+        m => ((m >> 18) & 7) === t
+      );
+
+      $('promo').hidden = true;
+      if (move) humanMove(move);
+    };
+
+    $('promo').hidden = false;
+  };
+
+  // 8. 상태 표시와 로컬 전용 버튼
+  renderAll = function() {
+    oldRenderAll();
+
+    if (G.mode !== 'local') return;
+
+    const whiteTurn = G.pos.turn === 0;
+    const check = G.pos.inCheck();
+
+    if (!G.over) {
+      setStatus(
+        (check ? '체크! ' : '') +
+        (whiteTurn
+          ? '백 (플레이어 1)'
+          : '흑 (플레이어 2)') +
+        ' 차례예요.',
+        check
+      );
+    }
+
+    $('p-top-av').textContent =
+      G.flipped ? '🙂' : '😎';
+    $('p-bot-av').textContent =
+      G.flipped ? '😎' : '🙂';
+
+    $('act-undo').hidden = false;
+    $('act-undo').disabled =
+      G.over || G.hist.length === 0;
+
+    $('chess-undo-count').textContent = '(무료)';
+
+    $('act-draw').hidden = false;
+    $('act-draw').disabled = G.over;
+    $('act-draw').textContent = '🤝 무승부 합의';
+
+    $('act-new').hidden = false;
+  };
+
+  // 9. 승리 결과 표시
+  finishGame = function(result) {
+    oldFinishGame(result);
+
+    if (G.mode !== 'local') return;
+
+    const winner = result.winner;
+    const title = winner === -1
+      ? '무승부'
+      : winner === 0
+        ? '백 승리! 🎉'
+        : '흑 승리! 🎉';
+
+    G.result.head = title;
+    G.result.text =
+      title + ' — ' +
+      (REASON_TEXT[result.reason] || '');
+
+    $('result-h').textContent = title;
+    $('result-s').textContent =
+      REASON_TEXT[result.reason] || '';
+
+    $('helo-report').hidden = true;
+    setStatus(G.result.text, false);
+  };
+
+  // 10. 한 수 무르기 (무료)
+  function undoLocal() {
+    if (G.mode !== 'local') return;
+    if (G.over || G.hist.length === 0) return;
+
+    G.pos.unmake();
+    G.hist.pop();
+    G.sans.pop();
+
+    G.selected = null;
+    G.legal = [];
+    G.allLegal = G.pos.legalMoves();
+    G.last = null;
+    G.animSq = null;
+    G.token++;
+
+    renderAll();
+  }
+
+  // 기존 AI/온라인 버튼 동작은 그대로 유지
+  // 로컬에서만 버튼 동작 가로채기
+  function localAction(id, action) {
+    document.getElementById(id).addEventListener(
+      'click',
+      e => {
+        if (G.mode !== 'local') return;
+
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        action();
+      },
+      true
+    );
+  }
+
+  // 무르기
+  localAction('act-undo', undoLocal);
+
+  // 새 게임
+  localAction('act-new', () => {
+    if (
+      G.hist.length > 1 &&
+      !G.over &&
+      !confirm('현재 대국을 끝내고 다시 시작할까요?')
+    ) return;
+
+    startLocal();
+  });
+
+  // 기권
+  localAction('act-resign', () => {
+    if (G.over) return;
+    if (!confirm('현재 차례의 플레이어가 기권할까요?'))
+      return;
+
+    finishGame({
+      over: true,
+      winner: G.pos.turn ^ 1,
+      reason: 'resign'
+    });
+  });
+
+  // 무승부 합의
+  localAction('act-draw', () => {
+    if (G.over) return;
+
+    if (confirm('두 플레이어 모두 무승부에 합의했나요?')) {
+      finishGame({
+        over: true,
+        winner: -1,
+        reason: 'agreed'
+      });
+    }
+  });
+
+  // 대국 종료 후 다시 하기
+  localAction('result-again', startLocal);
+
+})();
+</script>
+<!-- 체스 로컬플레이 추가 패치 끝 -->
 </body>
 </html>
