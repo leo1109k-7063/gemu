@@ -151,13 +151,13 @@ function draw(cv,rows,gh,pend){const x=cv.getContext('2d'),s=cv.width/W;x.fillSt
 function mini(cv,ts,dim){const x=cv.getContext('2d');x.clearRect(0,0,cv.width,cv.height);ts.forEach((t,k)=>{if(!t)return;const m=SH[t],s=14;x.save();x.translate((cv.width-m.length*s)/2,k*54+(t=='I'?-4:6));x.globalAlpha=dim?.35:1;m.forEach((rw,j)=>rw.forEach((v,i)=>{if(v)cell(x,T.indexOf(t)+1,i,j,s)}));x.restore()})}
 const rowsOf=s=>Array.from({length:20},(_,j)=>s.slice(j*W,j*W+W));
 
-let mode,me,opp,ai,net,lob,run=0,last=0,cd=0,paused=false,raf=0,lastTx=0,lastS='',sent=0,lastStart=null;
+let mode,me,opp,ai,net,lob,run=0,last=0,cd=0,paused=false,raf=0,lastTx=0,lastS='',sent=0,lastStart=null,xpMatchId='',xpSoloLevel=1;
 const hiGet=()=>{try{return+localStorage.getItem('tetris-best')||0}catch{return 0}};
 const hiSet=v=>{try{localStorage.setItem('tetris-best',v)}catch{}};
 const view=v=>{$('menu').classList.toggle('hidden',v!='menu');$('game').classList.toggle('hidden',v!='game')};
 function ov(h,btns){const o=$('ov');if(!h){o.classList.add('hidden');return}o.classList.remove('hidden');o.innerHTML=h;(btns||[]).forEach(([id,fn])=>{const b=$(id);if(b)b.onclick=fn})}
 
-function start(m,o={}){cancelAnimationFrame(raf);mode=m;lastStart={m,o};const seed=o.seed??(Math.random()*1e9|0);me=new G(seed);opp=null;ai=null;sent=0;lastS='';
+function start(m,o={}){cancelAnimationFrame(raf);mode=m;lastStart={m,o};const seed=o.seed??(Math.random()*1e9|0);me=new G(seed);opp=null;ai=null;sent=0;lastS=''; xpMatchId=(crypto.randomUUID?.() || `${Date.now()}-${Math.random()}-${Math.random()}`); xpSoloLevel=1;
   if(m[0]=='a'){const lv=+m[2];opp={G:new G(seed)};ai=new AI(opp.G,lv);me.send=n=>{opp.G.pend=Math.min(12,opp.G.pend+n)};opp.G.send=n=>{me.pend=Math.min(12,me.pend+n)};$('on').textContent='AI '+['','초급','중급','고급'][lv]}
   else if(m=='online'){opp={s:'0'.repeat(200),ln:0};me.send=n=>net&&net.tx({k:'g',n});$('on').textContent='상대'}
   $('opw').style.display=m=='solo'?'none':'';view('game');ov('');cd=3000;paused=false;run=1;last=performance.now();raf=requestAnimationFrame(loop)}
@@ -171,13 +171,17 @@ function loop(t){if(!run)return;const dt=Math.min(50,t-last);last=t;
   if(cd>0){cd-=dt;ov(`<h2 class="px" style="color:#ffea00">${cd>0?Math.ceil(cd/1000):'GO!'}</h2>`)}
   else{if(!$('ov').classList.contains('hidden')&&!paused)ov('');
     if(!paused){me.update(dt);if(ai)ai.update(dt);
+      if(mode==='solo' && me.lv>xpSoloLevel){for(let level=xpSoloLevel+1;level<=me.lv;level++) window.gameXpClaim('tetris','solo','level',xpMatchId,level);xpSoloLevel=me.lv;}
       if(net&&t-lastTx>120){lastTx=t;const s=me.cells().map(r=>r.join('')).join('');if(s!=lastS){lastS=s;net.tx({k:'b',s,ln:me.ln})}}
       if(me.over){net&&net.tx({k:'d'});render();return finish(false,mode=='solo'?`점수 ${me.sc} · 최고 ${Math.max(hiGet(),me.sc)}`:'다음엔 이길 수 있어요')}
       if(opp&&opp.G&&opp.G.over){render();return finish(true,'AI를 쓰러뜨렸어요')}
-      if(net&&t-net.last>9000){render();return finish(true,'상대와의 연결이 끊겼어요')}}}
+      if(net&&t-net.last>9000){render();return finish(false,'연결이 끊겨 대전이 중단됐어요',false)}}}
   render();raf=requestAnimationFrame(loop)}
 
-function finish(win,msg){if(!run)return;run=0;if(mode=='solo'&&me.sc>hiGet())hiSet(me.sc);
+function finish(win,msg,verifiedWin=true){if(!run)return;run=0;
+  if(mode==='solo') window.gameXpClaim('tetris','solo','lose',xpMatchId,0);
+  else if(verifiedWin) window.gameXpClaim('tetris',mode[0]==='a'?`ai_${['','easy','medium','hard'][+mode[2]]}`:'online',win?'win':'lose',xpMatchId,0);
+  if(mode=='solo'&&me.sc>hiGet())hiSet(me.sc);
   const again=mode!='online';ov(`<h2 class="px" style="color:${win?'#00ff66':'#ff0055'}">${mode=='solo'?'GAME OVER':win?'YOU WIN!':'YOU LOSE'}</h2><p>${msg}</p>${again?'<button class="btn" id="ag">다시하기</button>':''}<button class="btn sec" id="mn">메뉴로</button>`,[['ag',()=>start(lastStart.m,lastStart.o)],['mn',toMenu]]);if(net)leaveNet()}
 function toMenu(){run=0;cancelAnimationFrame(raf);leaveNet();view('menu')}
 
@@ -202,7 +206,7 @@ async function joinRoom(name,timeout){try{const s=await getSB(),ch=s.channel(nam
       else if(p.k=='b'&&opp&&!opp.G){opp.s=p.s;opp.ln=p.ln}
       else if(p.k=='g'&&me&&run)me.pend=Math.min(12,me.pend+p.n);
       else if(p.k=='d')finish(true,'상대가 쓰러졌어요');
-      else if(p.k=='bye')finish(true,'상대가 나갔어요')});
+      else if(p.k=='bye')finish(false,'상대가 나가 대전이 중단됐어요',false)});
     ch.subscribe(st=>{if(st=='SUBSCRIBED'){const hi=()=>{if(got||net!==me0)return;net.tx({k:'hi',id:myId,seed:mySeed});net.hi=setTimeout(hi,800)};hi()}else if(st=='CHANNEL_ERROR')fail()});
     if(timeout)net.to=setTimeout(()=>{if(!got){leaveNet();quick()}},timeout)}catch{fail()}}
 async function quick(){wait('상대를 찾는 중이에요…');try{const s=await getSB();let done=0;lob=s.channel('tetris-lobby',{config:{presence:{key:myId}}});
@@ -217,5 +221,6 @@ document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{const m=b.datase
 $('quit').onclick=toMenu;
 addEventListener('beforeunload',()=>{if(net)try{net.tx({k:'bye'})}catch{}});
 </script>
+<script src="assets/js/xp-loader.js?v=20261110"></script>
 </body>
 </html>
