@@ -50,6 +50,7 @@ async function render() {
 
   $('hello').textContent = profile.nickname;
   $('coins').textContent = Number(profile.coins || 0);
+  $('game-xp').textContent = Number(profile.xp || 0);
 
   // 공지사항은 로그인 후 인사말 바로 위에 표시합니다.
   const banner = $('announcementBanner');
@@ -140,6 +141,7 @@ async function authenticate(kind) {
       id: result.profile.id,
       nickname: result.profile.nickname,
       coins: result.profile.coins,
+      xp: result.profile.xp,
       is_developer: result.profile.is_developer,
       is_teacher: result.profile.is_teacher
     });
