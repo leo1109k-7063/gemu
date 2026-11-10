@@ -740,12 +740,16 @@
                 playSound('win');
                 if (!pongWinRewarded) {
                     pongWinRewarded = true;
-                    claimArcadeReward('pong', 'win', pongMatchId);
+                    claimArcadeReward('pong', 'win', pongMatchId).then(ok => {
+                        if (ok) window.gameXpClaim('pong', `ai_${state.difficulty}`, 'win_bonus', pongMatchId);
+                    });
                 }
             }
 
             const resTitle = document.getElementById('resultTitle');
             const resIcon = document.getElementById('resultIcon');
+
+            if (!playerWon) window.gameXpClaim('pong', `ai_${state.difficulty}`, 'lose', pongMatchId);
 
             if (playerWon) {
                 resTitle.innerText = 'YOU WIN!';
@@ -807,5 +811,6 @@
             }, 300);
         });
     </script>
+<script src="assets/js/xp-loader.js?v=20261110"></script>
 </body>
 </html>
