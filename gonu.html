@@ -1222,6 +1222,7 @@ function checkVictory() {
         const rewardCoins = { easy: 3, medium: 5, hard: 7 }[aiDiff];
         document.getElementById('gonu-reward-status').textContent = `🪙 ${rewardCoins}코인 지급 확인 중…`;
         window.claimGonuReward?.(currentGame, aiDiff, gonuMatchId);
+        window.gameXpClaim('gonu', `ai_${aiDiff}`, 'win', gonuMatchId);
       } else if (gameMode !== 'ai') {
         document.getElementById('gonu-reward-status').textContent = '2인용 대전은 코인 보상 대상이 아닙니다.';
       }
@@ -1231,6 +1232,7 @@ function checkVictory() {
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
     } else {
       title.innerText = gameMode === 'ai' ? '🤖 컴퓨터 (홍) 승리' : '🎉 플레이어 2 (홍) 승리!';
+      if (gameMode === 'ai') window.gameXpClaim('gonu', `ai_${aiDiff}`, 'lose', gonuMatchId);
       sub.innerText = '다음 대국에서 다시 도전해보세요!';
       iconBg.style.background = 'rgba(255,59,48,0.12)';
       iconBg.style.color = '#FF3B30';
@@ -1410,5 +1412,6 @@ function addLogRecord(player, actionStr) {
   body.insertBefore(tr, body.firstChild);
 }
 </script>
+<script src="assets/js/xp-loader.js?v=20261110"></script>
 </body>
 </html>
