@@ -15,8 +15,77 @@ kbd{background:#263445;border:1px solid #3c4f66;border-radius:4px;padding:0 6px;
 button{background:var(--ac);color:#111;border:0;border-radius:8px;padding:10px 22px;font-size:16px;font-weight:700;cursor:pointer;margin-top:8px}
 .s{display:grid;grid-template-columns:auto auto;gap:2px 20px;margin:10px 0}.s b{text-align:right}
 small{color:#9fb0c3}
+
+/* 터치 장치에서만 나타나는 모바일 비행 조종 패널 */
+#mobile-controls{display:none}
+@media (pointer:coarse){
+ #mobile-controls{display:block;position:fixed;inset:0;z-index:3;pointer-events:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:none;font-family:system-ui,sans-serif}
+ .mc-button,.mc-stick{pointer-events:auto;touch-action:none;-webkit-tap-highlight-color:transparent}
+ .mc-button{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1px;width:clamp(43px,12vw,58px);height:clamp(43px,12vw,58px);border-radius:50%;border:1.5px solid rgba(255,255,255,.6);background:rgba(16,29,47,.72);color:#fff;box-shadow:0 3px 12px #0008;backdrop-filter:blur(5px);font-size:18px;font-weight:800;line-height:1;position:absolute;margin:0;padding:0;cursor:pointer}
+ .mc-button small{font-size:9px;color:#e3ecf7;font-weight:600;white-space:nowrap}
+ .mc-button:active,.mc-button.is-down{background:rgba(255,176,32,.85);color:#101820;border-color:#fff}
+ .mc-button.is-down small{color:#101820}
+ .mc-stick{position:absolute;left:max(12px,env(safe-area-inset-left));bottom:calc(20px + env(safe-area-inset-bottom));width:clamp(118px,35vw,164px);height:clamp(118px,35vw,164px);border-radius:50%;border:2px solid #ffffff9c;background:radial-gradient(circle,#21324b99 0%,#0b1729ab 70%);box-shadow:inset 0 0 30px #02061188,0 4px 22px #0007}
+ .mc-stick::before,.mc-stick::after{content:'';position:absolute;opacity:.45;background:#fff;pointer-events:none}
+ .mc-stick::before{height:1px;left:13%;right:13%;top:50%}
+ .mc-stick::after{width:1px;top:13%;bottom:13%;left:50%}
+ .mc-knob{position:absolute;left:50%;top:50%;width:44%;height:44%;transform:translate(-50%,-50%);border-radius:50%;border:2px solid #fff9;background:linear-gradient(145deg,#7b91ae,#283b59);box-shadow:0 3px 10px #0009;pointer-events:none}
+ .mc-caption{position:absolute;left:0;bottom:calc(100% + 5px);width:100%;text-align:center;font-size:11px;font-weight:750;color:white;text-shadow:0 1px 5px black;pointer-events:none}
+ .mc-throttle{position:absolute;right:max(10px,env(safe-area-inset-right));bottom:calc(20px + env(safe-area-inset-bottom));width:clamp(132px,38vw,166px);height:clamp(132px,38vw,166px);pointer-events:none}
+ .mc-throttle .mc-button{width:34%;height:34%;font-size:17px}
+ .mc-throttle .up{top:0;left:33%}.mc-throttle .down{bottom:0;left:33%}.mc-throttle .left{top:33%;left:0}.mc-throttle .right{top:33%;right:0}
+ .mc-throttle-label{position:absolute;left:25%;top:44%;width:50%;font-size:10px;color:#fff;text-align:center;text-shadow:0 1px 5px #000;pointer-events:none}
+ .mc-side{position:absolute;top:calc(72px + env(safe-area-inset-top));display:flex;flex-direction:column;gap:10px;pointer-events:none}
+ .mc-side.left{left:max(9px,env(safe-area-inset-left))}.mc-side.right{right:max(9px,env(safe-area-inset-right))}
+ .mc-side .mc-button{position:relative}
+ .mc-flap{position:absolute;right:max(9px,env(safe-area-inset-right));top:calc(275px + env(safe-area-inset-top));display:flex;flex-direction:column;border-radius:30px;border:1.5px solid #ffffffa0;background:#13253dcc;pointer-events:auto;overflow:hidden;box-shadow:0 3px 12px #0007}
+ .mc-flap .mc-button{position:relative;width:clamp(45px,12vw,58px);height:clamp(47px,13vw,60px);border:0;border-radius:0;box-shadow:none;background:transparent;backdrop-filter:none}
+ .mc-flap .mc-button+.mc-button{border-top:1px solid #ffffff55}
+ .mc-flap .mc-button.is-down{background:#ffb020;color:#111}
+ .mc-flap .mc-button.is-down small{color:#111}
+ #ov{z-index:5}
+ #box{max-height:calc(100dvh - 38px);padding:16px;max-width:90vw}
+ #box .k{grid-template-columns:1fr 1fr;font-size:12px}
+}
+@media (pointer:coarse) and (max-height:500px){
+ .mc-side{top:calc(12px + env(safe-area-inset-top));flex-direction:row;gap:7px}
+ .mc-side.left{left:max(9px,env(safe-area-inset-left))}.mc-side.right{right:max(9px,env(safe-area-inset-right))}
+ .mc-side .mc-button{width:42px;height:42px}
+ .mc-stick{width:110px;height:110px;bottom:calc(7px + env(safe-area-inset-bottom))}
+ .mc-throttle{width:124px;height:124px;bottom:calc(7px + env(safe-area-inset-bottom))}
+ .mc-flap{top:calc(70px + env(safe-area-inset-top))}
+ .mc-flap .mc-button{width:42px;height:43px}
+}
 </style></head><body>
 <canvas id="c"></canvas>
+
+<div id="mobile-controls" aria-label="모바일 비행기 조종 장치">
+  <div class="mc-side left">
+    <button type="button" class="mc-button" data-key="KeyG" aria-label="랜딩기어 G">G<small>랜딩기어</small></button>
+    <button type="button" class="mc-button" data-key="KeyX" aria-label="스포일러 X">X<small>스포일러</small></button>
+    <button type="button" class="mc-button" data-key="KeyR" aria-label="역추진 R">R<small>역추진</small></button>
+  </div>
+  <div class="mc-side right">
+    <button type="button" class="mc-button" data-key="KeyP" aria-label="일시정지 P">Ⅱ<small>일시정지</small></button>
+    <button type="button" class="mc-button" data-key="KeyY" aria-label="상하 반전 Y">Y<small>상하 반전</small></button>
+    <button type="button" class="mc-button" data-key="KeyB" data-hold="true" aria-label="브레이크 B 누르고 있기">B<small>브레이크</small></button>
+  </div>
+  <div class="mc-flap" aria-label="플랩 단계 조절">
+    <button type="button" class="mc-button" data-key="KeyV" aria-label="플랩 올리기 V">▲<small>V 올림</small></button>
+    <button type="button" class="mc-button" data-key="KeyF" aria-label="플랩 내리기 F">▼<small>F 내림</small></button>
+  </div>
+  <div id="mc-stick" class="mc-stick" role="group" aria-label="기수와 기울기 조이스틱: 상하좌우 방향키">
+    <span class="mc-caption">기수 · 기울기</span><div id="mc-knob" class="mc-knob"></div>
+  </div>
+  <div class="mc-throttle" role="group" aria-label="스로틀과 방향타 화살표 버튼">
+    <span class="mc-caption">스로틀 · 방향타</span>
+    <button type="button" class="mc-button up" data-key="KeyW" data-hold="true" aria-label="W 스로틀 증가">▲<small>W 가속</small></button>
+    <button type="button" class="mc-button down" data-key="KeyS" data-hold="true" aria-label="S 스로틀 감소">▼<small>S 감속</small></button>
+    <button type="button" class="mc-button left" data-key="KeyQ" data-hold="true" aria-label="Q 왼쪽 방향타">◀<small>Q 좌</small></button>
+    <button type="button" class="mc-button right" data-key="KeyE" data-hold="true" aria-label="E 오른쪽 방향타">▶<small>E 우</small></button>
+    <span class="mc-throttle-label">W S<br>Q E</span>
+  </div>
+</div>
 <div id="ov"><div id="box"></div></div>
 <script type="module">
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './assets/js/config.js';
@@ -118,7 +187,7 @@ function finish(){const s=S,t=s.td,vs=-t.vs,a=Math.max(0,40-Math.max(0,vs-1)*13)
 function start(){reset();st='fly';ov.style.display='none';initAudio();actx&&actx.resume()}
 function intro(){showOv(`<h1>✈ 비행기 착륙시키기</h1><p>활주로 36(길이 3000 m, 폭 45 m)에 접근 중입니다. 약 130~145 kt, 3° 글라이드 경로를 따라 내려와 착륙 후 활주로 위에서 멈추세요. 횡풍이 불어 기체가 밀립니다. 기수를 바람 쪽으로 살짝 돌려(크랩) 중심선을 유지하세요.</p>
 <div class="k"><span><kbd>↓</kbd> 기수 올림 (조종간 당김)</span><span><kbd>↑</kbd> 기수 내림</span><span><kbd>←</kbd><kbd>→</kbd> 좌우 기울이기</span><span><kbd>Q</kbd><kbd>E</kbd> 방향타 / 지상 조향</span><span><kbd>W</kbd><kbd>S</kbd> 스로틀 올림/내림</span><span><kbd>G</kbd> 랜딩기어 내림/올림</span><span><kbd>F</kbd><kbd>V</kbd> 플랩 내림/올림</span><span><kbd>X</kbd> 스포일러</span><span><kbd>R</kbd> 역추진 (착지 후)</span><span><kbd>B</kbd> 브레이크 (누르는 동안)</span><span><kbd>Y</kbd> 상하 조작 반전</span><span><kbd>P</kbd> 일시정지</span></div>
-<small>순서 팁: 기어 내리기(G) → 플랩 30°(F×2) → 속도 약 125 kt → PAPI 빨강2·흰색2 유지 → 지면 직전 스로틀 아이들 + 기수 살짝 올림(플레어) → 착지 후 스포일러·역추진·브레이크. 지면 가까이 뜨면 계기판 전방 중앙에 전파고도가 표시됩니다.</small><br><button onclick="start()">시작 (Enter)</button>`)}
+<small>📱 모바일: 왼쪽 조이스틱은 기수·기울기, 오른쪽 화살표는 W/S 스로틀 및 Q/E 방향타입니다. 화면 가장자리 동그란 버튼으로 나머지 기능을 조작하고, F/V는 붙어 있는 플랩 ▲▼ 버튼입니다. 가속·감속·방향타·브레이크는 누르고 있는 동안 작동합니다.</small><br><small>순서 팁: 기어 내리기(G) → 플랩 30°(F×2) → 속도 약 125 kt → PAPI 빨강2·흰색2 유지 → 지면 직전 스로틀 아이들 + 기수 살짝 올림(플레어) → 착지 후 스포일러·역추진·브레이크. 지면 가까이 뜨면 계기판 전방 중앙에 전파고도가 표시됩니다.</small><br><button onclick="start()">시작 (Enter)</button>`)}
 addEventListener('keydown',e=>{if(/^(Arrow|Space|Enter)/.test(e.code))e.preventDefault();keys[e.code]=true;if(!e.repeat)press(e.code)});
 addEventListener('keyup',e=>keys[e.code]=false);addEventListener('blur',()=>keys={});
 function press(c){const s=S;if(c==='Enter'){if(st!=='fly')start();return}if(st!=='fly')return;
@@ -128,6 +197,51 @@ function press(c){const s=S;if(c==='Enter'){if(st!=='fly')start();return}if(st!=
  if(c==='KeyX')s.spt=s.spt?0:1;
  if(c==='KeyR'){if(!s.on)say('역추진은 착지 후에만 사용할 수 있습니다');else{s.rev=!s.rev;say(s.rev?'역추진 작동 – 스로틀을 올리세요':'역추진 해제')}}
  if(c==='KeyY'){inv=!inv;say('상하 조작 반전: '+(inv?'ON (↑ 기수 올림)':'OFF (↓ 기수 올림)'))}}
+
+// 모바일 화면 조작: 기존 키보드 상태 및 press() 함수를 그대로 재사용
+(function setupMobileControls(){
+ const root=document.getElementById('mobile-controls');
+ const touchDown=new Set();
+ const down=(code)=>{touchDown.add(code);keys[code]=true;};
+ const up=(code)=>{touchDown.delete(code);keys[code]=false;};
+ root.querySelectorAll('[data-key]').forEach(button=>{
+  const code=button.dataset.key,hold=button.dataset.hold==='true';
+  let pointer=null;
+  button.addEventListener('pointerdown',e=>{
+   if(e.pointerType==='mouse' && e.button!==0)return;
+   e.preventDefault();if(pointer!==null)return;
+   pointer=e.pointerId;button.setPointerCapture?.(e.pointerId);
+   button.classList.add('is-down');
+   if(hold)down(code);else press(code);
+  });
+  const release=e=>{if(pointer!==e.pointerId)return;e.preventDefault();pointer=null;button.classList.remove('is-down');if(hold)up(code)};
+  button.addEventListener('pointerup',release);
+  button.addEventListener('pointercancel',release);
+  button.addEventListener('lostpointercapture',e=>{if(pointer===e.pointerId)release(e)});
+  button.addEventListener('contextmenu',e=>e.preventDefault());
+ });
+ const stick=document.getElementById('mc-stick'),knob=document.getElementById('mc-knob');
+ const dir=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'];
+ let active=null;
+ function move(e){
+  const r=stick.getBoundingClientRect(),x=e.clientX-r.left-r.width/2,y=e.clientY-r.top-r.height/2;
+  const max=r.width*.28,dist=Math.hypot(x,y),scale=dist>max?max/dist:1;
+  knob.style.transform=`translate(calc(-50% + ${x*scale}px),calc(-50% + ${y*scale}px))`;
+  const dead=max*.28,ax=x*scale,ay=y*scale;
+  const want={ArrowUp:ay < -dead,ArrowDown:ay > dead,ArrowLeft:ax < -dead,ArrowRight:ax > dead};
+  dir.forEach(k=>want[k]?down(k):up(k));
+ }
+ function stop(){active=null;knob.style.transform='translate(-50%,-50%)';dir.forEach(up)}
+ stick.addEventListener('pointerdown',e=>{
+  if(e.pointerType==='mouse'&&e.button!==0)return;
+  if(active!==null)return;e.preventDefault();active=e.pointerId;stick.setPointerCapture?.(e.pointerId);move(e);
+ });
+ stick.addEventListener('pointermove',e=>{if(e.pointerId===active){e.preventDefault();move(e)}});
+ for(const ev of ['pointerup','pointercancel','lostpointercapture'])stick.addEventListener(ev,e=>{if(e.pointerId===active){e.preventDefault();stop()}});
+ stick.addEventListener('contextmenu',e=>e.preventDefault());
+ addEventListener('blur',()=>{touchDown.forEach(k=>keys[k]=false);touchDown.clear();stop();root.querySelectorAll('.is-down').forEach(b=>b.classList.remove('is-down'))});
+ document.addEventListener('visibilitychange',()=>{if(document.hidden){touchDown.forEach(k=>keys[k]=false);touchDown.clear();stop()}});
+})();
 function initAudio(){if(actx)return;try{actx=new AudioContext();osc=actx.createOscillator();osc.type='sawtooth';gn=actx.createGain();gn.gain.value=0;const f=actx.createBiquadFilter();f.frequency.value=420;osc.connect(f);f.connect(gn);gn.connect(actx.destination);osc.start()}catch(e){}}
 function tone(f,d,v,t='square'){if(!actx)return;const o=actx.createOscillator(),g=actx.createGain();o.type=t;o.frequency.value=f;g.gain.value=v;g.gain.exponentialRampToValueAtTime(.0001,actx.currentTime+d);o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+d)}
 function thump(v){tone(70,.35,Math.min(.6,v),'sine');tone(40,.5,Math.min(.5,v),'sine')}
