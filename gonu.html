@@ -197,7 +197,14 @@
     margin-bottom: 20px;
   }
 
-  canvas {
+  /* 오목·체스와 동일한 반응형 정사각형 게임판 */
+  #gonuCanvas {
+    display: block;
+    width: 100%;
+    max-width: 480px;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    flex: 0 1 auto;
     background: #FAF8F5; /* Soft traditional Hanji tone */
     border-radius: 20px;
     box-shadow: inset 0 2px 8px rgba(0,0,0,0.06);
@@ -969,7 +976,7 @@ function setupCanvasEvents() {
 
     const rect = canvas.getBoundingClientRect();
     const clickX = (e.clientX - rect.left) * (canvas.width / rect.width);
-    const clickY = (e.clientY - rect.top) * (canvas.height / rect.width);
+    const clickY = (e.clientY - rect.top) * (canvas.height / rect.height);
 
     // Find clicked node
     let clickedNodeId = null;
