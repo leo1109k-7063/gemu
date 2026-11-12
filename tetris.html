@@ -54,9 +54,12 @@ input{flex:1;min-width:110px;padding:11px;border:2px solid var(--bd);border-radi
 #ov h2{margin:0;font-size:1.05rem;line-height:1.6}
 #ov p{margin:0;color:#cbd5e1;font-size:.85rem;line-height:1.7}
 #ov .btn{flex:none;width:150px}
-.pad{display:none;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:14px}
-.pad button{width:60px;height:52px;border:2px solid #000;border-radius:10px;background:var(--card);color:var(--c);font-size:1.2rem;box-shadow:3px 3px #000;touch-action:none}
-@media(pointer:coarse){.pad{display:flex}}
+.pad{display:none;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px auto 0;width:min(100%,540px)}
+.pad button{width:100%;min-width:0;height:clamp(60px,16vw,82px);border:2px solid #000;border-radius:12px;background:var(--card);color:var(--c);font-size:clamp(1.15rem,5vw,1.8rem);font-weight:800;box-shadow:3px 3px #000;touch-action:none;cursor:pointer}
+.pad button:active,.mobile-hold:active{background:#183445;transform:translateY(2px)}
+.mobile-hold{display:none;width:100%;min-width:0;padding:10px 2px;border:2px solid #00f0ff;border-radius:9px;background:#0f111a;color:#00f0ff;font:800 clamp(.57rem,2.3vw,.82rem) Inter,sans-serif;touch-action:none}
+@media(pointer:coarse){.pad{display:grid}.mobile-hold{display:block}}
+
 @media(max-width:600px){
   .grid{grid-template-columns:minmax(0,1fr)}
   /* 게임판(10×20)이 휴대폰 너비와 높이 모두에 들어오게 조절 */
@@ -74,8 +77,8 @@ input{flex:1;min-width:110px;padding:11px;border:2px solid var(--bd);border-radi
   .opw{min-width:0;width:auto;flex:0 1 100px}
   .opw canvas{width:100%;height:auto;aspect-ratio:1/2;border-width:1px}
   .opw div{font-size:clamp(.34rem,1.5vw,.5rem);overflow-wrap:anywhere}
-  .pad{gap:5px;margin-top:10px}
-  .pad button{width:clamp(38px,12vw,55px);height:clamp(42px,11vw,48px);font-size:1.05rem}
+  .pad{grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(7px,2vw,12px);margin-top:12px;width:100%}
+  .pad button{height:clamp(62px,17vw,86px);font-size:clamp(1.25rem,5.5vw,1.8rem)}
   #ov{padding:5px;gap:6px}
   #ov h2{font-size:clamp(.66rem,3vw,.95rem)}
   #ov p{font-size:clamp(.6rem,2.5vw,.75rem)}
@@ -106,12 +109,12 @@ input{flex:1;min-width:110px;padding:11px;border:2px solid var(--bd);border-radi
       <div class="box"><b>HOLD</b><canvas id="hd" width="80" height="54"></canvas></div>
       <div class="box"><b>NEXT</b><canvas id="nx" width="80" height="162"></canvas></div>
       <div class="box" id="st"></div>
-      <button class="back" id="quit">메뉴로</button>
+      <button class="mobile-hold" data-a="C" aria-label="블록 보관하기">HOLD</button><button class="back" id="quit">메뉴로</button>
     </div>
     <div class="bw"><canvas id="me" width="200" height="400"></canvas><div id="ov" class="hidden"></div></div>
     <div class="opw" id="opw"><canvas id="op" width="200" height="400"></canvas><div id="on"></div><div id="os" style="color:#9ca3af"></div></div>
   </div>
-  <div class="pad"><button data-a="L">◀</button><button data-a="D">▼</button><button data-a="R">▶</button><button data-a="Z">↺</button><button data-a="U">↻</button><button data-a="H">⤓</button><button data-a="C">HOLD</button></div>
+  <div class="pad" aria-label="모바일 테트리스 조작"><button data-a="L" aria-label="왼쪽 이동">◀</button><button data-a="D" aria-label="아래로 이동">▼</button><button data-a="R" aria-label="오른쪽 이동">▶</button><button data-a="Z" aria-label="반시계 방향 회전">↺</button><button data-a="H" aria-label="즉시 착지">⤓</button><button data-a="U" aria-label="시계 방향 회전">↻</button></div>
 </section>
 </main>
 
@@ -213,7 +216,7 @@ const ACT={L:()=>me.mv(-1),R:()=>me.mv(1),D:()=>me.sd(),U:()=>me.rot(1),Z:()=>me
 const KEY={ArrowLeft:'L',ArrowRight:'R',ArrowDown:'D',ArrowUp:'U',KeyX:'U',KeyZ:'Z',Space:'H',KeyC:'C',ShiftLeft:'C',ShiftRight:'C'};
 addEventListener('keydown',e=>{if(e.target.tagName=='INPUT'||!run||cd>0)return;if(e.code=='KeyP'&&mode=='solo'){paused=!paused;ov(paused?'<h2 class="px" style="color:#00f0ff">PAUSE</h2><p>P를 누르면 계속해요</p>':'');return}
   const a=KEY[e.code];if(a){e.preventDefault();if(!paused)ACT[a]()}});
-document.querySelectorAll('.pad button').forEach(b=>{let t1,t2;const a=b.dataset.a,go=()=>{if(run&&cd<=0&&!paused)ACT[a]()},stop=()=>{clearTimeout(t1);clearInterval(t2)};
+document.querySelectorAll('.pad button, .mobile-hold').forEach(b=>{let t1,t2;const a=b.dataset.a,go=()=>{if(run&&cd<=0&&!paused)ACT[a]()},stop=()=>{clearTimeout(t1);clearInterval(t2)};
   b.addEventListener('pointerdown',e=>{e.preventDefault();go();if('LRD'.includes(a)){t1=setTimeout(()=>{t2=setInterval(go,70)},180)}});['pointerup','pointerleave','pointercancel'].forEach(v=>b.addEventListener(v,stop))});
 
 /* ---- 온라인 (Supabase Realtime Broadcast) ---- */
