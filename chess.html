@@ -261,9 +261,10 @@
   <div id="view-ai" hidden>
     <section class="new-card">
       <h2 class="cx-title">🤖 AI 실력 고르기</h2>
-      <p class="cx-sub">AI 난이도는 1~10단계(100~1000 HElo)입니다. 내 HElo는 1~1100 범위에서 대국 결과와 착수 분석에 따라 바뀝니다. 공식 Elo가 아닙니다.</p>
+      <p class="cx-sub">AI 목표 난이도는 1~10단계(100~1000 HElo)입니다. 내 HElo는 1~1100 범위에서 대국 결과와 착수 분석에 따라 바뀝니다. 공식 Elo가 아닙니다.</p>
       <div id="levels" class="cx-levels" role="group" aria-label="AI 난이도 선택"></div>
       <p class="cx-note" id="helo-current" aria-live="polite"></p>
+      <p class="cx-note">대국 중 AI의 착수를 간이 평가해 추정 HElo를 표시합니다. 선택한 목표보다 높거나 낮으면 다음 착수의 엔진 단계를 최대 2단계 범위에서 조정합니다.</p>
     </section>
     <section class="new-card">
       <h2 class="cx-title">내 색깔</h2>
@@ -336,6 +337,7 @@
             <span class="cx-turn-dot" aria-hidden="true"></span>
           </div>
           <div id="board" class="cx-board" role="group" aria-label="체스판"></div>
+          <p id="ai-live-helo" class="cx-note" aria-live="polite" hidden style="margin:8px 2px 0;text-align:center;font-variant-numeric:tabular-nums"></p>
           <div class="cx-player" id="p-bot">
             <div class="cx-avatar" id="p-bot-av">🙂</div>
             <div class="cx-pinfo"><div class="cx-pname" id="p-bot-name"></div><div class="cx-caps" id="p-bot-caps"></div></div>
@@ -1048,18 +1050,36 @@ function chooseMove(fen, hist, level) {
   if (!ms.length) return { uci: null };
   if (ms.length === 1) return { uci: moveUci(ms[0]), score: 0, depth: 0 };
 
+  /* 실시간 HElo용: AI가 고른 수의 1수 앞 정적 평가 손실을 근사한다.
+     전술/장기 전략을 완전히 평가하지 못하므로 공식 레이팅이 아니다. */
+  function withQuality(result) {
+    if (!result.uci || ms.length < 2) return Object.assign(result, {qualityLoss:null, choices:ms.length});
+    var best=-INF, chosen=-INF;
+    for (var j=0; j<ms.length; j++) {
+      var move=ms[j];
+      pos.make(move);
+      var score=-pos.evaluate();
+      pos.unmake();
+      if (score>best) best=score;
+      if (moveUci(move)===result.uci) chosen=score;
+    }
+    result.qualityLoss = chosen===-INF ? null : Math.max(0,Math.min(700,Math.round(best-chosen)));
+    result.choices=ms.length;
+    return result;
+  }
+
   /* 오프닝북(표준 시작 국면에서만) */
   if (hist && hist.length <= 6 && Math.random() < cfg.book) {
     var key = hist.join(' '), line = BOOK[key];
     if (line) {
       var cands = [];
       for (var i = 0; i < line.length; i++) { var bm = pos.moveFromUci(line[i]); if (bm) cands.push(line[i]); }
-      if (cands.length) return { uci: cands[(Math.random() * cands.length) | 0], score: 0, depth: 0, book: true };
+      if (cands.length) return withQuality({ uci: cands[(Math.random() * cands.length) | 0], score: 0, depth: 0, book: true });
     }
   }
   /* 무작위 실수 */
   if (cfg.rand && Math.random() < cfg.rand) {
-    return { uci: moveUci(ms[(Math.random() * ms.length) | 0]), score: 0, depth: 0, random: true };
+    return withQuality({ uci: moveUci(ms[(Math.random() * ms.length) | 0]), score: 0, depth: 0, random: true });
   }
 
   resetSearch();
@@ -1070,14 +1090,14 @@ function chooseMove(fen, hist, level) {
     /* 약한 레벨: 모든 수를 같은 깊이로 평가한 뒤 점수에 소프트맥스로 흔들어서 고른다 */
     stopAt = Date.now() + 4000;
     var scored = scoreRoot(pos, cfg.depth, ms);
-    if (!scored.length) return { uci: bestUci, score: 0, depth: 0 };
+    if (!scored.length) return withQuality({ uci: bestUci, score: 0, depth: 0 });
     var top = -INF, j;
     for (j = 0; j < scored.length; j++) if (scored[j].s > top) top = scored[j].s;
     var total = 0, weights = [];
     for (j = 0; j < scored.length; j++) { var w = Math.exp((scored[j].s - top) / cfg.temp); weights.push(w); total += w; }
     var r = Math.random() * total, chosen = scored[0];
     for (j = 0; j < scored.length; j++) { r -= weights[j]; if (r <= 0) { chosen = scored[j]; break; } }
-    return { uci: moveUci(chosen.m), score: chosen.s, depth: cfg.depth, nodes: nodes };
+    return withQuality({ uci: moveUci(chosen.m), score: chosen.s, depth: cfg.depth, nodes: nodes });
   }
 
   /* 강한 레벨: 반복 심화 알파-베타 */
@@ -1110,7 +1130,7 @@ function chooseMove(fen, hist, level) {
     if (Date.now() > stopAt) break;
   }
   /* 고난이도: 반복 심화 결과를 사용 */
-  return { uci: bestUci, score: bestScore, depth: doneDepth, nodes: nodes };
+  return withQuality({ uci: bestUci, score: bestScore, depth: doneDepth, nodes: nodes });
 }
 
 /* 한 대국의 착수를 동일한 깊이(2 ply)로 사후 재평가한다.
@@ -1434,11 +1454,11 @@ const G = {
   last: null, flipped: false,
   thinking: false, token: 0,
   animSq: null,
-  online: null, rated: false
+  online: null, rated: false, aiLiveHelo:500, aiEffectiveLevel:500, aiSamples:[]
 };
 let settings = { level: +store.get('chess-helo-level', 500), color: store.get('chess-color', 'w') };
 if (!E.LEVELS[settings.level]) settings.level = 500;
-// HElo는 계정의 서버 기록이 원본입니다. AI 난이도는 HElo와 관계없이 직접 선택합니다.
+// 내 HElo는 계정에 저장하고, 대국 중 AI 추정 HElo는 별도로 계산합니다.
 const heloClamp = n => Math.min(1100, Math.max(1, Math.round(n)));
 let heloScore = 500;
 let heloReady = false;
@@ -1476,6 +1496,35 @@ const heloLoad = (async () => {
   } catch (error) { heloError = `불러오기 실패: ${error.message}`; }
   refreshHeloBadge();
 })();
+/* 최근 AI 착수의 정적 평가 손실(centipawn)을 바탕으로 실시간 실력을 추정.
+   신뢰도가 낮은 첫 2수는 선택 수준을 그대로 보여 주고, 최대 ±240 범위로 제한. */
+function recalcAILiveHelo() {
+  const samples = G.aiSamples.slice(-10);
+  if (samples.length < 3) {
+    G.aiLiveHelo = G.level;
+    G.aiEffectiveLevel = G.level;
+    return;
+  }
+  const total = samples.reduce((sum,x)=>sum+x.loss,0);
+  const avgLoss = total / samples.length;
+  const measured = 1000 * Math.exp(-avgLoss / 220);
+  const weight = Math.min(.60, samples.length * .075);
+  const estimate = Math.round(G.level*(1-weight)+measured*weight);
+  G.aiLiveHelo = Math.max(100,Math.min(1000,Math.max(G.level-240,Math.min(G.level+240,estimate))));
+  const difference = G.level - G.aiLiveHelo;
+  // 70점 이내 오차에서는 변경하지 않아 잦은 난이도 변동을 방지합니다.
+  const step = Math.abs(difference) < 70 ? 0 : Math.round(difference/100);
+  G.aiEffectiveLevel = Math.max(100,Math.min(1000,G.level+Math.max(-2,Math.min(2,step))*100));
+}
+function renderAILiveHelo() {
+  const box=$('ai-live-helo');
+  box.hidden=G.mode!=='ai';
+  if (G.mode!=='ai') return;
+  const n=G.aiSamples.length;
+  const difference=G.aiLiveHelo-G.level;
+  const status=n<3?'측정 중':Math.abs(difference)<70?'목표에 근접':difference>0?'목표보다 높음 → 다음 수 약하게':'목표보다 낮음 → 다음 수 강하게';
+  box.textContent=`🤖 AI 실시간 추정 ${G.aiLiveHelo} HElo · 목표 ${G.level} · ${status} (현재 엔진 ${G.aiEffectiveLevel/100}단계)`;
+}
 function newHeloMatchId() {
   if (crypto?.randomUUID) return crypto.randomUUID();
   return `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
@@ -1536,7 +1585,7 @@ async function finishHeloReport(out, token, hist) {
       <div class="cx-helo-metrics"><div><b>나</b><br>착수 정확도 ${fmt(mine)}<br>최선에 근접한 수 ${mine.near}/${mine.moves}<br>놓친 수 ${mine.miss}회 · 큰 실수 ${mine.blunders}회<br>평균 손실 ${mine.avgLoss}cp</div>
       <div><b>AI · ${G.level/100}단계</b><br>착수 정확도 ${fmt(bot)}<br>최선에 근접한 수 ${bot.near}/${bot.moves}<br>놓친 수 ${bot.miss}회 · 큰 실수 ${bot.blunders}회<br>평균 손실 ${bot.avgLoss}cp</div></div>
       <p>이번 대국 추정: 나 <b>${mineEstimate??'—'} HElo</b> · AI <b>${botEstimate??'—'} HElo</b></p>${examples}
-      <p class="note">정확도와 추정 HElo는 자체 엔진의 2플라이 간이 분석값입니다. 공인 Elo나 Chess.com 분석 점수와 다르며, 강제 수·짧은 대국에서는 정확성이 낮습니다. 개인 HElo는 승패 중심으로 변동하며 게임놀이터 계정에 저장됩니다. AI 난이도는 자동으로 변경되지 않습니다.</p>`;
+      <p class="note">정확도와 추정 HElo는 자체 엔진의 2플라이 간이 분석값입니다. 공인 Elo나 Chess.com 분석 점수와 다르며, 강제 수·짧은 대국에서는 정확성이 낮습니다. 개인 HElo는 승패 중심으로 변동하며 게임놀이터 계정에 저장됩니다. AI는 대국 중 간이 추정 HElo와 목표 수준의 차이에 따라 탐색 단계를 조절합니다. 추정치는 공식 Elo가 아닙니다.</p>`;
   } catch (e) {
     if(G.token!==token || !G.over)return;
     el.textContent='HElo 분석 또는 계정 저장에 실패했습니다: '+(e?.message||'알 수 없는 오류')+' · 이번 대국의 HElo는 저장되지 않았습니다.';
@@ -1549,6 +1598,7 @@ function newPosition() {
   G.pos.setFen(E.START_FEN);
   G.hist = []; G.sans = []; G.over = false; G.result = null; G.rated = false; G.heloMatchId = newHeloMatchId();
   G.selected = null; G.legal = []; G.last = null; G.thinking = false; G.animSq = null;
+  G.aiSamples = []; G.aiLiveHelo = G.level; G.aiEffectiveLevel = G.level;
   G.allLegal = G.pos.legalMoves();
   G.token++;
   if (analysisWorker) { analysisWorker.terminate(); analysisWorker=null; }
@@ -1636,11 +1686,12 @@ function capsHTML(color, info) {   // color 가 잡은 상대 기물들
   return html;
 }
 function playerName(color) {
-  if (G.mode === 'ai') return color === G.myColor ? '나' : `AI ${G.level/100}단계 · ${G.level} HElo`;
+  if (G.mode === 'ai') return color === G.myColor ? '나' : `AI 목표 ${G.level/100}단계 · 추정 ${G.aiLiveHelo} HElo`;
   if (color === G.myColor) return (G.online?.myName || '나') + ' (나)';
   return G.online?.oppName || '상대';
 }
 function renderPlayers() {
+  renderAILiveHelo();
   const bot = G.flipped ? 1 : 0;   // 화면 아래쪽에 보이는 색 (뒤집지 않으면 백)
   const top = bot ^ 1;
   const info = materialInfo();
@@ -1824,7 +1875,8 @@ async function aiTurn() {
   if (G.over || G.mode !== 'ai' || G.pos.turn === G.myColor) return;
   G.thinking = true; renderAll();
   const token = G.token, started = performance.now();
-  const res = await askEngine(G.pos.getFen(), G.hist.slice(), G.level);
+  const effectiveLevel = G.aiEffectiveLevel;
+  const res = await askEngine(G.pos.getFen(), G.hist.slice(), effectiveLevel);
   const minWait = G.level <= 500 ? 650 + Math.random() * 600 : 450 + Math.random() * 350;
   const rest = minWait - (performance.now() - started);
   if (rest > 0) await new Promise((r) => setTimeout(r, rest));
@@ -1834,6 +1886,11 @@ async function aiTurn() {
   const m = uci ? G.pos.moveFromUci(uci) : 0;
   if (!m) { renderAll(); return; }
   playMove(m);
+  // 이미 종료된 대국에서도 마지막 AI 착수의 추정치는 갱신합니다.
+  if (Number.isFinite(res.r?.qualityLoss) && res.r?.choices >= 2) {
+    G.aiSamples.push({moveIndex:G.hist.length,loss:res.r.qualityLoss});
+    recalcAILiveHelo();
+  }
   renderAll();
 }
 function startAIGame() {
@@ -1869,6 +1926,8 @@ async function undoMove() {
   undoOne();
   while (G.pos.turn !== G.myColor && G.hist.length) undoOne();
   if (G.pos.turn !== G.myColor) { /* 내가 아직 안 뒀을 때: AI가 이어서 둠 */ }
+  G.aiSamples = G.aiSamples.filter(x=>x.moveIndex<=G.hist.length);
+  recalcAILiveHelo();
   G.selected = null; G.legal = [];
   G.allLegal = G.pos.legalMoves();
   const h = G.hist.length;
