@@ -117,6 +117,15 @@
     .cx-pinfo { min-width: 0; flex: 1; }
     .cx-pname { font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .cx-pname small { font-weight: 600; color: #64748b; margin-left: 6px; }
+    .cx-helo-tag { display: inline-block; margin-left: 7px; padding: 2px 7px; border-radius: 7px;
+      background: #eaf1ff; color: #1d4ed8; font-size: .78rem; font-weight: 800; font-variant-numeric: tabular-nums;
+      vertical-align: middle; white-space: nowrap; }
+    .cx-helo-tag.ai { background: #ecfdf5; color: #047857; }
+    .cx-menu-helo { margin-top: 12px; padding: 13px 16px; border: 1px solid #dbe7ff;
+      border-radius: 12px; background: #f2f6ff; font-size: 1rem; font-weight: 700; }
+    .cx-menu-helo strong { color: #1d4ed8; font-size: 1.12rem; font-variant-numeric: tabular-nums; }
+    .cx-menu-helo .cx-note { display: block; margin-top: 4px; font-size: .8rem; font-weight: 400; }
+    @media (max-width: 520px) { .cx-pname { white-space: normal; overflow-wrap: anywhere; } .cx-helo-tag { margin-top: 2px; } }
     .cx-caps { display: flex; align-items: center; flex-wrap: wrap; min-height: 22px; color: #64748b; font-size: .85rem; }
     .cx-caps .cx-piece { font-size: 1.15rem !important; width: 1em; height: 1em; margin-right: -.28em; display: inline-flex; }
     .cx-caps .cx-adv { margin-left: .5em; font-weight: 800; }
@@ -240,6 +249,10 @@
     <section class="new-card" aria-labelledby="menu-title">
       <h2 id="menu-title">체스</h2>
       <p>컴퓨터와 실력을 겨루거나, 다른 플레이어와 온라인으로 대결해 보세요.</p>
+      <div class="cx-menu-helo" role="status" aria-live="polite">
+        ♟️ 내 체스 HElo <strong id="helo-home-score">불러오는 중…</strong>
+        <span class="cx-note" id="helo-home-state">게임놀이터 계정 점수를 확인하고 있습니다.</span>
+      </div>
     </section>
     <section class="new-grid" aria-label="체스 모드">
       <button id="go-ai" class="new-card game-link cx-mode" type="button">
@@ -1484,7 +1497,14 @@ async function heloRpc(name, payload) {
 }
 function refreshHeloBadge() {
   const label = heloReady ? `계정에 저장됨 · ${heloAccountName}` : (heloError || '계정 점수 불러오는 중…');
-  $('helo-current').textContent = `내 HElo: ${heloScore}점 / 1100 · ${label} · AI 난이도는 직접 선택`;
+  $('helo-current').textContent = heloReady
+    ? `내 HElo: ${heloScore}점 / 1100 · ${label} · AI 난이도는 직접 선택`
+    : `내 HElo: — · ${label}`;
+  $('helo-home-score').textContent = heloReady ? `${heloScore} HElo` : '—';
+  $('helo-home-state').textContent = heloReady
+    ? `${heloAccountName} 계정에 저장된 점수 · AI 대전 종료 후 자동 갱신`
+    : (heloError || '계정 점수를 불러오는 중입니다.');
+  if (G.mode === 'ai' && !$('view-game').hidden) renderPlayers();
 }
 const heloLoad = (async () => {
   heloAccountName = profileNickname();
@@ -1686,7 +1706,7 @@ function capsHTML(color, info) {   // color 가 잡은 상대 기물들
   return html;
 }
 function playerName(color) {
-  if (G.mode === 'ai') return color === G.myColor ? '나' : `AI 목표 ${G.level/100}단계 · 추정 ${G.aiLiveHelo} HElo`;
+  if (G.mode === 'ai') return color === G.myColor ? (heloAccountName || profileNickname() || '나') : 'AI';
   if (color === G.myColor) return (G.online?.myName || '나') + ' (나)';
   return G.online?.oppName || '상대';
 }
@@ -1696,7 +1716,12 @@ function renderPlayers() {
   const top = bot ^ 1;
   const info = materialInfo();
   [['top', top], ['bot', bot]].forEach(([k, color]) => {
-    $('p-' + k + '-name').innerHTML = `${esc(playerName(color))}<small>${color ? '흑' : '백'}</small>`;
+    const heloTag = G.mode === 'ai'
+      ? (color === G.myColor
+        ? `<span class="cx-helo-tag" title="게임놀이터 계정에 저장된 내 체스 HElo">${heloReady ? `${heloScore} HElo` : 'HElo —'}</span>`
+        : `<span class="cx-helo-tag ai" title="AI의 최근 착수를 토대로 계산한 실시간 추정 HElo">${G.aiLiveHelo} HElo · 실시간 추정</span>`)
+      : '';
+    $('p-' + k + '-name').innerHTML = `${esc(playerName(color))}${heloTag}<small>${color ? '흑' : '백'}</small>`;
     $('p-' + k + '-caps').innerHTML = capsHTML(color, info);
     $('p-' + k + '-av').textContent = (G.mode === 'ai' && color !== G.myColor) ? '🤖' : (color === G.myColor ? '🙂' : '👤');
     $('p-' + k).classList.toggle('on', !G.over && G.pos.turn === color);
