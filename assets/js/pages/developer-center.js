@@ -135,3 +135,23 @@ if (logoutButton) {
 }
 
 initialize();
+
+// 개발자 영역: 체스 HElo 학습 탭 (개발자 세션 확인 후에만 로드)
+const tabMain=document.getElementById('dev-tab-main');
+const tabChess=document.getElementById('dev-tab-chess');
+const panelMain=document.getElementById('dev-panel-main');
+const panelChess=document.getElementById('dev-panel-chess');
+const chessFrame=document.getElementById('dev-chess-frame');
+function chooseDevTab(which){
+  if (!isDeveloper(getSession())) return;
+  const chess=which==='chess';
+  tabMain?.setAttribute('aria-selected',String(!chess));
+  tabChess?.setAttribute('aria-selected',String(chess));
+  tabMain?.classList.toggle('active',!chess);
+  tabChess?.classList.toggle('active',chess);
+  if(panelMain)panelMain.hidden=chess;
+  if(panelChess)panelChess.hidden=!chess;
+  if(chess&&chessFrame&&!chessFrame.src)chessFrame.src=chessFrame.dataset.src;
+}
+tabMain?.addEventListener('click',()=>chooseDevTab('main'));
+tabChess?.addEventListener('click',()=>chooseDevTab('chess'));
