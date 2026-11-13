@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>개발자 · 체스 HElo 학습</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif;color:#17243b;background:#f4f7fb}*{box-sizing:border-box}body{margin:0}main{max-width:1050px;margin:auto;padding:20px}header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}h1{font-size:clamp(1.3rem,3vw,2rem);margin:4px 0}h2{font-size:1.1rem;margin:0 0 12px}a{color:#2457c9}.panel{background:white;border:1px solid #dfe5ef;border-radius:16px;padding:20px;margin:14px 0;box-shadow:0 4px 12px #18294b0a}.muted{color:#5f6b80;font-size:.9rem;line-height:1.6}.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}button,select{font:inherit;border:1px solid #bdc9df;background:white;color:#1b335c;padding:11px 15px;border-radius:10px;cursor:pointer}button.primary{background:#2457d6;color:white;border-color:#2457d6}button:disabled{opacity:.4;cursor:not-allowed}select{min-width:200px}progress{width:100%;height:18px;accent-color:#2457d6}table{border-collapse:collapse;width:100%;font-size:.88rem}th,td{padding:10px 8px;border-bottom:1px solid #e4e8f1;text-align:right;white-space:nowrap}th:first-child,td:first-child{text-align:left}.scroll{overflow-x:auto}.stat{font-size:1.2rem;font-weight:800}#log{white-space:pre-wrap;background:#101a2e;color:#dce8ff;border-radius:10px;padding:12px;font-size:.82rem;max-height:180px;overflow:auto}#status{font-weight:700}small{color:#5f6b80}.warning{border-left:4px solid #ebac36;padding-left:12px}input[type=checkbox]{width:18px;height:18px} @media(max-width:640px){main{padding:10px}.panel{padding:14px}button{flex:1}th,td{padding:8px 5px}}
+</style></head><body><div id="dev-access" style="padding:20px;font:16px system-ui">개발자 권한 확인 중…</div><main id="sim-root" hidden>
+<header><h1>♟️ 체스 HElo 학습 · 전체 리그</h1><a href="developer/index.html">← 개발자 센터</a></header>
+<section class="panel"><h2>한 번 클릭 · 전체 리그 1세트</h2>
+<p class="muted">10단계(100~1000 HElo)가 <b>서로 다른 나머지 모든 AI</b>와 겨룹니다. 중복 없는 45대진 × 500판 = <b>22,500판/세트</b>. 각 대진에서 백과 흑을 각각 250판씩 맡습니다. 신규 세트 시작 시 기존 기록은 삭제되지 않습니다.</p>
+<div class="row"><label for="limit">대국 최대 반수</label><select id="limit"><option value="300">300반수 (기본)</option><option value="200">200반수 (빠른 실행)</option><option value="120">120반수 (시험용)</option></select></div>
+<div class="row" style="margin-top:14px"><button class="primary" id="start">전체 리그 1세트 시작 (22,500판)</button><button id="resume" disabled>일시정지된 세트 이어하기</button><button id="pause" disabled>일시정지</button></div>
+<p class="muted warning">22,500판은 매우 큰 연산 작업입니다. 브라우저 탭이 실행 중이어야 하며 종료·절전 시 진행되지 않습니다. 완료된 각 대국은 IndexedDB에 저장합니다. 저장 공간 부족·브라우저 데이터 삭제 시 기록이 유실될 수 있으므로 주기적으로 JSON 백업을 받으세요. 저장 파일은 대용량일 수 있습니다. 서버/Supabase와는 동기화되지 않습니다.</p></section>
+<section class="panel"><h2>AI 수준 학습 및 시험 대국</h2>
+<p class="muted">학습 ON이면 전체 45개 대진이 완료되고 각 대진의 정상 종료 대국이 300판 이상일 때만 보정합니다. 한 세트당 각 AI 단계의 조절값은 최대 1칸만 바뀝니다. 분석은 대진 점수율을 기반으로 하고, 보정 전·후 설정은 모두 기록됩니다. 진행 중인 세트는 시작 시점의 AI 설정으로 고정됩니다.</p>
+<div class="row"><label><input type="checkbox" id="learn-enabled"> 세트 종료 후 실력 자동 조절 ON</label><label><input type="checkbox" id="publish-enabled"> 학습 설정을 이 브라우저의 실제 체스 AI에 적용</label></div>
+<p class="muted warning">이 설정은 <b>현재 브라우저만</b> 영향을 받습니다. 다른 사용자·다른 기기의 게임 AI는 자동 변경되지 않습니다. 엔진 탐색/수 선택 매개변수와 승률을 참고한 오프닝 수 선호도를 조정합니다. 전체 사용자 적용은 내보낸 chess-helo-tuning.json을 GitHub assets/data/ 폴더에 올려야 합니다.</p>
+<div class="row"><button id="test-chess" class="primary">개발자 시험 대국</button><button id="rollback-training">직전 실력 조절 되돌리기</button><button id="backup-training">학습 설정 JSON 백업</button><button id="export-public">전체 사이트용 설정 JSON 내보내기</button><label style="border:1px solid #bdc9df;padding:10px;border-radius:10px;cursor:pointer">학습 설정 JSON 가져오기<input type="file" id="import-training" accept=".json,application/json" hidden></label></div>
+<p id="test-after-run" class="muted warning" hidden>리그 세트가 완료되었습니다. 개발자 시험 대국을 진행해 AI 실력이 적절한지 평가해 주세요. 위의 <b>개발자 시험 대국</b> 버튼을 누르면 됩니다.</p><p id="training-summary" class="muted"></p><pre id="training-history" class="muted" style="white-space:pre-wrap"></pre></section>
+<section class="panel"><div class="row" style="justify-content:space-between"><h2>실행 기록</h2><span id="status">데이터 불러오는 중…</span></div>
+<div class="row"><div><small>완료</small><div id="count" class="stat">0 / 0</div></div><div><small>현재 대국</small><div id="current" class="stat">—</div></div><div><small>소요 시간</small><div id="elapsed" class="stat">—</div></div></div><progress id="progress" value="0" max="1"></progress><small id="runid">—</small>
+<div id="log" aria-live="polite">작업을 선택해 시작하세요.</div></section>
+<section class="panel"><h2>대진별 결과 · 높은 HElo AI 기준</h2><p class="muted">점수율 = (승리 + 0.5×무승부) ÷ 대국 수. 표준 Elo에서는 100점 차이의 기대 점수율이 약 64%입니다. 최대 반수에 도달한 판은 결과를 보존하되 실력 추정에서는 제외합니다. 계산된 상대 격차는 <b>게임놀이터 자체 AI끼리의 상대 수치</b>로, 공인 Elo가 아닙니다.</p>
+<div class="scroll"><table><thead><tr><th>조합</th><th>대국</th><th>승</th><th>무</th><th>패</th><th>점수율</th><th>추정 격차</th><th>제한 무승부</th></tr></thead><tbody id="summary"></tbody></table></div>
+<p id="calibrated" class="muted"></p>
+<div class="row"><button id="json" disabled>전체 기록 JSON 저장</button><button id="csv" disabled>결과표 CSV 저장</button><button id="gamescsv" disabled>대국별 CSV 저장</button><button id="calibration" disabled>상대 HElo 분석 JSON 저장</button><label style="border:1px solid #bdc9df;padding:11px 15px;border-radius:10px;cursor:pointer">백업 JSON 가져오기 <input type="file" id="import" accept=".json,application/json" hidden></label></div>
+<p class="muted">JSON에는 대국별 선후공·결과·전체 UCI 기보·난이도별 평균 착수 손실 및 실수 횟수을 담습니다. 분석 JSON은 결과를 확인하고 난이도 수치를 수정할 때 쓰는 자료이며, 체스 게임의 설정을 임의로 변경하지 않습니다.</p></section>
+<section class="panel"><h2>저장된 실행</h2><div class="row"><select id="runs"><option>불러오는 중…</option></select><button id="openrun">불러오기</button><button id="deleterun">선택 실행 삭제</button></div><p class="muted">이 장치의 동일한 사이트 주소에서만 실행 목록을 볼 수 있습니다. 기존 실행 결과를 삭제하지 않고 세트별로 구분합니다. 과거 9대진 기록도 계속 열람할 수 있습니다.</p></section>
+</main><script type="module">
+import {getSession} from './assets/js/game-api.js';
+const user=getSession();
+if(user && user.authVersion===2 && user.is_developer===true){
+ document.getElementById('dev-access').hidden=true;
+ document.getElementById('sim-root').hidden=false;
+ import('./assets/js/chess-sim-app.js');
+}else{
+ document.getElementById('dev-access').textContent='개발자 권한이 있는 계정으로 로그인해야 사용할 수 있습니다.';
+}
+</script></body></html>
