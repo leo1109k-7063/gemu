@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ko">
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width,initial-scale=1" name="viewport"/>
+  <title>
+   개발자 체스 HElo 시험 대국
+  </title>
+  <style>
+   :root {
+  font-family:system-ui,'Noto Sans KR',sans-serif;
+  color:#17243b;
+  background:#f5f7fb
+}
+* {
+  box-sizing:border-box
+}
+body {
+  margin:0;
+  padding:16px
+}
+main {
+  max-width:940px;
+  margin:auto
+}
+.panel {
+  background:#fff;
+  padding:17px;
+  border-radius:14px;
+  border:1px solid #dee5f1;
+  margin:12px 0
+}
+h1 {
+  font-size:1.5rem
+}
+p {
+  line-height:1.55
+}
+.row {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:10px
+}
+button,select {
+  font:inherit;
+  background:#fff;
+  border:1px solid #a6b4ca;
+  border-radius:9px;
+  padding:9px 12px;
+  cursor:pointer
+}
+button.primary {
+  background:#2457d6;
+  color:white
+}
+button:disabled {
+  opacity:.4;
+  cursor:not-allowed
+}
+#board {
+  width:min(100%,550px);
+  display:grid;
+  grid-template-columns:repeat(8,1fr);
+  border:4px solid #566784;
+  aspect-ratio:1
+}
+#board button {
+  padding:0;
+  border:0;
+  border-radius:0;
+  aspect-ratio:1;
+  display:grid;
+  place-items:center;
+  font-size:clamp(22px,6.5vw,54px);
+  line-height:1;
+  font-family:'Segoe UI Symbol','DejaVu Sans',serif
+}
+#board button.light {
+  background:#f0d9b5
+}
+#board button.dark {
+  background:#b58863
+}
+#board button.sel {
+  outline:4px solid #facc15;
+  outline-offset:-4px
+}
+#board button.target {
+  box-shadow:inset 0 0 0 5px #30a66a
+}
+#board button:focus-visible {
+  outline:4px solid #2457d6;
+  outline-offset:-4px
+}
+#status {
+  font-weight:bold
+}
+#moves {
+  white-space:pre-wrap;
+  max-height:200px;
+  overflow:auto;
+  background:#f4f6fa;
+  border-radius:9px;
+  padding:10px;
+  word-break:break-word
+}
+.muted {
+  color:#66748a;
+  font-size:.9rem
+}
+.tests {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px
+}
+.tests button {
+  flex:1;
+  min-width:130px
+}
+.warn {
+  border-left:4px solid #e7ad38;
+  padding-left:10px
+}
+#access {
+  font-weight:bold
+}
+  </style>
+ </head>
+ <body>
+  <div id="access">
+   개발자 권한 확인 중…
+  </div>
+  <main hidden="" id="root">
+   <div class="row">
+    <h1>
+     ♟ 개발자 · 체스 AI 시험 대국
+    </h1>
+    <a href="developer/index.html">
+     개발자 센터로
+    </a>
+   </div>
+   <section class="panel">
+    <div class="row">
+     <label>
+      상대 AI
+      <select id="level">
+      </select>
+     </label>
+     <label>
+      내 색
+      <select id="color">
+       <option value="w">
+        백
+       </option>
+       <option value="b">
+        흑
+       </option>
+      </select>
+     </label>
+     <button class="primary" id="restart">
+      새 시험 대국
+     </button>
+    </div>
+    <p class="muted">
+     개발자 계정 전용. 테스트는 XP·코인·플레이어 HElo에 영향을 주지 않습니다. 이 브라우저의 학습 설정을 적용한 AI를 상대합니다.
+    </p>
+    <p id="status">
+     시작 준비
+    </p>
+    <div aria-label="체스판" id="board" role="group">
+    </div>
+    <div class="row" hidden="" id="promotion">
+    </div>
+    <p class="muted" id="moves">
+    </p>
+   </section>
+   <section class="panel">
+    <h2>
+     개발자 실력 평가
+    </h2>
+    <p class="muted">
+     각 단계가 의도한 난이도와 비교해 너무 약하다면 ‘더 강하게’, 너무 강하다면 ‘더 약하게’를 선택하세요. 시험 대국 중에도 평가할 수 있지만 끝까지 두고 평가하는 것을 권장합니다. 평가 결과는 기록되고 다음 대국에 적용됩니다.
+    </p>
+    <div class="tests">
+     <button id="stronger">
+      ↑ AI 더 강하게
+     </button>
+     <button id="keep">
+      = 현 수준 유지
+     </button>
+     <button id="weaker">
+      ↓ AI 더 약하게
+     </button>
+    </div>
+    <p class="muted warn">
+     자동 리그 평가는 대국 통계에 따른 조절이고, 개발자 평가는 명시적 판단에 따른 조절입니다. 1회 평가당 최대 1칸, 총 조절 범위 ±4칸으로 제한합니다. 다른 기기로는 자동 동기화되지 않습니다.
+    </p>
+    <p id="feedback" role="status">
+    </p>
+   </section>
+  </main>
+  <script src="./assets/js/chess-training-test.js" type="module">
+  </script>
+ </body>
+</html>
+
