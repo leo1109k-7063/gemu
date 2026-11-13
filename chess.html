@@ -277,7 +277,7 @@
       <p class="cx-sub">AI 목표 난이도는 1~10단계(100~1000 HElo)입니다. 내 HElo는 1~1100 범위에서 대국 결과와 착수 분석에 따라 바뀝니다. 공식 Elo가 아닙니다.</p>
       <div id="levels" class="cx-levels" role="group" aria-label="AI 난이도 선택"></div>
       <p class="cx-note" id="helo-current" aria-live="polite"></p>
-      <p class="cx-note">대국 중 AI의 착수를 간이 평가해 추정 HElo를 표시합니다. 선택한 목표보다 높거나 낮으면 다음 착수의 엔진 단계를 최대 2단계 범위에서 조정합니다.</p>
+      <p class="cx-note">대국 중 AI의 착수를 간이 평가해 추정 HElo를 표시합니다. 선택한 목표보다 높거나 낮으면 다음 착수의 엔진 단계를 최대 1단계 범위에서 완만하게 조정합니다.</p>
     </section>
     <section class="new-card">
       <h2 class="cx-title">내 색깔</h2>
@@ -1025,18 +1025,49 @@ function scoreRoot(pos, depth, ms) {
 }
 
 /* HElo 단계 1~10: 표시 점수는 실제 Elo가 아닌 게임 내부 난이도 지표 */
+/* 무제한 랜덤 착수를 없애고 모든 단계가 적어도 합리적인 수를 둡니다.
+   단계 간 차이는 탐색 깊이, 선택 온도, 허용 평가손실로 서서히 변화합니다.
+   이 수치는 게임 내부 HElo이며 공인 Elo가 아닙니다. */
 var LEVELS = {
-  100:  {depth:1,time:250,rand:.48,temp:330,book:0},
-  200:  {depth:1,time:300,rand:.36,temp:260,book:0},
-  300:  {depth:1,time:350,rand:.25,temp:210,book:.15},
-  400:  {depth:2,time:450,rand:.18,temp:170,book:.25},
-  500:  {depth:2,time:500,rand:.12,temp:130,book:.4},
-  600:  {depth:2,time:650,rand:.08,temp:95,book:.5},
-  700:  {depth:3,time:900,rand:.04,temp:55,book:.7},
-  800:  {depth:4,time:1200,rand:.02,temp:25,book:.85},
-  900:  {depth:5,time:1500,rand:0,temp:14,book:1},
-  1000: {depth:8,time:2600,rand:0,temp:0,book:1}
+  100:  {depth:1,time:350,rand:0,temp:150,maxLoss:240,book:.25},
+  200:  {depth:1,time:400,rand:0,temp:135,maxLoss:215,book:.30},
+  300:  {depth:1,time:450,rand:0,temp:120,maxLoss:190,book:.35},
+  400:  {depth:2,time:500,rand:0,temp:105,maxLoss:170,book:.40},
+  500:  {depth:2,time:600,rand:0,temp:90,maxLoss:150,book:.45},
+  600:  {depth:2,time:700,rand:0,temp:75,maxLoss:130,book:.55},
+  700:  {depth:3,time:900,rand:0,temp:60,maxLoss:110,book:.65},
+  800:  {depth:3,time:1100,rand:0,temp:45,maxLoss:85,book:.75},
+  900:  {depth:4,time:1500,rand:0,temp:22,maxLoss:50,book:.85},
+  1000: {depth:5,time:2200,rand:0,temp:0,maxLoss:0,book:1}
 };
+
+/* Developer-approved HElo training: bounded strength offsets, not a neural model. */
+var TRAIN_OFFSETS = {};
+var TRAIN_BOOK = {};
+function setTuning(tuning) {
+ var offsets=tuning && tuning.offsets ? tuning.offsets : tuning;
+ TRAIN_BOOK=tuning && tuning.book && typeof tuning.book === "object" ? tuning.book : {};
+ TRAIN_OFFSETS = {};
+ if (offsets && typeof offsets === 'object') for(var key in LEVELS) {
+  var n = Number(offsets[key]);
+  TRAIN_OFFSETS[key] = Number.isFinite(n) ? Math.max(-4,Math.min(4,Math.round(n))) : 0;
+ }
+}
+function tunedConfig(level) {
+ var base=LEVELS[level] || LEVELS[500];
+ var bias=TRAIN_OFFSETS[level]||0;
+ if(!bias) return base;
+ var cfg=Object.assign({},base);
+ // Each step changes selection quality and search conservatively. No arbitrary illegal moves.
+ cfg.temp=Math.max(0,Math.min(240,base.temp-bias*19));
+ cfg.maxLoss=Math.max(0,Math.min(340,base.maxLoss-bias*24));
+ cfg.book=Math.max(0,Math.min(1,base.book+bias*.055));
+ cfg.time=Math.max(180,Math.min(3500,Math.round(base.time*(1+bias*.13))));
+ // Increasing search depth is permitted only after +3 steps, limited to 5.
+ cfg.depth=Math.max(1,Math.min(5,base.depth+(bias>=3?1:0)-(bias<=-3?1:0)));
+ return cfg;
+}
+
 var BOOK = {
   '': ['e2e4', 'd2d4', 'g1f3', 'c2c4'],
   'e2e4': ['e7e5', 'c7c5', 'e7e6', 'c7c6'],
@@ -1057,7 +1088,7 @@ var BOOK = {
 
 /* 최선의 수 찾기. fen: 현재 국면, hist: 시작부터의 UCI 수 목록 */
 function chooseMove(fen, hist, level) {
-  var cfg = LEVELS[level] || LEVELS[500];
+  var cfg = tunedConfig(level);
   var pos = new Position(); pos.setFen(fen);
   var ms = pos.legalMoves();
   if (!ms.length) return { uci: null };
@@ -1087,14 +1118,16 @@ function chooseMove(fen, hist, level) {
     if (line) {
       var cands = [];
       for (var i = 0; i < line.length; i++) { var bm = pos.moveFromUci(line[i]); if (bm) cands.push(line[i]); }
-      if (cands.length) return withQuality({ uci: cands[(Math.random() * cands.length) | 0], score: 0, depth: 0, book: true });
+      if (cands.length) {
+        var votes=TRAIN_BOOK[level] && TRAIN_BOOK[level][key];
+        var total=0, weights=[];
+        for(var v=0;v<cands.length;v++) {var w=votes && Number(votes[cands[v]]) || 1;w=Math.max(.7,Math.min(1.3,w));weights.push(w);total+=w;}
+        var roll=Math.random()*total, selected=cands[0];
+        for(var v=0;v<cands.length;v++){roll-=weights[v];if(roll<=0){selected=cands[v];break;}}
+        return withQuality({uci:selected,score:0,depth:0,book:true});
+      }
     }
   }
-  /* 무작위 실수 */
-  if (cfg.rand && Math.random() < cfg.rand) {
-    return withQuality({ uci: moveUci(ms[(Math.random() * ms.length) | 0]), score: 0, depth: 0, random: true });
-  }
-
   resetSearch();
   nodes = 0; stopped = false; stopAt = Date.now() + cfg.time;
   var bestUci = moveUci(ms[0]), bestScore = 0, doneDepth = 0;
@@ -1106,10 +1139,19 @@ function chooseMove(fen, hist, level) {
     if (!scored.length) return withQuality({ uci: bestUci, score: 0, depth: 0 });
     var top = -INF, j;
     for (j = 0; j < scored.length; j++) if (scored[j].s > top) top = scored[j].s;
+    // 심각한 실수는 하위 단계에서도 제외: 허용 손실 안에서만 가중 추첨.
+    // 강제 메이트가 보이면 초보 AI도 그것을 놓치지 않습니다.
+    var safe = scored.filter(function(x) {
+      return top - x.s <= cfg.maxLoss && (top < MATE - 100 || x.s >= MATE - 100);
+    });
+    if (!safe.length) safe = scored.filter(function(x) { return x.s === top; });
     var total = 0, weights = [];
-    for (j = 0; j < scored.length; j++) { var w = Math.exp((scored[j].s - top) / cfg.temp); weights.push(w); total += w; }
-    var r = Math.random() * total, chosen = scored[0];
-    for (j = 0; j < scored.length; j++) { r -= weights[j]; if (r <= 0) { chosen = scored[j]; break; } }
+    for (j = 0; j < safe.length; j++) {
+      var w = Math.exp((safe[j].s - top) / cfg.temp);
+      weights.push(w); total += w;
+    }
+    var r = Math.random() * total, chosen = safe[0];
+    for (j = 0; j < safe.length; j++) { r -= weights[j]; if (r <= 0) { chosen = safe[j]; break; } }
     return withQuality({ uci: moveUci(chosen.m), score: chosen.s, depth: cfg.depth, nodes: nodes });
   }
 
@@ -1191,7 +1233,7 @@ function analyzeGame(ucis) {
   });
 }
 
-return { Position: Position, moveUci: moveUci, START_FEN: START_FEN, sqName: sqName, chooseMove: chooseMove, LEVELS: LEVELS, analyzeGame: analyzeGame };
+return { Position: Position, moveUci: moveUci, START_FEN: START_FEN, sqName: sqName, chooseMove: chooseMove, LEVELS: LEVELS, setTuning: setTuning, analyzeGame: analyzeGame };
 })();
 </script>
 
@@ -1418,7 +1460,7 @@ function getWorker() {
   if (worker) return worker;
   try {
     const src = $('engine-src').textContent +
-      '\nonmessage=function(e){var d=e.data;var r=d.kind==="analyze"?ChessEngine.analyzeGame(d.hist):ChessEngine.chooseMove(d.fen,d.hist,d.level);postMessage({id:d.id,r:r});};';
+      '\nonmessage=function(e){var d=e.data;if(d.tuning)ChessEngine.setTuning(d.tuning);var r=d.kind==="analyze"?ChessEngine.analyzeGame(d.hist):ChessEngine.chooseMove(d.fen,d.hist,d.level);postMessage({id:d.id,r:r});};';
     workerUrl = URL.createObjectURL(new Blob([src], { type: 'text/javascript' }));
     worker = new Worker(workerUrl);
   } catch (err) { worker = null; }
@@ -1426,15 +1468,28 @@ function getWorker() {
 }
 function killWorker() { if (worker) { worker.terminate(); worker = null; } if (workerUrl) { URL.revokeObjectURL(workerUrl); workerUrl = null; } }
 let reqId = 0;
+let globalTrainingConfig={offsets:{},book:{}};
+// Optional static GitHub deployment: assets/data/chess-helo-tuning.json
+fetch('./assets/data/chess-helo-tuning.json',{cache:'no-store'})
+ .then(r=>r.ok?r.json():null)
+ .then(x=>{if(x?.schema===1&&x.offsets&&typeof x.offsets==='object')globalTrainingConfig={offsets:x.offsets,book:x.book||{}};})
+ .catch(()=>{});
+function liveTrainingOffsets() {
+ try {
+  const x=JSON.parse(localStorage.getItem('gemu-chess-ai-training-v1')||'null');
+  return x?.published === true && x?.offsets && typeof x.offsets==='object'
+   ? {offsets:x.offsets,book:x.book||{}} : globalTrainingConfig;
+ } catch {return globalTrainingConfig;}
+}
 function askEngine(fen, hist, level) {
   const id = ++reqId;
   return new Promise((resolve) => {
     const w = getWorker();
-    if (!w) { setTimeout(() => resolve({ id, r: E.chooseMove(fen, hist, level) }), 30); return; }   // Worker 를 못 쓰면 그냥 메인에서
+    if (!w) { setTimeout(() => resolve({ id, r: (E.setTuning(liveTrainingOffsets()),E.chooseMove(fen, hist, level)) }), 30); return; }   // Worker 를 못 쓰면 그냥 메인에서
     const onMsg = (e) => { if (e.data.id === id) { w.removeEventListener('message', onMsg); resolve(e.data); } };
     w.addEventListener('message', onMsg);
-    w.addEventListener('error', () => { w.removeEventListener('message', onMsg); resolve({ id, r: E.chooseMove(fen, hist, level) }); }, { once: true });
-    w.postMessage({ id, fen, hist, level });
+    w.addEventListener('error', () => { w.removeEventListener('message', onMsg); resolve({ id, r: (E.setTuning(liveTrainingOffsets()),E.chooseMove(fen, hist, level)) }); }, { once: true });
+    w.postMessage({ id, fen, hist, level, tuning:liveTrainingOffsets() });
   });
 }
 
@@ -1533,8 +1588,9 @@ function recalcAILiveHelo() {
   G.aiLiveHelo = Math.max(100,Math.min(1000,Math.max(G.level-240,Math.min(G.level+240,estimate))));
   const difference = G.level - G.aiLiveHelo;
   // 70점 이내 오차에서는 변경하지 않아 잦은 난이도 변동을 방지합니다.
-  const step = Math.abs(difference) < 70 ? 0 : Math.round(difference/100);
-  G.aiEffectiveLevel = Math.max(100,Math.min(1000,G.level+Math.max(-2,Math.min(2,step))*100));
+  // 실시간 추정값의 노이즈로 2단계 이상 뛰지 않도록 최대 1단계만 보정.
+  const step = Math.abs(difference) < 110 ? 0 : Math.sign(difference);
+  G.aiEffectiveLevel = Math.max(100,Math.min(1000,G.level+step*100));
 }
 function renderAILiveHelo() {
   const box=$('ai-live-helo');
