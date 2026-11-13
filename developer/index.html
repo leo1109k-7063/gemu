@@ -94,6 +94,10 @@
       min-height: 1.5em;
       margin-bottom: 0;
     }
+    .dev-tool-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}
+    .dev-tab{cursor:pointer;background:#f0f3f9;border:1px solid #cbd5e1;border-radius:10px;padding:12px 18px;font:inherit;font-weight:700;color:#334155}
+    .dev-tab.active{background:#2457d6;color:#fff;border-color:#2457d6}
+    @media(max-width:640px){#dev-chess-frame{height:1350px}}
   </style>
 </head>
 
@@ -131,6 +135,20 @@
   <!-- 개발자 전용 콘텐츠 -->
   <section id="content" hidden>
 
+    <!-- 개발자 도구 탭 -->
+    <nav class="dev-tool-tabs" aria-label="개발자 도구 탭" role="tablist">
+      <button id="dev-tab-main" type="button" role="tab" aria-selected="true" aria-controls="dev-panel-main" class="dev-tab active">개발자 도구</button>
+      <button id="dev-tab-chess" type="button" role="tab" aria-selected="false" aria-controls="dev-panel-chess" class="dev-tab">♟ 체스 HElo 학습</button>
+    </nav>
+    <section id="dev-panel-chess" role="tabpanel" aria-labelledby="dev-tab-chess" hidden>
+      <div class="new-card">
+        <h2>체스 HElo 실력 학습 · 개발자 시험 대국</h2>
+        <p>모든 난이도 100~1000의 45개 대진을 각각 500판씩 자동 대국합니다. 전체 22,500판이며, 실행 버튼 한 번으로 한 세트를 시작합니다.</p>
+        <p class="muted">브라우저가 실행 중인 동안 계산합니다. 완료 대국은 로컬에 보관되며, 새로 실행하면 새로운 세트가 생성됩니다. 학습 ON 시에는 세트 결과로 AI 선택 수준을 조절합니다. 게임 적용 ON은 현재 브라우저에만 적용됩니다.</p>
+        <iframe id="dev-chess-frame" title="체스 HElo 학습 시뮬레이터" data-src="../chess-simulator.html" style="width:100%;height:1290px;border:1px solid #dfe5ef;border-radius:12px;background:#f4f7fb" loading="lazy"></iframe>
+      </div>
+    </section>
+    <div id="dev-panel-main" role="tabpanel" aria-labelledby="dev-tab-main">
     <!-- 센터 안내 -->
     <div class="new-card">
       <h2>개발자 센터</h2>
@@ -520,6 +538,7 @@
       </p>
     </div>
 
+  </div>
   </section>
 </main>
 
