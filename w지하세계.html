@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>지하세계</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#090d16;color:#f4edda;font-family:monospace;touch-action:none}
+#app{width:100%;height:100%;display:flex;flex-direction:column;padding:5px;gap:5px}
+header{height:28px;flex:none;text-align:center;color:#ffd66b;font-size:21px;font-weight:bold;letter-spacing:5px;text-shadow:2px 2px #6d314b}
+#auth,#classes,#ending{position:absolute;z-index:10;inset:40px 12px auto;margin:auto;max-width:460px;background:#20263a;border:3px solid #64708c;padding:14px;box-shadow:5px 5px #05070c}
+h2{margin:4px 0 12px;color:#ffd66b}input,button{font:inherit;color:#f4edda;background:#111827;border:2px solid #687493;padding:10px;border-radius:3px}input{width:100%;margin:4px 0}button{cursor:pointer;background:#394666}button:disabled{opacity:.4}.row{display:flex;gap:5px}.row button{flex:1}.hidden{display:none!important}.hint{font-size:11px;line-height:1.5;color:#bdc8df}
+#hud{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:5px 8px;background:#20263a;border:2px solid #58617e;font-size:12px;min-height:30px;flex:none}
+#hearts{color:#ff647c;font-size:17px;letter-spacing:1px}
+#view{width:100%;flex:1;min-height:0;display:block;background:#141923;border:2px solid #687493;image-rendering:pixelated}
+#bottom{display:flex;align-items:center;justify-content:space-between;gap:8px;flex:none;min-height:112px;padding:2px 8px}
+#sticks{display:flex;align-items:center;gap:12px}
+.stick{width:104px;height:104px;border-radius:50%;position:relative;border:3px solid #7886a5;background:rgba(45,58,83,.7);touch-action:none;flex:none}
+.knob{position:absolute;width:42px;height:42px;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;background:#b5c2d9;border:3px solid #35425f;box-shadow:0 2px 5px #000;pointer-events:none}
+.stick span{position:absolute;bottom:-17px;left:0;right:0;text-align:center;font-size:10px;color:#d4d9e7}
+#attack{width:88px;height:88px;border-radius:50%;background:#873f55;border:4px solid #f1a0a5;font-weight:bold}
+#tools{display:flex;gap:4px;flex-wrap:wrap;justify-content:center}
+#tools button{font-size:10px;padding:6px}
+@media (orientation:landscape){header{height:22px;font-size:17px}#app{padding:3px;gap:3px}#hud{min-height:25px}#bottom{min-height:94px}.stick{width:86px;height:86px}.knob{width:36px;height:36px}#attack{width:76px;height:76px}}
+@media (max-height:430px){header{height:19px;font-size:16px}#bottom{min-height:78px}.stick{width:72px;height:72px}.knob{width:30px;height:30px}#attack{width:65px;height:65px}#hud{font-size:10px;padding:3px}}
+</style></head><body><main id="app">
+<header>지하세계</header>
+<section id="auth">
+<h2 id="authTitle">로그인</h2><div id="loginForm"><input id="loginId" placeholder="계정 이름"><input id="loginPw" type="password" placeholder="비밀번호"><button id="loginBtn" style="width:100%">로그인</button><button id="showSignup" style="width:100%">회원가입</button></div>
+<div id="signupForm" class="hidden"><input id="newId" placeholder="사용할 계정 이름"><input id="newPw" type="password" placeholder="비밀번호"><input id="heroName" placeholder="플레이어 이름"><button id="signupBtn" style="width:100%">가입하기</button><button id="showLogin" style="width:100%">로그인으로 돌아가기</button></div><p id="authMsg" class="hint"></p><p class="hint">계정과 진행 상황은 이 브라우저에 저장돼.</p></section>
+<section id="classes" class="hidden"><h2>직업 선택</h2><p class="hint">선택한 직업으로 끝까지 모험하게 돼.</p><div class="row"><button data-job="warrior">⚔ 검사<br>칼 · 근거리</button><button data-job="archer">➶ 궁수<br>활 · 원거리</button><button data-job="mage">✦ 법사<br>지팡이 · 중거리</button></div></section>
+<section id="ending" class="hidden"><h2>축하합니다!</h2><p>축하합니다! 당신은 이 지하세계를 구하셨습니다!</p><button id="reset" style="width:100%">계정 초기화</button><button id="keep" style="width:100%">계정 유지</button></section>
+<div id="hud" class="hidden"><span id="hero"></span><span id="stage">야외</span><span id="hearts">♥♥♥♥♥♥♥♥♥</span><span id="stats">스탯 0개</span></div>
+<canvas id="view" class="hidden" width="480" height="270"></canvas>
+<div id="bottom" class="hidden"><div id="sticks"><div class="stick" id="moveStick"><i class="knob"></i><span>이동</span></div><div class="stick" id="lookStick"><i class="knob"></i><span>시점 전환</span></div></div><div id="tools"><button id="atkUp">공격력 +0.1<br>(1개)</button><button id="hpUp">체력 +½♥<br>(6개)</button><button id="save">저장</button></div><button id="attack">공격</button></div>
+</main>
+<script>
+(()=>{
+const $=id=>document.getElementById(id),cv=$('view'),g=cv.getContext('2d'),KEY='underworld_v2';
+let db=JSON.parse(localStorage.getItem(KEY)||'{}'),user=null,S=null,zone='world',map=[],enemies=[],boss=null,portal=null,potion=null,projectiles=[],move={x:0,y:0},look={x:0,y:0},yaw=0,last=0,lastAtk=0,statAtFloor=0,stageStartHp=18,gameOn=false,toast='',toastUntil=0;
+const jobs={warrior:{name:'검사',damage:3,cool:100,range:1.5,kind:'slash'},archer:{name:'궁수',damage:3,cool:400,range:8,kind:'arrow'},mage:{name:'법사',damage:4,cool:500,range:4,kind:'fire'}};
+const floors=[null,{n:5,boss:'핏빛 기사',hp:20,dmg:4,cool:700,range:1.7,kind:'blade',color:'#b94c59'},{n:7,boss:'서리 마녀',hp:24,dmg:5,cool:600,range:5,kind:'ice',color:'#64c5e8'},{n:10,boss:'심연의 군주',hp:28,dmg:6,cool:500,range:8,kind:'spear',color:'#b77be8'}];
+function save(){if(user){db[user.id]={pw:user.pw||db[user.id]?.pw,data:S};localStorage.setItem(KEY,JSON.stringify(db));}}
+function showScreen(id){['auth','classes','ending'].forEach(x=>$(x).classList.toggle('hidden',x!==id));let play=id==='play';['hud','view','bottom'].forEach(x=>$(x).classList.toggle('hidden',!play));}
+function say(t){toast=t;toastUntil=performance.now()+2600;}
+function newSave(name){return{name,job:null,floor:1,hp:18,maxHp:18,stat:0,bonus:0,cleared:[],x:8.5,y:8.5,yaw:0};}
+function hud(){if(!S)return;$('hero').textContent=S.name+' · '+(S.job?jobs[S.job].name:'');$('stage').textContent=zone==='world'?'성 밖 오픈 월드':`악마성 ${S.floor}층`;$('hearts').textContent='♥'.repeat(Math.ceil(S.hp/2))+'♡'.repeat(Math.max(0,Math.ceil((S.maxHp-S.hp)/2)));$('stats').textContent='스탯 '+S.stat+'개';}
+function setupMap(){let n=20;map=Array.from({length:n},(_,y)=>Array.from({length:n},(_,x)=>(x===0||y===0||x===n-1||y===n-1)?1:0));
+const blocks=zone==='world'?[[4,4],[4,5],[4,6],[7,3],[8,3],[13,4],[14,4],[15,4],[5,14],[6,14],[13,14],[14,14],[15,14],[10,6],[10,7],[2,10],[3,10],[16,9],[16,10]]:[[4,4],[5,4],[6,4],[13,4],[14,4],[15,4],[4,13],[5,13],[14,13],[15,13],[8,7],[8,8],[11,11],[12,11],[3,9],[16,9]];
+blocks.forEach(([x,y])=>map[y][x]=1);
+}
+function placeEnemies(count,bossMode=false){enemies=[];boss=null;projectiles=[];let spots=zone==='world'?[[7.5,4.5],[8.7,5.4],[10.3,5.4],[11.5,4.5],[9.5,6.3]]:[[4.5,4.5],[15.5,4.5],[4.5,15.5],[15.5,15.5],[10.5,4.5],[4.5,10.5],[15.5,10.5],[10.5,15.5],[7.5,10.5],[12.5,7.5]];for(let i=0;i<count;i++){let [x,y]=spots[i];enemies.push({x,y,hp:4,max:4,cd:0,kind:'grunt',color:zone==='world'?'#a9a36e':'#84976b'});}}
+function beginWorld(){zone='world';setupMap();S.x=9.5;S.y=17;S.yaw=-Math.PI/2;yaw=S.yaw;placeEnemies(5);portal={x:9.5,y:2.5};potion=null;statAtFloor=S.stat;hud();say('성 중앙의 포탈을 지키는 몬스터 5마리를 처치해라.');}
+function beginFloor(n){zone='castle';S.floor=n;setupMap();S.x=9.5;S.y=17;S.yaw=-Math.PI/2;yaw=S.yaw;statAtFloor=S.stat;stageStartHp=S.hp;placeEnemies(floors[n].n);portal=null;potion=null;hud();say(`악마성 ${n}층: 몬스터 ${floors[n].n}마리를 처치해라.`);}
+function startBoss(){let f=floors[S.floor];boss={x:9.5,y:4.5,hp:f.hp,max:f.hp,cd:650,kind:f.kind,color:f.color,name:f.boss,dmg:f.dmg,cool:f.cool,range:f.range};say(f.boss+' 등장!');}
+function clearedFloor(){let reward=[0,4,6,8][S.floor];S.stat+=reward;potion={x:9.5,y:9.5};say('보스 처치! 스탯 '+reward+'개 획득. 회복 물약이 나타났다!');if(S.floor===3){save();showScreen('ending');return;}hud();}
+function resetDead(){S.stat=statAtFloor;S.hp=S.maxHp;beginFloor(S.floor);say('쓰러졌다! 현재 층을 처음부터 다시 시작한다.');save();}
+function tile(x,y){let ix=Math.floor(x),iy=Math.floor(y);return !map[iy]||map[iy][ix]!==0;}
+function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y);}
+function canMove(x,y){return !tile(x+.18,y)&&!tile(x-.18,y)&&!tile(x,y+.18)&&!tile(x,y-.18);}
+function update(dt){let sec=dt/1000;let forward=-move.y,side=move.x;let nx=S.x+(Math.cos(S.yaw)*forward+Math.cos(S.yaw+Math.PI/2)*side)*3.2*sec,ny=S.y+(Math.sin(S.yaw)*forward+Math.sin(S.yaw+Math.PI/2)*side)*3.2*sec;if(canMove(nx,S.y))S.x=nx;if(canMove(S.x,ny))S.y=ny;yaw+=look.x*2.2*sec;S.yaw=yaw;
+if(zone==='world'&&portal&&dist(S,portal)<1.15&&enemies.length===0){beginFloor(1);save();}
+if(zone==='castle'&&potion&&dist(S,potion)<.75){S.hp=Math.min(S.maxHp,S.hp+8);potion=null;portal={x:9.5,y:2.4};say('회복 물약 사용! 하트 4칸을 회복했다. 다음 층 포탈이 열렸다.');}
+if(zone==='castle'&&portal&&dist(S,portal)<1.05){if(S.floor<3){beginFloor(S.floor+1);save();}else{showScreen('ending');}}
+let targets=[...enemies,...(boss?[boss]:[])];targets.forEach(e=>{let d=dist(S,e);if(d>1.0){let dx=(S.x-e.x)/d,dy=(S.y-e.y)/d;let ex=e.x+dx*.55*sec,ey=e.y+dy*.55*sec;if(!tile(ex,e.y))e.x=ex;if(!tile(e.x,ey))e.y=ey;}e.cd-=dt;if(d<(e===boss?e.range:1.05)&&e.cd<=0){e.cd=e===boss?e.cool:300;if(e===boss&&e.kind!=='blade'){let v=1.8,ang=Math.atan2(S.y-e.y,S.x-e.x);projectiles.push({x:e.x,y:e.y,vx:Math.cos(ang)*v,vy:Math.sin(ang)*v,dmg:e.dmg,kind:e.kind});}else if(d<1.6)damage(e===boss?e.dmg:2);}});
+projectiles.forEach(p=>{p.x+=p.vx*sec;p.y+=p.vy*sec;if(dist(S,p)<.35){damage(p.dmg);p.dead=true;}if(tile(p.x,p.y))p.dead=true;});projectiles=projectiles.filter(p=>!p.dead);
+if(S.hp<=0)resetDead();hud();}
+function damage(d){S.hp-=d*2;if(S.hp<=0)S.hp=0;}
+function attack(){let now=performance.now(),c=jobs[S.job];if(now-lastAtk<c.cool)return;lastAtk=now;let pool=[...enemies,...(boss?[boss]:[])],target=null,bd=999;for(let e of pool){let d=dist(S,e),a=Math.atan2(e.y-S.y,e.x-S.x),delta=Math.atan2(Math.sin(a-yaw),Math.cos(a-yaw));if(Math.abs(delta)<(S.job==='archer'?.22:.32)&&d<c.range&&d<bd){target=e;bd=d;}}
+if(!target){say('조준 방향에 적이 없어!');return;}target.hp-=c.damage+S.bonus;if(target.hp<=0){if(target===boss){boss=null;clearedFloor();}else{enemies=enemies.filter(e=>e!==target);S.stat+=zone==='world'?0:2;if(zone==='world'&&enemies.length===0)say('포탈 수호 몬스터를 모두 처치했다! 중앙 포탈로 가라.');else say('몬스터 처치! 스탯 2개 획득.');if(zone==='castle'&&enemies.length===0)startBoss();}save();hud();}}
+function castRay(angle){let max=14,step=.025;for(let d=.05;d<max;d+=step){let x=S.x+Math.cos(angle)*d,y=S.y+Math.sin(angle)*d;if(tile(x,y))return {d,x,y,side:(Math.floor(x*2)+Math.floor(y*2))%2};}return {d:max,x:S.x+Math.cos(angle)*max,y:S.y+Math.sin(angle)*max,side:0};}
+function drawHumanoid(x,y,size,color,isBoss=false){let h=size,w=size*.48;g.save();g.translate(x,y);g.fillStyle='rgba(0,0,0,.35)';g.beginPath();g.ellipse(0,h*.43,w*.8,h*.13,0,0,Math.PI*2);g.fill();
+let torso=isBoss?color:color;g.fillStyle=torso;g.fillRect(-w*.32,-h*.05,w*.64,h*.42);
+g.fillStyle='#d9b18f';g.fillRect(-w*.2,-h*.36,w*.4,h*.25);
+g.fillStyle='#24202b';g.fillRect(-w*.13,-h*.27,w*.07,h*.05);g.fillRect(w*.06,-h*.27,w*.07,h*.05);
+g.strokeStyle=isBoss?'#d8c4ff':'#d6b18f';g.lineWidth=Math.max(2,w*.16);g.beginPath();g.moveTo(-w*.28,0);g.lineTo(-w*.55,h*.22);g.moveTo(w*.28,0);g.lineTo(w*.55,h*.22);g.stroke();
+g.strokeStyle='#38364b';g.lineWidth=Math.max(3,w*.18);g.beginPath();g.moveTo(-w*.16,h*.34);g.lineTo(-w*.25,h*.58);g.moveTo(w*.16,h*.34);g.lineTo(w*.25,h*.58);g.stroke();
+g.fillStyle='#eee4c9';g.fillRect(-w*.24,h*.55,w*.2,h*.07);g.fillRect(w*.04,h*.55,w*.2,h*.07);
+if(isBoss){g.fillStyle='#f4d16c';g.fillRect(-w*.34,-h*.45,w*.68,h*.07);}g.restore();}
+function render(){let W=cv.width,H=cv.height,horizon=H*.48;let sky=zone==='world'?'#283b43':'#171d32',ground=zone==='world'?'#526247':'#383247';g.fillStyle=sky;g.fillRect(0,0,W,horizon);g.fillStyle=ground;g.fillRect(0,horizon,W,H-horizon);
+if(zone==='world'){g.fillStyle='#354c40';for(let i=0;i<8;i++){let x=(i*79+25)%W;g.fillRect(x,horizon-20,24,20);g.fillRect(x+8,horizon-34,9,16);}}
+let depths=[];for(let x=0;x<W;x++){let a=yaw+(x/W-.5)*Math.PI*.42,r=castRay(a),d=r.d*Math.cos(a-yaw);let wallH=Math.min(H*1.7,H*.92/Math.max(.15,d));let top=horizon-wallH/2;let shade=Math.max(35,150-d*9);g.fillStyle=r.side?'rgb('+Math.floor(shade*.75)+','+Math.floor(shade*.8)+','+Math.floor(shade)+')':'rgb('+shade+','+Math.floor(shade*.92)+','+Math.floor(shade*.78)+')';g.fillRect(x,top,1,wallH);depths[x]=d;}
+let actors=[...enemies,...(boss?[boss]:[]),...(potion?[{...potion,kind:'potion'}]:[]),...(portal?[{...portal,kind:'portal'}]:[]),...projectiles.map(p=>({...p,kind:'shot'}))].map(e=>{let dx=e.x-S.x,dy=e.y-S.y,d=Math.hypot(dx,dy),a=Math.atan2(dy,dx),rel=Math.atan2(Math.sin(a-yaw),Math.cos(a-yaw));return {...e,d,rel};}).filter(e=>Math.abs(e.rel)<.8&&e.d>.15).sort((a,b)=>b.d-a.d);
+actors.forEach(e=>{let sx=(.5+e.rel/(Math.PI*.42))*W,size=Math.min(H*1.55,H*1.05/e.d),sy=horizon+size*.27;if(e.kind==='portal'){g.fillStyle='#9d6bdb';g.fillRect(sx-size*.18,horizon-size*.58,size*.36,size*.9);g.strokeStyle='#f3d58b';g.lineWidth=4;g.strokeRect(sx-size*.18,horizon-size*.58,size*.36,size*.9);}else if(e.kind==='potion'){g.fillStyle='#65e2a1';g.fillRect(sx-size*.13,sy-size*.3,size*.26,size*.45);g.fillStyle='#eaffd8';g.fillRect(sx-size*.08,sy-size*.38,size*.16,size*.1);}else if(e.kind==='shot'){g.fillStyle=e.kind==='ice'?'#8deaff':'#e6aaff';g.fillRect(sx-size*.08,sy-size*.12,size*.16,size*.16);}else{drawHumanoid(sx,sy,size*.8,e.color||'#b67bce',e===boss||e.name);g.fillStyle='#ff687b';g.fillRect(sx-size*.24,sy-size*.52,size*.48,4);g.fillStyle='#73e38f';g.fillRect(sx-size*.24,sy-size*.52,size*.48*Math.max(0,e.hp/e.max),4);}});
+g.fillStyle='rgba(0,0,0,.35)';g.fillRect(W/2-1,H/2-7,2,14);g.fillRect(W/2-7,H/2-1,14,2);
+if(performance.now()<toastUntil){g.fillStyle='#ffe18a';g.font='10px monospace';g.textAlign='center';g.fillText(toast,W/2,18);g.textAlign='left';}
+}
+function frame(t){let dt=Math.min(40,t-last||16);last=t;if(gameOn){update(dt);render();}requestAnimationFrame(frame);}
+// 게임 루프를 실제로 시작해야 화면 렌더링과 이동 처리가 실행돼.
+requestAnimationFrame(frame);
+function bindStick(id,obj,mode){
+ const el=$(id),knob=el.querySelector('.knob');let pid=null;
+ function set(e){
+  const r=el.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+  let dx=(e.clientX-cx)/(r.width*.34),dy=(e.clientY-cy)/(r.height*.34);
+  if(mode==='look')dy=0;
+  const m=Math.hypot(dx,dy);if(m>1){dx/=m;dy/=m;}
+  obj.x=dx;obj.y=dy;
+  const travel=r.width*.27;
+  knob.style.transform=`translate(calc(-50% + ${dx*travel}px),calc(-50% + ${dy*travel}px))`;
+ }
+ function release(e){if(pid===null||e.pointerId!==pid)return;pid=null;obj.x=0;obj.y=0;knob.style.transform='translate(-50%,-50%)';}
+ el.addEventListener('pointerdown',e=>{e.preventDefault();pid=e.pointerId;try{el.setPointerCapture(pid);}catch(_){}set(e);});
+ el.addEventListener('pointermove',e=>{if(pid===e.pointerId){e.preventDefault();set(e);}});
+ el.addEventListener('pointerup',release);el.addEventListener('pointercancel',release);el.addEventListener('lostpointercapture',release);
+}
+bindStick('moveStick',move,'move');bindStick('lookStick',look,'look');$('attack').addEventListener('pointerdown',e=>{e.preventDefault();attack();});
+$('showSignup').onclick=()=>{$('loginForm').classList.add('hidden');$('signupForm').classList.remove('hidden');$('authTitle').textContent='회원가입';};
+$('showLogin').onclick=()=>{$('signupForm').classList.add('hidden');$('loginForm').classList.remove('hidden');$('authTitle').textContent='로그인';};
+$('signupBtn').onclick=()=>{let id=$('newId').value.trim(),pw=$('newPw').value,n=$('heroName').value.trim();if(!id||!pw||!n)return $('authMsg').textContent='모든 항목을 입력해줘.';if(db[id])return $('authMsg').textContent='이미 사용 중인 계정이야.';user={id,pw};S=newSave(n);save();showScreen('classes');};
+$('loginBtn').onclick=()=>{let id=$('loginId').value.trim(),pw=$('loginPw').value;if(!db[id]||db[id].pw!==pw)return $('authMsg').textContent='계정 이름이나 비밀번호를 확인해줘.';user={id,pw};S=db[id].data;if(S.cleared?.includes(3)){showScreen('ending');return;}if(S.job){yaw=S.yaw||-Math.PI/2;beginWorldOrResume();}else showScreen('classes');};
+function beginWorldOrResume(){if(S.floor>1||S.cleared?.length){beginFloor(S.floor);if(S.cleared.includes(S.floor)){beginFloor(Math.min(3,S.floor+1));}}else beginWorld();enterPlay();}
+document.querySelectorAll('[data-job]').forEach(b=>b.onclick=()=>{S.job=b.dataset.job;S.hp=18;S.maxHp=18;S.floor=1;beginWorld();enterPlay();save();});
+function enterPlay(){showScreen('play');gameOn=true;hud();try{if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().then(()=>{if(screen.orientation?.lock)screen.orientation.lock('landscape').catch(()=>{});}).catch(()=>{});}catch(e){}}
+$('atkUp').onclick=()=>{if(S.stat>=1){S.stat--;S.bonus+=.1;hud();save();say('공격력이 0.1 증가했다.');}};
+$('hpUp').onclick=()=>{if(S.stat>=6){S.stat-=6;S.maxHp+=1;S.hp+=1;hud();save();say('최대 체력이 하트 반 칸 증가했다.');}};
+$('save').onclick=()=>{save();say('저장 완료.');};
+$('reset').onclick=()=>{S=newSave(S.name);save();showScreen('classes');};
+$('keep').onclick=()=>{save();user=null;S=null;gameOn=false;showScreen('auth');};
+})();
+</script></body></html>
